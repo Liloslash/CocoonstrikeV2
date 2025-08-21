@@ -1,0 +1,14 @@
+
+.godot/
+.nomedia
+
+.import/
+export.cfg
+exportcredentials.cfg
+*.tmp
+
+*.translation
+
+.mono/
+data/
+mono_crash..json
