@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://duveuss376vek"]
+
+[ext_resource type="PackedScene" uid="uid://on8dmdl0asvj" path="res://Maps/environments/Arena.glb" id="1_fj7yv"]
+[ext_resource type="PackedScene" uid="uid://danq5m8lo3862" path="res://Maps/obstacles/Obstacles.glb" id="2_tlwt5"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="Arena" parent="." instance=ExtResource("1_fj7yv")]
+
+[node name="Obstacles" parent="." instance=ExtResource("2_tlwt5")]

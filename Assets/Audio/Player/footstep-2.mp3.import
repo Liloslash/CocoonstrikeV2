@@ -3,12 +3,12 @@
 importer="mp3"
 type="AudioStreamMP3"
 uid="uid://c6erh4o3lmpqu"
-path="res://.godot/imported/footstep-2.mp3-ca96b5de91c0ea4a5324d21a56297f0f.mp3str"
+path="res://.godot/imported/Footstep-2.mp3-9a35a794bf0d791c82ae7ad1d90308b0.mp3str"
 
 [deps]
 
-source_file="res://Assets/Audio/Player/footstep-2.mp3"
-dest_files=["res://.godot/imported/footstep-2.mp3-ca96b5de91c0ea4a5324d21a56297f0f.mp3str"]
+source_file="res://Assets/Audio/Player/Footstep-2.mp3"
+dest_files=["res://.godot/imported/Footstep-2.mp3-9a35a794bf0d791c82ae7ad1d90308b0.mp3str"]
 
 [params]
 

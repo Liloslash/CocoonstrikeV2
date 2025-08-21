@@ -1,11 +1,11 @@
 [gd_scene load_steps=3 format=3 uid="uid://blpn5lfg8ub4b"]
 
-[ext_resource type="Script" uid="uid://co6b1qlsqhx6s" path="res://Scenes/PlayerMovement.gd" id="1_rpqav"]
+[ext_resource type="Script" uid="uid://co6b1qlsqhx6s" path="res://Player/playerMovement.gd" id="1_v0iea"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_rpqav"]
 
 [node name="Player" type="CharacterBody3D"]
-script = ExtResource("1_rpqav")
+script = ExtResource("1_v0iea")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 

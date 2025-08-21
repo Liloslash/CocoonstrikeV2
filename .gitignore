@@ -1,7 +1,7 @@
 
 .godot/
 .nomedia
-
+.vscode/
 .import/
 export.cfg
 exportcredentials.cfg
