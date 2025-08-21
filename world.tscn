@@ -1,10 +1,14 @@
-[gd_scene load_steps=3 format=3 uid="uid://duveuss376vek"]
+[gd_scene load_steps=4 format=3 uid="uid://duveuss376vek"]
 
 [ext_resource type="PackedScene" uid="uid://on8dmdl0asvj" path="res://Maps/environments/Arena.glb" id="1_fj7yv"]
 [ext_resource type="PackedScene" uid="uid://danq5m8lo3862" path="res://Maps/obstacles/Obstacles.glb" id="2_tlwt5"]
+[ext_resource type="PackedScene" uid="uid://blpn5lfg8ub4b" path="res://Player/player.tscn" id="3_tlwt5"]
 
-[node name="Node3D" type="Node3D"]
+[node name="World" type="Node3D"]
 
 [node name="Arena" parent="." instance=ExtResource("1_fj7yv")]
 
 [node name="Obstacles" parent="." instance=ExtResource("2_tlwt5")]
+
+[node name="Player" parent="." instance=ExtResource("3_tlwt5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
