@@ -3,7 +3,6 @@ extends CharacterBody3D
 @export var max_speed: float = 9.5
 @export var jump_velocity: float = 4.5
 
-
 var current_speed: float = 0.0  # Vitesse actuelle (0 à max_speed)
 var is_accelerating: bool = false
 var acceleration_timer: float = 0.0
@@ -27,7 +26,6 @@ func _physics_process(delta: float) -> void:
 	var input_dir = Input.get_vector("left", "right", "up", "down")
 
 	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-
 	
 	if direction != Vector3.ZERO:
 		# Démarrer l'accélération si ce n'est pas déjà fait
