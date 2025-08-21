@@ -13,15 +13,17 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("esc"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
-func update(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	# Appliquer la gravité
 	if not is_on_floor():
 		velocity.y += get_gravity().y * delta
 
 	# Récupérer l'input de direction
 	var input_dir = Input.get_vector("left", "right", "up", "down")
+	print(input_dir)
 	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-
+	print(direction)
+	
 	if direction != Vector3.ZERO:
 		# Démarrer l'accélération si ce n'est pas déjà fait
 		if not is_accelerating:
@@ -44,8 +46,3 @@ func update(delta: float) -> void:
 		velocity.z = 0.0
 
 	move_and_slide()
-
-func handle_input(event: InputEvent) -> void:
-	# Gestion du saut
-	if event.is_action_pressed("ui_accept") and is_on_floor():
-		velocity.y = jump_velocity
