@@ -14,6 +14,9 @@ func _input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if event is InputEventMouseMotion:
 		rotate_y(-event.relative.x * 0.002)
+	# Détection du saut
+	if event.is_action_pressed("jump") and is_on_floor():
+		velocity.y = jump_velocity
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
