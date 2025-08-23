@@ -3,16 +3,19 @@ extends CharacterBody3D
 # --- Paramètres exportés ---
 @export_group("Mouvement")
 @export var max_speed: float = 9.5  # Vitesse maximale de déplacement
-@export var jump_velocity: float = 6.0  # Vitesse initiale du saut (augmentée pour une phase descendante plus longue)
+@export var jump_velocity: float = 6.0  # Vitesse initiale du saut
 @export var acceleration_duration: float = 0.5  # Temps pour atteindre la vitesse maximale
-@export var slam_velocity: float = -25.0  # Vitesse verticale pour l'écrasement (négative)
+@export var slam_velocity: float = -25.0  # Vitesse verticale pour l'écrasement
+@export var freeze_duration_after_slam: float = 0.5  # Durée du freeze après un écrasement (en secondes)
 
 # --- Variables internes ---
 var current_speed: float = 0.0  # Vitesse actuelle (0 à max_speed)
 var is_accelerating: bool = false  # Indique si le personnage accélère
 var acceleration_timer: float = 0.0  # Temps écoulé depuis le début de l'accélération
-var can_slam: bool = true  # Active la capacité d'écrasement (à désactiver en début de jeu)
+var can_slam: bool = true  # Active la capacité d'écrasement
 var is_slamming: bool = false  # Indique si le personnage est en train d'effectuer un écrasement
+var is_frozen: bool = false  # Indique si le personnage est gelé après un écrasement
+var freeze_timer: float = 0.0  # Temps restant pour le freeze
 
 # --- Gestion des inputs ---
 func _input(event: InputEvent) -> void:
@@ -20,13 +23,13 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("esc"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	# Rotation horizontale avec la souris
-	if event is InputEventMouseMotion:
+	if event is InputEventMouseMotion and !is_frozen:
 		rotate_y(-event.relative.x * 0.002)
 	# Saut initial
-	if event.is_action_pressed("jump") and is_on_floor():
+	if event.is_action_pressed("jump") and is_on_floor() and !is_frozen:
 		velocity.y = jump_velocity
 	# Déclencher l'écrasement en phase descendante
-	if event.is_action_pressed("jump") and !is_on_floor() and velocity.y < 0 and can_slam and !is_slamming:
+	if event.is_action_pressed("jump") and !is_on_floor() and velocity.y < 0 and can_slam and !is_slamming and !is_frozen:
 		is_slamming = true
 		velocity.y = slam_velocity
 
@@ -37,19 +40,32 @@ func _ready() -> void:
 
 # --- Mise à jour de la physique ---
 func _physics_process(delta: float) -> void:
+	# Gestion du freeze après un écrasement
+	if is_frozen:
+		freeze_timer -= delta
+		if freeze_timer <= 0:
+			is_frozen = false
+			freeze_timer = 0.0
+		# Annuler tout mouvement pendant le freeze
+		velocity.x = 0.0
+		velocity.z = 0.0
+		return  # On sort de la fonction pour éviter tout autre traitement
+
 	# Appliquer la gravité si le personnage n'est pas au sol
 	if not is_on_floor():
 		velocity.y += get_gravity().y * delta
 
-	# Réinitialiser l'état d'écrasement à l'atterrissage
+	# Réinitialiser l'état d'écrasement et déclencher le freeze à l'atterrissage
 	if is_on_floor() and is_slamming:
 		is_slamming = false
+		is_frozen = true
+		freeze_timer = freeze_duration_after_slam
 
 	# Gestion du déplacement horizontal
 	var input_dir = Input.get_vector("left", "right", "up", "down")
 	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
-	if direction != Vector3.ZERO:
+	if direction != Vector3.ZERO and !is_frozen:
 		# Démarrer l'accélération
 		if not is_accelerating:
 			is_accelerating = true
