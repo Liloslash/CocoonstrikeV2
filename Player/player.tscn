@@ -6,6 +6,7 @@
 
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_v0iea")
+acceleration_duration = 0.38
 
 [node name="Camera3D" type="Camera3D" parent="."]
 

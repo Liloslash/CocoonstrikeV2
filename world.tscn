@@ -1,8 +1,17 @@
-[gd_scene load_steps=4 format=3 uid="uid://duveuss376vek"]
+[gd_scene load_steps=5 format=3 uid="uid://duveuss376vek"]
 
 [ext_resource type="PackedScene" uid="uid://on8dmdl0asvj" path="res://Maps/environments/Arena.glb" id="1_fj7yv"]
 [ext_resource type="PackedScene" uid="uid://danq5m8lo3862" path="res://Maps/obstacles/Obstacles.glb" id="2_tlwt5"]
 [ext_resource type="PackedScene" uid="uid://blpn5lfg8ub4b" path="res://Player/player.tscn" id="3_tlwt5"]
+
+[sub_resource type="Environment" id="Environment_tlwt5"]
+background_energy_multiplier = 7.0
+ambient_light_source = 3
+ambient_light_color = Color(0.982698, 0.874011, 0.968364, 1)
+ssao_enabled = true
+fog_mode = 1
+fog_density = 1.0
+volumetric_fog_density = 0.5206
 
 [node name="World" type="Node3D"]
 
@@ -14,3 +23,4 @@
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_tlwt5")
