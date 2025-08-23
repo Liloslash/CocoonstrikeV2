@@ -8,7 +8,6 @@
 background_energy_multiplier = 7.0
 ambient_light_source = 3
 ambient_light_color = Color(0.982698, 0.874011, 0.968364, 1)
-ssao_enabled = true
 fog_mode = 1
 fog_density = 1.0
 volumetric_fog_density = 0.5206
