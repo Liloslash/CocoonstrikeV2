@@ -23,6 +23,7 @@ script = ExtResource("1_v0iea")
 acceleration_duration = 0.38
 freeze_duration_after_slam = 0.3
 min_time_before_slam = 0.4
+headbob_amplitude = 0.06
 
 [node name="Camera3D" type="Camera3D" parent="."]
 script = SubResource("GDScript_l8h54")
