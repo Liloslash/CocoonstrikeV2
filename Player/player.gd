@@ -49,7 +49,7 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("jump") and is_on_floor() and not is_frozen:
 		velocity.y = jump_velocity
 		jump_time = 0.0
-	if event.is_action_pressed("jump") and not is_on_floor() and jump_time >= min_time_before_slam and can_slam and not is_slamming and not is_frozen:
+	if event.is_action_pressed("slam") and not is_on_floor() and jump_time >= min_time_before_slam and can_slam and not is_slamming and not is_frozen:
 		is_slamming = true
 		velocity.y = slam_velocity
 
