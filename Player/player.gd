@@ -69,8 +69,6 @@ func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: fl
 
 # --- Gestion du tremblement et du head bob à chaque frame ---
 func _process(_delta: float) -> void:
-	# -------------------------------------------------------
-	# Tremblement de la caméra (camera shake)
 	if shake_timer > 0:
 		var t := 1.0 - (shake_timer / shake_time_total)
 		var elastic := ease_out_elastic(t)  # Courbe d’atténuation élastique
@@ -85,21 +83,12 @@ func _process(_delta: float) -> void:
 		if shake_timer <= 0:
 			camera.position = original_camera_position
 			camera.rotation_degrees = original_camera_rotation
-	
-	# -------------------------------------------------------
-	# Head Bob (balancement de la caméra en marche)
 	elif not is_frozen and current_speed > 0:
 		headbob_timer += _delta
-		
-		# Balancement vertical en forme de "U" : valeur absolue du sinus
 		var bob_offset_y = abs(sin(headbob_timer * headbob_frequency)) * headbob_amplitude
-		
-		# Balancement horizontal classique sinusoidal pour fluidité
 		var bob_offset_x = sin(headbob_timer * headbob_frequency * 2) * headbob_amplitude * 0.5
-		
 		camera.position = original_camera_position + Vector3(bob_offset_x, bob_offset_y, 0)
 	else:
-		# Remise à la position originale quand on ne bouge pas ou freeze
 		headbob_timer = 0.0
 		camera.position = original_camera_position
 
@@ -124,28 +113,31 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += get_gravity().y * delta
 		jump_time += delta
+
 	if is_on_floor() and is_slamming:
 		is_slamming = false
 		is_frozen = true
 		freeze_timer = freeze_duration_after_slam
 		start_camera_shake()
-	
+
 	var input_dir = Input.get_vector("left", "right", "up", "down")
-	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-	
-	if direction != Vector3.ZERO and not is_frozen:
-		if not is_accelerating:
-			is_accelerating = true
-			acceleration_timer = 0.0
-		acceleration_timer += delta
-		var speed_ratio = min(acceleration_timer / acceleration_duration, 1.0)
-		current_speed = max_speed * speed_ratio
-		velocity.x = direction.x * current_speed
-		velocity.z = direction.z * current_speed
+
+	# Calculer la direction uniquement si input non nul pour éviter calculs inutiles
+	if input_dir != Vector2.ZERO:
+		var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+		if not is_frozen:
+			if not is_accelerating:
+				is_accelerating = true
+				acceleration_timer = 0.0
+			acceleration_timer += delta
+			var speed_ratio = min(acceleration_timer / acceleration_duration, 1.0)
+			current_speed = max_speed * speed_ratio
+			velocity.x = direction.x * current_speed
+			velocity.z = direction.z * current_speed
 	else:
 		is_accelerating = false
 		current_speed = 0.0
 		velocity.x = 0.0
 		velocity.z = 0.0
-	
+
 	move_and_slide()
