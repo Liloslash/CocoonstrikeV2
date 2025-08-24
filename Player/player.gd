@@ -63,22 +63,22 @@ func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: fl
 	shake_timer = shake_time_total
 
 # --- Gestion du tremblement à chaque frame ---
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if shake_timer > 0:
 		# Progression de 0 (début) à 1 (fin)
-		var t := 1.0 - (shake_timer / shake_time_total) 
+		var t := 1.0 - (shake_timer / shake_time_total)
 		# Courbe EaseOutElastic pour un effet “punch + amorti”
-		var ease := ease_out_elastic(t)
+		var elastic := ease_out_elastic(t)
 		# Génère un mini offset random sur X et Y, diminuant avec le temps
 		var offset = Vector3(
-			randf_range(-1, 1) * shake_strength * (1 - ease),
-			randf_range(-1, 1) * shake_strength * (1 - ease),
+			randf_range(-1, 1) * shake_strength * (1 - elastic),
+			randf_range(-1, 1) * shake_strength * (1 - elastic),
 			0
 		)
 		camera.position = original_camera_position + offset
-		# Petite rotation sur Z pour simuler un choc/vertige (optionnel, décommente si tu veux plus discret) :
-		camera.rotation_degrees = original_camera_rotation + Vector3(0, 0, randf_range(-1, 1) * shake_rot * (1 - ease))
-		shake_timer -= delta
+		# Petite rotation sur Z pour simuler un choc/vertige
+		camera.rotation_degrees = original_camera_rotation + Vector3(0, 0, randf_range(-1, 1) * shake_rot * (1 - elastic))
+		shake_timer -= _delta
 		if shake_timer <= 0:
 			camera.position = original_camera_position
 			camera.rotation_degrees = original_camera_rotation
