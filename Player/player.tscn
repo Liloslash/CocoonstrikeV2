@@ -1,20 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://blpn5lfg8ub4b"]
+[gd_scene load_steps=3 format=3 uid="uid://blpn5lfg8ub4b"]
 
 [ext_resource type="Script" uid="uid://co6b1qlsqhx6s" path="res://Player/player.gd" id="1_v0iea"]
-
-[sub_resource type="GDScript" id="GDScript_l8h54"]
-script/source = "extends Camera3D
-
-
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
-"
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_rpqav"]
 
@@ -24,12 +10,11 @@ acceleration_duration = 0.38
 freeze_duration_after_slam = 0.3
 min_time_before_slam = 0.4
 shake_intensity = 0.5
-shake_duration = 0.7
+shake_duration = 0.8
 headbob_amplitude = 0.09
 headbob_frequency = 6.0
 
 [node name="Camera3D" type="Camera3D" parent="."]
-script = SubResource("GDScript_l8h54")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_rpqav")
