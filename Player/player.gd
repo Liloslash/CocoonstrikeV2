@@ -2,43 +2,43 @@ extends CharacterBody3D
 
 # --- Paramètres exportés ---
 @export_group("Mouvement")
-@export var max_speed: float = 9.5
-@export var jump_velocity: float = 6.0
-@export var acceleration_duration: float = 0.5
-@export var slam_velocity: float = -25.0
-@export var freeze_duration_after_slam: float = 0.5
-@export var min_time_before_slam: float = 0.3
+@export var max_speed: float = 9.5               # Vitesse maximale de déplacement
+@export var jump_velocity: float = 6.0           # Vélocité verticale initiale du saut
+@export var acceleration_duration: float = 0.5   # Temps pour atteindre la vitesse max
+@export var slam_velocity: float = -25.0         # Vélocité verticale lors du slam (écrasement)
+@export var freeze_duration_after_slam: float = 0.5  # Durée du freeze après slam (secondes)
+@export var min_time_before_slam: float = 0.3    # Temps min après saut avant slam
 
 @export_group("Camera Shake")
-@export var shake_intensity: float = 0.25
-@export var shake_duration: float = 0.5
-@export var shake_rotation: float = 5
+@export var shake_intensity: float = 0.25        # Intensité du tremblement de caméra
+@export var shake_duration: float = 0.5           # Durée du tremblement (secondes)
+@export var shake_rotation: float = 5             # Rotation max en degrés pour le shake
 
 @export_group("Head Bob")
-@export var headbob_amplitude: float = 0.05  # Hauteur du balancement (en unités Godot)
-@export var headbob_frequency: float = 8.0   # Fréquence du balancement (oscillations par seconde)
+@export var headbob_amplitude: float = 0.05       # Amplitude verticale du balancement (en unités)
+@export var headbob_frequency: float = 8.0         # Fréquence du balancement (oscillations par seconde)
 
 # --- Variables internes ---
-var current_speed: float = 0.0
-var is_accelerating: bool = false
-var acceleration_timer: float = 0.0
-var can_slam: bool = true
-var is_slamming: bool = false
-var is_frozen: bool = false
-var freeze_timer: float = 0.0
-var jump_time: float = 0.0
+var current_speed: float = 0.0                      # Vitesse effective du joueur
+var is_accelerating: bool = false                   # Indique si on accélère vers la vitesse max
+var acceleration_timer: float = 0.0                 # Timer progressif pour accélération
+var can_slam: bool = true                            # Capacité à effectuer un slam
+var is_slamming: bool = false                        # État d’écrasement en cours
+var is_frozen: bool = false                          # Blocage du joueur après slam
+var freeze_timer: float = 0.0                        # Timer du blocage après slam
+var jump_time: float = 0.0                           # Temps passé en l’air depuis le saut
 
 # --- Camera Shake interne ---
-var camera: Camera3D
-var shake_timer: float = 0.0
-var shake_time_total: float = 0.0
-var shake_strength: float = 0.0
-var shake_rot: float = 0.0
-var original_camera_position: Vector3
-var original_camera_rotation: Vector3
+var camera: Camera3D                                 # Référence à la caméra enfant
+var shake_timer: float = 0.0                         # Temps restant du tremblement actif
+var shake_time_total: float = 0.0                    # Durée totale du tremblement déclenché
+var shake_strength: float = 0.0                       # Intensité variable du tremblement
+var shake_rot: float = 0.0                             # Rotation max du tremblement
+var original_camera_position: Vector3                 # Position de caméra sans décalage
+var original_camera_rotation: Vector3                 # Rotation caméra originale
 
 # --- Head Bob interne ---
-var headbob_timer: float = 0.0
+var headbob_timer: float = 0.0                         # Timer progressif pour oscillations
 
 # --- Gestion des inputs ---
 func _input(event: InputEvent) -> void:
@@ -60,19 +60,20 @@ func _ready() -> void:
 	original_camera_position = camera.position
 	original_camera_rotation = camera.rotation_degrees
 
-# --- Camera shake déclenchable de partout ---
+# --- Fonction générique pour déclencher le tremblement de caméra ---
 func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: float = -1.0) -> void:
 	shake_strength = intensity if intensity > 0 else shake_intensity
 	shake_time_total = duration if duration > 0 else shake_duration
 	shake_rot = rot if rot > 0 else shake_rotation
 	shake_timer = shake_time_total
 
-# --- Gestion du tremblement et head bob à chaque frame ---
+# --- Gestion du tremblement et du head bob à chaque frame ---
 func _process(_delta: float) -> void:
-	# Gestion du tremblement
+	# -------------------------------------------------------
+	# Tremblement de la caméra (camera shake)
 	if shake_timer > 0:
 		var t := 1.0 - (shake_timer / shake_time_total)
-		var elastic := ease_out_elastic(t)
+		var elastic := ease_out_elastic(t)  # Courbe d’atténuation élastique
 		var offset = Vector3(
 			randf_range(-1, 1) * shake_strength * (1 - elastic),
 			randf_range(-1, 1) * shake_strength * (1 - elastic),
@@ -84,26 +85,32 @@ func _process(_delta: float) -> void:
 		if shake_timer <= 0:
 			camera.position = original_camera_position
 			camera.rotation_degrees = original_camera_rotation
+	
+	# -------------------------------------------------------
+	# Head Bob (balancement de la caméra en marche)
+	elif not is_frozen and current_speed > 0:
+		headbob_timer += _delta
+		
+		# Balancement vertical en forme de "U" : valeur absolue du sinus
+		var bob_offset_y = abs(sin(headbob_timer * headbob_frequency)) * headbob_amplitude
+		
+		# Balancement horizontal classique sinusoidal pour fluidité
+		var bob_offset_x = sin(headbob_timer * headbob_frequency * 2) * headbob_amplitude * 0.5
+		
+		camera.position = original_camera_position + Vector3(bob_offset_x, bob_offset_y, 0)
 	else:
-		# Gestion du head bob (uniquement si pas en freeze ni en shake)
-		if not is_frozen and current_speed > 0:
-			headbob_timer += _delta
-			var bob_offset_y = sin(headbob_timer * headbob_frequency) * headbob_amplitude
-			var bob_offset_x = cos(headbob_timer * headbob_frequency * 2) * headbob_amplitude * 0.5
-			camera.position = original_camera_position + Vector3(bob_offset_x, bob_offset_y, 0)
-		else:
-			# Remise à la position originale si arrêt
-			headbob_timer = 0.0
-			camera.position = original_camera_position
+		# Remise à la position originale quand on ne bouge pas ou freeze
+		headbob_timer = 0.0
+		camera.position = original_camera_position
 
-# --- Fonction d'atténuation EaseOutElastic ---
+# --- Fonction d'atténuation EaseOutElastic pour la courbe du shake ---
 func ease_out_elastic(t: float) -> float:
 	if t == 0.0 or t == 1.0:
 		return t
 	var c4 = (2 * PI) / 3
 	return pow(2, -10 * t) * sin((t * 10 - 0.75) * c4) + 1
 
-# --- Physique du joueur ---
+# --- Mise à jour de la physique du joueur ---
 func _physics_process(delta: float) -> void:
 	if is_frozen:
 		freeze_timer -= delta
@@ -122,8 +129,10 @@ func _physics_process(delta: float) -> void:
 		is_frozen = true
 		freeze_timer = freeze_duration_after_slam
 		start_camera_shake()
+	
 	var input_dir = Input.get_vector("left", "right", "up", "down")
 	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	
 	if direction != Vector3.ZERO and not is_frozen:
 		if not is_accelerating:
 			is_accelerating = true
@@ -138,4 +147,5 @@ func _physics_process(delta: float) -> void:
 		current_speed = 0.0
 		velocity.x = 0.0
 		velocity.z = 0.0
+	
 	move_and_slide()
