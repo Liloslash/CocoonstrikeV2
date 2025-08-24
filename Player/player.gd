@@ -7,6 +7,7 @@ extends CharacterBody3D
 @export var acceleration_duration: float = 0.5  # Temps pour atteindre la vitesse maximale
 @export var slam_velocity: float = -25.0  # Vitesse verticale pour l'écrasement
 @export var freeze_duration_after_slam: float = 0.5  # Durée du freeze après un écrasement (en secondes)
+@export var min_time_before_slam: float = 0.3  # Temps minimum après le saut avant de pouvoir écraser (en secondes)
 
 # --- Variables internes ---
 var current_speed: float = 0.0  # Vitesse actuelle (0 à max_speed)
@@ -16,6 +17,7 @@ var can_slam: bool = true  # Active la capacité d'écrasement
 var is_slamming: bool = false  # Indique si le personnage est en train d'effectuer un écrasement
 var is_frozen: bool = false  # Indique si le personnage est gelé après un écrasement
 var freeze_timer: float = 0.0  # Temps restant pour le freeze
+var jump_time: float = 0.0  # Temps écoulé depuis le début du saut
 
 # --- Gestion des inputs ---
 func _input(event: InputEvent) -> void:
@@ -28,8 +30,9 @@ func _input(event: InputEvent) -> void:
 	# Saut initial
 	if event.is_action_pressed("jump") and is_on_floor() and !is_frozen:
 		velocity.y = jump_velocity
-	# Déclencher l'écrasement en phase descendante
-	if event.is_action_pressed("jump") and !is_on_floor() and velocity.y < 0 and can_slam and !is_slamming and !is_frozen:
+		jump_time = 0.0  # Réinitialise le temps de saut au début d'un nouveau saut
+	# Déclencher l'écrasement après un délai minimum depuis le début du saut
+	if event.is_action_pressed("jump") and !is_on_floor() and jump_time >= min_time_before_slam and can_slam and !is_slamming and !is_frozen:
 		is_slamming = true
 		velocity.y = slam_velocity
 
@@ -54,6 +57,7 @@ func _physics_process(delta: float) -> void:
 	# Appliquer la gravité si le personnage n'est pas au sol
 	if not is_on_floor():
 		velocity.y += get_gravity().y * delta
+		jump_time += delta  # Incrémente le temps de saut tant que le personnage est en l'air
 
 	# Réinitialiser l'état d'écrasement et déclencher le freeze à l'atterrissage
 	if is_on_floor() and is_slamming:
