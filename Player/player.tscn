@@ -175,7 +175,7 @@ autoplay = "Idle"
 script = ExtResource("3_btcbx")
 tween_duration = 0.04
 
-[node name="AnimationGunOscillation" type="AnimationPlayer" parent="HUD_Layer/Revolver"]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="HUD_Layer/Revolver"]
 libraries = {
 &"": SubResource("AnimationLibrary_k53q1")
 }
