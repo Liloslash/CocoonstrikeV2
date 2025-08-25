@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://blpn5lfg8ub4b"]
+[gd_scene load_steps=21 format=3 uid="uid://blpn5lfg8ub4b"]
 
 [ext_resource type="Script" uid="uid://co6b1qlsqhx6s" path="res://Player/player.gd" id="1_v0iea"]
 [ext_resource type="Texture2D" uid="uid://80v0rg0temi1" path="res://Assets/Sprites/Guns/Revolver.png" id="2_4ntmi"]
@@ -8,41 +8,45 @@
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gwnis"]
 atlas = ExtResource("2_4ntmi")
-region = Rect2(128, 0, 128, 128)
+region = Rect2(0, 0, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_k53q1"]
 atlas = ExtResource("2_4ntmi")
-region = Rect2(256, 0, 128, 128)
+region = Rect2(128, 0, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fhl08"]
 atlas = ExtResource("2_4ntmi")
-region = Rect2(384, 0, 128, 128)
+region = Rect2(256, 0, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vtle1"]
 atlas = ExtResource("2_4ntmi")
-region = Rect2(0, 128, 128, 128)
+region = Rect2(384, 0, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_od3ui"]
 atlas = ExtResource("2_4ntmi")
-region = Rect2(128, 128, 128, 128)
+region = Rect2(0, 128, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_00tjw"]
 atlas = ExtResource("2_4ntmi")
-region = Rect2(256, 128, 128, 128)
+region = Rect2(128, 128, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_x3vf3"]
 atlas = ExtResource("2_4ntmi")
-region = Rect2(384, 128, 128, 128)
+region = Rect2(256, 128, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_apopc"]
 atlas = ExtResource("2_4ntmi")
-region = Rect2(0, 256, 128, 128)
+region = Rect2(384, 128, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_5htga"]
 atlas = ExtResource("2_4ntmi")
-region = Rect2(128, 256, 128, 128)
+region = Rect2(0, 256, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_p5o4e"]
+atlas = ExtResource("2_4ntmi")
+region = Rect2(128, 256, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gu6f8"]
 atlas = ExtResource("2_4ntmi")
 region = Rect2(256, 256, 128, 128)
 
@@ -82,10 +86,13 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_p5o4e")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gu6f8")
 }],
 "loop": false,
 "name": &"GunShotAnim",
-"speed": 35.0
+"speed": 24.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -166,6 +173,7 @@ sprite_frames = SubResource("SpriteFrames_gwnis")
 animation = &"GunShotAnim"
 autoplay = "Idle"
 script = ExtResource("3_btcbx")
+tween_duration = 0.04
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="HUD_Layer/Revolver"]
 libraries = {
