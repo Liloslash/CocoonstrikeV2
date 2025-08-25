@@ -12,12 +12,12 @@ ground_energy_multiplier = 0.0
 
 [sub_resource type="Sky" id="Sky_aqk2v"]
 sky_material = SubResource("ProceduralSkyMaterial_tlwt5")
-radiance_size = 4
 
 [sub_resource type="Environment" id="Environment_036b0"]
 background_mode = 2
 background_energy_multiplier = 1.2
 sky = SubResource("Sky_aqk2v")
+ambient_light_source = 3
 
 [node name="World" type="Node3D"]
 
