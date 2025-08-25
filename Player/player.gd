@@ -2,43 +2,46 @@ extends CharacterBody3D
 
 # --- Paramètres exportés ---
 @export_group("Mouvement")
-@export var max_speed: float = 9.5               # Vitesse maximale de déplacement
-@export var jump_velocity: float = 6.0           # Vélocité verticale initiale du saut
-@export var acceleration_duration: float = 0.5   # Temps pour atteindre la vitesse max
-@export var slam_velocity: float = -25.0         # Vélocité verticale lors du slam (écrasement)
-@export var freeze_duration_after_slam: float = 0.5  # Durée du freeze après slam (secondes)
-@export var min_time_before_slam: float = 0.3    # Temps min après saut avant slam
+@export var max_speed: float = 9.5
+@export var jump_velocity: float = 6.0
+@export var acceleration_duration: float = 0.5
+@export var slam_velocity: float = -25.0
+@export var freeze_duration_after_slam: float = 0.5
+@export var min_time_before_slam: float = 0.3
 
 @export_group("Camera Shake")
-@export var shake_intensity: float = 0.25        # Intensité du tremblement de caméra
-@export var shake_duration: float = 0.5           # Durée du tremblement (secondes)
-@export var shake_rotation: float = 5             # Rotation max en degrés pour le shake
+@export var shake_intensity: float = 0.25
+@export var shake_duration: float = 0.5
+@export var shake_rotation: float = 5
 
 @export_group("Head Bob")
-@export var headbob_amplitude: float = 0.05       # Amplitude verticale du balancement (en unités)
-@export var headbob_frequency: float = 8.0         # Fréquence du balancement (oscillations par seconde)
+@export var headbob_amplitude: float = 0.05
+@export var headbob_frequency: float = 8.0
 
 # --- Variables internes ---
-var current_speed: float = 0.0                      # Vitesse effective du joueur
-var is_accelerating: bool = false                   # Indique si on accélère vers la vitesse max
-var acceleration_timer: float = 0.0                 # Timer progressif pour accélération
-var can_slam: bool = true                            # Capacité à effectuer un slam
-var is_slamming: bool = false                        # État d’écrasement en cours
-var is_frozen: bool = false                          # Blocage du joueur après slam
-var freeze_timer: float = 0.0                        # Timer du blocage après slam
-var jump_time: float = 0.0                           # Temps passé en l’air depuis le saut
+var current_speed: float = 0.0
+var is_accelerating: bool = false
+var acceleration_timer: float = 0.0
+var can_slam: bool = true
+var is_slamming: bool = false
+var is_frozen: bool = false
+var freeze_timer: float = 0.0
+var jump_time: float = 0.0
 
 # --- Camera Shake interne ---
-var camera: Camera3D                                 # Référence à la caméra enfant
-var shake_timer: float = 0.0                         # Temps restant du tremblement actif
-var shake_time_total: float = 0.0                    # Durée totale du tremblement déclenché
-var shake_strength: float = 0.0                       # Intensité variable du tremblement
-var shake_rot: float = 0.0                             # Rotation max du tremblement
-var original_camera_position: Vector3                 # Position de caméra sans décalage
-var original_camera_rotation: Vector3                 # Rotation caméra originale
+var camera: Camera3D
+var shake_timer: float = 0.0
+var shake_time_total: float = 0.0
+var shake_strength: float = 0.0
+var shake_rot: float = 0.0
+var original_camera_position: Vector3
+var original_camera_rotation: Vector3
 
 # --- Head Bob interne ---
-var headbob_timer: float = 0.0                         # Timer progressif pour oscillations
+var headbob_timer: float = 0.0
+
+# --- Référence au revolver dans le HUD ---
+@onready var revolver_sprite = $HUD_Layer/Revolver
 
 # --- Gestion des inputs ---
 func _input(event: InputEvent) -> void:
@@ -67,11 +70,11 @@ func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: fl
 	shake_rot = rot if rot > 0 else shake_rotation
 	shake_timer = shake_time_total
 
-# --- Gestion du tremblement et du head bob à chaque frame ---
+# --- Gestion du tremblement, head bob et détection tir ---
 func _process(_delta: float) -> void:
 	if shake_timer > 0:
 		var t := 1.0 - (shake_timer / shake_time_total)
-		var elastic := ease_out_elastic(t)  # Courbe d’atténuation élastique
+		var elastic := ease_out_elastic(t)
 		var offset = Vector3(
 			randf_range(-1, 1) * shake_strength * (1 - elastic),
 			randf_range(-1, 1) * shake_strength * (1 - elastic),
@@ -91,6 +94,10 @@ func _process(_delta: float) -> void:
 	else:
 		headbob_timer = 0.0
 		camera.position = original_camera_position
+
+	# --- Détection du tir ---
+	if Input.is_action_just_pressed("shot"): 
+		revolver_sprite.play_shot_animation()
 
 # --- Fonction d'atténuation EaseOutElastic pour la courbe du shake ---
 func ease_out_elastic(t: float) -> float:
@@ -122,7 +129,6 @@ func _physics_process(delta: float) -> void:
 
 	var input_dir = Input.get_vector("left", "right", "up", "down")
 
-	# Calculer la direction uniquement si input non nul pour éviter calculs inutiles
 	if input_dir != Vector2.ZERO:
 		var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 		if not is_frozen:
