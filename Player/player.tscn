@@ -154,6 +154,10 @@ freeze_duration_after_slam = 0.3
 min_time_before_slam = 0.4
 shake_intensity = 0.8
 shake_duration = 0.8
+recoil_intensity = 0.03
+recoil_duration = 0.4
+recoil_rotation = 1.5
+recoil_kickback = 0.15
 headbob_amplitude = 0.06
 headbob_frequency = 6.0
 
