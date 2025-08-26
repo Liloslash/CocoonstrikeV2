@@ -154,12 +154,12 @@ freeze_duration_after_slam = 0.3
 min_time_before_slam = 0.4
 shake_intensity = 0.8
 shake_duration = 0.8
+headbob_amplitude = 0.06
+headbob_frequency = 6.0
 recoil_intensity = 0.03
 recoil_duration = 0.4
 recoil_rotation = 1.5
-recoil_kickback = 0.15
-headbob_amplitude = 0.06
-headbob_frequency = 6.0
+recoil_kickback = 0.25
 
 [node name="Camera3D" type="Camera3D" parent="."]
 
@@ -179,6 +179,9 @@ animation = &"GunShotAnim"
 autoplay = "Idle"
 script = ExtResource("3_btcbx")
 tween_duration = 0.03
+reload_down_duration = 0.15
+reload_up_duration = 0.1
+fire_rate = 0.3
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="HUD_Layer/Revolver"]
 libraries = {

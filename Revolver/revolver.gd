@@ -3,35 +3,296 @@ extends AnimatedSprite2D
 # Signal émis au moment exact du tir
 signal shot_fired
 
-@export var tween_duration := 0.12  # Durée réglable dans l'inspecteur
+# === PARAMÈTRES EXPORTÉS ===
+@export_group("Animation")
+@export var tween_duration := 0.12  # Durée du tween de position
+
+@export_group("Munitions")
+@export var max_ammo: int = 6       # Maximum de balles (6 coups)
+@export var start_ammo: int = 6     # Munitions au début
+
+@export_group("Rechargement - Positions")
+@export var reload_offset_y: float = 200.0  # Distance vers le bas pour le rechargement
+@export var reload_down_duration: float = 0.3   # Durée pour descendre l'arme
+@export var reload_up_duration: float = 0.3     # Durée pour remonter l'arme
+@export var interrupt_up_duration: float = 0.2  # Durée pour remonter en cas d'interruption
+
+@export_group("Cadence de Tir")
+@export var fire_rate: float = 0.5  # Délai minimum entre deux tirs (en secondes)
+@export var shot_detection_frame: int = 2  # Frame où le tir se déclenche dans l'animation
+
 @onready var animation_player = $AnimationPlayer
 var base_position: Vector2
 
+# === SYSTÈME DE MUNITIONS ===
+var current_ammo: int  # Balles actuelles dans le barillet
+
+# === SYSTÈME DE CADENCE ===
+var last_shot_time: float = 0.0  # Temps du dernier tir
+var can_shoot: bool = true        # Peut-on tirer ?
+var is_shooting: bool = false     # Est-on en train de tirer ?
+
+# === SYSTÈME DE RECHARGEMENT ===
+enum ReloadState {
+	IDLE,                    # État normal
+	RELOAD_STARTING,         # L'arme descend + ouverture barillet
+	RELOAD_ADDING_BULLETS,   # On ajoute les balles une par une
+	RELOAD_INTERRUPTED       # Rechargement interrompu pour tirer
+}
+
+var reload_state = ReloadState.IDLE
+var bullets_to_add: int = 0      # Combien de balles il reste à ajouter
+var bullets_added: int = 0       # Combien on en a déjà ajouté
+
+# === SONS DE RECHARGEMENT ===
+var sound_open: AudioStream
+var sound_add_bullet: AudioStream  
+var sound_close: AudioStream
+var sound_gunshot: AudioStream  # SON DE TIR
+var sound_empty_click: AudioStream  # SON QUAND VIDE
+var audio_player: AudioStreamPlayer2D       # Pour les sons de rechargement
+var gunshot_audio_player: AudioStreamPlayer2D  # Pour les sons de tir (séparé)
+var empty_click_audio_player: AudioStreamPlayer2D  # Pour les sons de clic vide (séparé)
+
+# === POSITIONS POUR L'ANIMATION ===
+var reload_position: Vector2     # Position quand l'arme est baissée
+
 func _ready():
 	base_position = position
+	# Position de rechargement (plus bas que la position normale)
+	reload_position = base_position + Vector2(0, reload_offset_y)
+	
+	# Initialisation des munitions
+	current_ammo = start_ammo
+	
 	play("Idle")
 	animation_player.play("Sway_Idle")
 	connect("animation_finished", Callable(self, "_on_animation_finished"))
 	
 	# Connexion du signal frame_changed pour détecter le moment du tir
 	connect("frame_changed", Callable(self, "_on_frame_changed"))
+	
+	# === CHARGEMENT DES SONS ===
+	sound_open = load("res://Assets/Audio/Guns/OpenRevolverBarrel.mp3")
+	sound_add_bullet = load("res://Assets/Audio/Guns/AddRevolverBullet.mp3")
+	sound_close = load("res://Assets/Audio/Guns/CloseRevolverBarrel.mp3")
+	sound_gunshot = load("res://Assets/Audio/Guns/GunShot-2.mp3")  # SON DE TIR
+	sound_empty_click = load("res://Assets/Audio/Guns/AOARevolver.mp3")  # SON QUAND VIDE
+	
+	# Création des lecteurs audio
+	audio_player = AudioStreamPlayer2D.new()
+	add_child(audio_player)
+	
+	# Lecteur audio séparé pour les tirs (permet la superposition)
+	gunshot_audio_player = AudioStreamPlayer2D.new()
+	add_child(gunshot_audio_player)
+	
+	# Lecteur audio séparé pour les clics vides (permet la superposition)
+	empty_click_audio_player = AudioStreamPlayer2D.new()
+	add_child(empty_click_audio_player)
+	
+	print("Revolver initialisé - Munitions: ", current_ammo, "/", max_ammo)
 
 func play_shot_animation():
+	# Vérification: peut-on tirer ?
+	if is_shooting:
+		# Déjà en train de tirer
+		print("Tir en cours...")
+		return
+	elif reload_state == ReloadState.RELOAD_ADDING_BULLETS:
+		# Interruption du rechargement SEULEMENT pendant l'ajout de balles !
+		_interrupt_reload()
+		return
+	elif current_ammo <= 0:
+		# Pas de munitions, jouer le son de clic vide
+		print("Pas de munitions !")
+		_play_empty_click_sound()
+		return
+	elif reload_state != ReloadState.IDLE:
+		# Autre état de rechargement (STARTING ou INTERRUPTED), on ne peut pas tirer
+		print("Rechargement en cours, impossible d'interrompre maintenant...")
+		return
+	elif not can_shoot:
+		# Cadence de tir : trop tôt pour tirer
+		print("Trop rapide ! Attendez...")
+		return
+	
+	# Tir normal
+	is_shooting = true  # Marquer qu'on est en train de tirer
+	current_ammo -= 1
+	can_shoot = false
+	last_shot_time = Time.get_time_dict_from_system()["second"] + Time.get_time_dict_from_system()["minute"] * 60
+	
+	print("Tir ! Munitions restantes: ", current_ammo)
+	
+	# Démarrer le timer de cadence
+	_start_fire_rate_timer()
+	
 	animation_player.stop()
 	var tween = create_tween()
 	tween.tween_property(self, "position", base_position, tween_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	await tween.finished
 	play("GunShotAnim")
 
+# === GESTION DE LA CADENCE DE TIR ===
+func _start_fire_rate_timer():
+	await get_tree().create_timer(fire_rate).timeout
+	can_shoot = true
+	print("Prêt à tirer !")
+
+# === FONCTION DE RECHARGEMENT ===
+func start_reload():
+	# Peut-on recharger ?
+	if is_shooting:
+		print("Tir en cours, impossible de recharger !")
+		return
+	if current_ammo >= max_ammo:
+		print("Déjà plein !")
+		return
+	if reload_state != ReloadState.IDLE:
+		print("Déjà en train de recharger !")
+		return
+	
+	print("Début du rechargement...")
+	reload_state = ReloadState.RELOAD_STARTING
+	bullets_to_add = max_ammo - current_ammo
+	bullets_added = 0
+	
+	print("Il faut ajouter ", bullets_to_add, " balles")
+	
+	# L'arme descend avec une rotation
+	animation_player.stop()
+	var tween = create_tween()
+	tween.set_parallel(true)  # Permet d'animer position et rotation simultanément
+	tween.tween_property(self, "position", reload_position, reload_down_duration)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(self, "rotation_degrees", -45.0, reload_down_duration)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	await tween.finished
+	
+	# Son d'ouverture + passage à l'état suivant
+	_play_sound(sound_open)
+	await audio_player.finished
+	
+	reload_state = ReloadState.RELOAD_ADDING_BULLETS
+	_add_next_bullet()
+
+# === AJOUT DES BALLES UNE PAR UNE ===
+func _add_next_bullet():
+	if bullets_added >= bullets_to_add:
+		# Fini d'ajouter les balles, on ferme
+		_finish_reload()
+		return
+	
+	# Vérification si on a été interrompu pendant l'ajout
+	if reload_state == ReloadState.RELOAD_INTERRUPTED:
+		return  # On arrête l'ajout de balles
+	
+	# Son d'ajout de balle + ajout immédiat de la balle au compteur
+	_play_sound(sound_add_bullet)
+	bullets_added += 1
+	current_ammo += 1
+	print("Balle ajoutée (", bullets_added, "/", bullets_to_add, ") - Total: ", current_ammo)
+	
+	await audio_player.finished
+	
+	# Nouvelle vérification après le son (au cas où on aurait été interrompu pendant)
+	if reload_state == ReloadState.RELOAD_INTERRUPTED:
+		return  # On arrête l'ajout de balles
+	
+	# Balle suivante
+	_add_next_bullet()
+
+# === FIN DU RECHARGEMENT ===
+func _finish_reload():
+	print("Rechargement terminé !")
+	
+	# Son de fermeture
+	_play_sound(sound_close)
+	await audio_player.finished
+	
+	# L'arme remonte APRÈS que le son soit terminé avec rotation inverse
+	var tween = create_tween()
+	tween.set_parallel(true)  # Position et rotation simultanément
+	tween.tween_property(self, "position", base_position, reload_up_duration)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "rotation_degrees", 0.0, reload_up_duration)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await tween.finished
+	
+	# Retour à l'état normal
+	reload_state = ReloadState.IDLE
+	animation_player.play("Sway_Idle")
+
+# === INTERRUPTION DU RECHARGEMENT ===
+func _interrupt_reload():
+	print("Rechargement interrompu ! Balles ajoutées: ", bullets_added)
+	
+	reload_state = ReloadState.RELOAD_INTERRUPTED
+	
+	# Attendre que le son d'ajout de balle en cours se termine
+	if audio_player.playing:
+		await audio_player.finished
+	
+	# L'arme remonte rapidement (SANS son de fermeture) avec rotation inverse
+	var tween = create_tween()
+	tween.set_parallel(true)  # Position et rotation simultanément
+	tween.tween_property(self, "position", base_position, interrupt_up_duration)  # Plus rapide
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "rotation_degrees", 0.0, interrupt_up_duration)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await tween.finished
+	
+	# Retour à l'état normal, prêt à tirer au prochain clic
+	reload_state = ReloadState.IDLE
+	animation_player.play("Sway_Idle")
+
+# === UTILITAIRE POUR JOUER LES SONS ===
+func _play_sound(sound: AudioStream):
+	audio_player.stream = sound
+	audio_player.play()
+
+# === UTILITAIRE POUR JOUER LES SONS DE TIR (avec superposition) ===
+func _play_gunshot_sound():
+	# Si le lecteur actuel est occupé, on en crée un nouveau temporaire
+	if gunshot_audio_player.playing:
+		var temp_player = AudioStreamPlayer2D.new()
+		add_child(temp_player)
+		temp_player.stream = sound_gunshot
+		temp_player.play()
+		# On supprime ce lecteur temporaire après le son
+		temp_player.finished.connect(func(): temp_player.queue_free())
+	else:
+		# Le lecteur principal est libre
+		gunshot_audio_player.stream = sound_gunshot
+		gunshot_audio_player.play()
+
+# === UTILITAIRE POUR JOUER LES SONS DE CLIC VIDE (avec superposition) ===
+func _play_empty_click_sound():
+	# Si le lecteur actuel est occupé, on en crée un nouveau temporaire
+	if empty_click_audio_player.playing:
+		var temp_player = AudioStreamPlayer2D.new()
+		add_child(temp_player)
+		temp_player.stream = sound_empty_click
+		temp_player.play()
+		# On supprime ce lecteur temporaire après le son
+		temp_player.finished.connect(func(): temp_player.queue_free())
+	else:
+		# Le lecteur principal est libre
+		empty_click_audio_player.stream = sound_empty_click
+		empty_click_audio_player.play()
+
 func _on_animation_finished():
 	if animation == "GunShotAnim":
+		is_shooting = false  # Fin du tir
 		play("Idle")
 		animation_player.play("Sway_Idle")
 
 # Détection du moment du tir dans l'animation
 func _on_frame_changed():
 	if animation == "GunShotAnim":
-		# Émission du signal au moment du tir (ajustez le frame selon votre animation)
-		# Par exemple, si le tir a lieu à la frame 2 ou 3 de votre animation
-		if frame == 2:  # Changez cette valeur selon votre animation
+		# Émission du signal au moment du tir (frame configurable)
+		if frame == shot_detection_frame:
 			shot_fired.emit()
+			# JOUER LE SON DE TIR avec le lecteur dédié (permet superposition)
+			_play_gunshot_sound()

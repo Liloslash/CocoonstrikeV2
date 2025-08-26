@@ -20,16 +20,16 @@ extends CharacterBody3D
 @export var shake_elastic_cycles: float = 10.0
 @export var shake_elastic_offset: float = 0.75
 
+@export_group("Head Bob")
+@export var headbob_amplitude: float = 0.05
+@export var headbob_frequency: float = 8.0
+@export var headbob_frequency_multiplier: float = 2.0
+
 @export_group("Effets de Tir")
 @export var recoil_intensity: float = 0.15
 @export var recoil_duration: float = 0.2
 @export var recoil_rotation: float = 3.0
 @export var recoil_kickback: float = 0.08
-
-@export_group("Head Bob")
-@export var headbob_amplitude: float = 0.05
-@export var headbob_frequency: float = 8.0
-@export var headbob_frequency_multiplier: float = 2.0
 
 # --- Variables internes ---
 var current_speed: float = 0.0
@@ -126,7 +126,7 @@ func _handle_head_bob(delta: float) -> void:
 		headbob_timer = 0.0
 		camera.position = original_camera_position
 
-# --- Gestion séparée du tir ---
+# --- Gestion séparée du tir et rechargement ---
 func _handle_shooting() -> void:
 	if Input.is_action_just_pressed("shot"):
 		if revolver_sprite:
@@ -134,6 +134,11 @@ func _handle_shooting() -> void:
 			# Le recul sera déclenché par le signal shot_fired du revolver
 		else:
 			push_error("Revolver sprite non trouvé dans HUD_Layer/Revolver")
+	
+	# NOUVEAU : Gestion du rechargement
+	if Input.is_action_just_pressed("reload"):
+		if revolver_sprite:
+			revolver_sprite.start_reload()
 
 # --- Effet de recul lors du tir ---
 func _trigger_recoil() -> void:
