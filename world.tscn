@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://duveuss376vek"]
+[gd_scene load_steps=8 format=3 uid="uid://duveuss376vek"]
 
 [ext_resource type="PackedScene" uid="uid://on8dmdl0asvj" path="res://Maps/environments/Arena.glb" id="1_fj7yv"]
 [ext_resource type="PackedScene" uid="uid://danq5m8lo3862" path="res://Maps/obstacles/Obstacles.glb" id="2_tlwt5"]
 [ext_resource type="PackedScene" uid="uid://blpn5lfg8ub4b" path="res://Player/player.tscn" id="3_tlwt5"]
+[ext_resource type="PackedScene" uid="uid://smwg3iv40p4o" path="res://Enemy/enemy.tscn" id="4_aqk2v"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tlwt5"]
 sky_top_color = Color(0.0885772, 0.129562, 0.304281, 1)
@@ -30,3 +31,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_036b0")
+
+[node name="Enemy" parent="." instance=ExtResource("4_aqk2v")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 1.14653, -7)

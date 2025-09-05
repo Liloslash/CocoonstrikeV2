@@ -55,6 +55,7 @@ var headbob_timer: float = 0.0
 
 # --- Référence au revolver dans le HUD ---
 @onready var revolver_sprite = $HUD_Layer/Revolver
+var revolver_connected: bool = false
 
 # --- Gestion des inputs ---
 func _input(event: InputEvent) -> void:
@@ -79,11 +80,13 @@ func _ready() -> void:
 	original_camera_position = camera.position
 	original_camera_rotation = camera.rotation_degrees
 	
-	# Connexion du signal de tir du revolver
+	# Connexion du signal de tir du revolver avec vérification
 	if revolver_sprite:
 		revolver_sprite.shot_fired.connect(_trigger_recoil)
+		revolver_connected = true
 	else:
 		push_error("Revolver sprite non trouvé dans HUD_Layer/Revolver")
+		revolver_connected = false
 
 # --- Fonction générique pour déclencher le tremblement de caméra ---
 func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: float = -1.0) -> void:
@@ -128,17 +131,17 @@ func _handle_head_bob(delta: float) -> void:
 
 # --- Gestion séparée du tir et rechargement ---
 func _handle_shooting() -> void:
+	if not revolver_connected:
+		return
+		
+	# Gestion du tir
 	if Input.is_action_just_pressed("shot"):
-		if revolver_sprite:
-			revolver_sprite.play_shot_animation()
-			# Le recul sera déclenché par le signal shot_fired du revolver
-		else:
-			push_error("Revolver sprite non trouvé dans HUD_Layer/Revolver")
+		revolver_sprite.play_shot_animation()
+		# Le recul sera déclenché par le signal shot_fired du revolver
 	
-	# NOUVEAU : Gestion du rechargement
+	# Gestion du rechargement - délégué entièrement au revolver
 	if Input.is_action_just_pressed("reload"):
-		if revolver_sprite:
-			revolver_sprite.start_reload()
+		revolver_sprite.start_reload()
 
 # --- Effet de recul lors du tir ---
 func _trigger_recoil() -> void:
