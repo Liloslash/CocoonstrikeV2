@@ -26,11 +26,12 @@ ambient_light_source = 3
 
 [node name="Obstacles" parent="." instance=ExtResource("2_tlwt5")]
 
-[node name="Player" parent="." instance=ExtResource("3_tlwt5")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_036b0")
+
+[node name="Player" parent="." instance=ExtResource("3_tlwt5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+revolver_damage = 25
 
 [node name="Enemy" parent="." instance=ExtResource("4_aqk2v")]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 1.14653, -7)

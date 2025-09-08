@@ -1,0 +1,80 @@
+extends CharacterBody3D
+
+# === PARAMÈTRES EXPORTÉS ===
+@export_group("Statistiques")
+@export var max_health: int = 100
+
+@export_group("Comportement")
+@export var move_speed: float = 3.0
+@export var detection_range: float = 15.0  # Distance de détection du joueur
+
+@export_group("Animation de Mort")
+@export var death_freeze_duration: float = 1.0  # Durée du freeze avant disparition
+
+# === VARIABLES INTERNES ===
+var current_health: int
+var is_alive: bool = true
+var is_frozen: bool = false
+var player_reference: Node3D = null
+
+# === COMPOSANTS ===
+@onready var sprite: AnimatedSprite3D = $AnimatedSprite3D  # Le sprite 2D billboard
+
+func _ready():
+	# Initialisation
+	current_health = max_health
+	
+	# Mettre l'ennemi sur la layer 2 pour le raycast
+	collision_layer = 2
+	
+	# Recherche du joueur dans la scène
+	_find_player()
+
+func _find_player():
+	# Cherche le joueur dans la scène (adaptez selon votre structure)
+	var world = get_tree().get_first_node_in_group("world")
+	if world:
+		player_reference = world.get_node_or_null("Player")
+	
+	if not player_reference:
+		# Recherche alternative
+		player_reference = get_tree().get_first_node_in_group("player")
+
+func _physics_process(_delta):
+	if not is_alive or is_frozen:
+		return
+	
+	# Pour l'instant, l'ennemi reste statique
+	# TODO: Ajouter logique de mouvement/pathfinding plus tard
+	pass
+
+# === SYSTÈME DE DÉGÂTS ===
+func take_damage(damage: int):
+	if not is_alive:
+		return
+	
+	current_health -= damage
+	print("Ennemi touché ! Vie restante: ", current_health, "/", max_health)
+	
+	# Vérification de la mort
+	if current_health <= 0:
+		_die()
+
+func _die():
+	if not is_alive:
+		return
+		
+	is_alive = false
+	is_frozen = true
+	print("Ennemi éliminé !")
+	
+	# Freeze pendant 1 seconde puis disparition
+	await get_tree().create_timer(death_freeze_duration).timeout
+	queue_free()
+
+# === GETTERS POUR DEBUG/HUD ===
+func get_health_percentage() -> float:
+	return float(current_health) / float(max_health)
+
+func is_dead() -> bool:
+	return not is_alive

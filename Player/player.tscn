@@ -163,6 +163,9 @@ recoil_kickback = 0.25
 
 [node name="Camera3D" type="Camera3D" parent="."]
 
+[node name="RayCast3D" type="RayCast3D" parent="Camera3D"]
+collision_mask = 2
+
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_rpqav")
 debug_color = Color(0.213589, 0.599834, 0.620549, 0.42)

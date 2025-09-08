@@ -31,6 +31,9 @@ extends CharacterBody3D
 @export var recoil_rotation: float = 3.0
 @export var recoil_kickback: float = 0.08
 
+@export_group("Combat")
+@export var revolver_damage: int = 50  # Dégâts du revolver
+
 # --- Variables internes ---
 var current_speed: float = 0.0
 var is_accelerating: bool = false
@@ -52,6 +55,9 @@ var original_camera_rotation: Vector3
 
 # --- Head Bob interne ---
 var headbob_timer: float = 0.0
+
+# --- Combat ---
+@onready var raycast: RayCast3D = $Camera3D/RayCast3D  # Raycast pour les tirs
 
 # --- Référence au revolver dans le HUD ---
 @onready var revolver_sprite = $HUD_Layer/Revolver
@@ -80,9 +86,19 @@ func _ready() -> void:
 	original_camera_position = camera.position
 	original_camera_rotation = camera.rotation_degrees
 	
+	# Créer le raycast s'il n'existe pas
+	if not raycast:
+		raycast = RayCast3D.new()
+		camera.add_child(raycast)
+		raycast.target_position = Vector3(0, 0, -100)  # 100 unités vers l'avant
+		raycast.enabled = true
+		# Configurer pour ignorer la Map (layer 1) et ne détecter que layer 2
+		raycast.collision_mask = 2  # Ne détecte que la layer 2
+	
 	# Connexion du signal de tir du revolver avec vérification
 	if revolver_sprite:
 		revolver_sprite.shot_fired.connect(_trigger_recoil)
+		revolver_sprite.shot_fired.connect(_handle_shot)  # Connexion pour les dégâts
 		revolver_connected = true
 	else:
 		push_error("Revolver sprite non trouvé dans HUD_Layer/Revolver")
@@ -103,31 +119,36 @@ func _process(_delta: float) -> void:
 
 # --- Gestion séparée du camera shake ---
 func _handle_camera_shake(delta: float) -> void:
-	if shake_timer > 0:
-		var t := 1.0 - (shake_timer / shake_time_total)
-		var elastic := ease_out_elastic(t)
-		var offset = Vector3(
-			randf_range(-1, 1) * shake_strength * (1 - elastic),
-			randf_range(-1, 1) * shake_strength * (1 - elastic),
-			0
-		)
-		camera.position = original_camera_position + offset
-		camera.rotation_degrees = original_camera_rotation + Vector3(0, 0, randf_range(-1, 1) * shake_rot * (1 - elastic))
-		shake_timer -= delta
-		if shake_timer <= 0:
-			camera.position = original_camera_position
-			camera.rotation_degrees = original_camera_rotation
+	if shake_timer <= 0:
+		return
+		
+	var t := 1.0 - (shake_timer / shake_time_total)
+	var elastic := ease_out_elastic(t)
+	var offset = Vector3(
+		randf_range(-1, 1) * shake_strength * (1 - elastic),
+		randf_range(-1, 1) * shake_strength * (1 - elastic),
+		0
+	)
+	camera.position = original_camera_position + offset
+	camera.rotation_degrees = original_camera_rotation + Vector3(0, 0, randf_range(-1, 1) * shake_rot * (1 - elastic))
+	shake_timer -= delta
+	
+	if shake_timer <= 0:
+		camera.position = original_camera_position
+		camera.rotation_degrees = original_camera_rotation
 
 # --- Gestion séparée du head bob ---
 func _handle_head_bob(delta: float) -> void:
-	if not is_frozen and current_speed > 0 and shake_timer <= 0:
-		headbob_timer += delta
-		var bob_offset_y = abs(sin(headbob_timer * headbob_frequency)) * headbob_amplitude
-		var bob_offset_x = sin(headbob_timer * headbob_frequency * headbob_frequency_multiplier) * headbob_amplitude * 0.5
-		camera.position = original_camera_position + Vector3(bob_offset_x, bob_offset_y, 0)
-	elif shake_timer <= 0:
+	if is_frozen or current_speed <= 0 or shake_timer > 0:
 		headbob_timer = 0.0
-		camera.position = original_camera_position
+		if shake_timer <= 0:
+			camera.position = original_camera_position
+		return
+		
+	headbob_timer += delta
+	var bob_offset_y = abs(sin(headbob_timer * headbob_frequency)) * headbob_amplitude
+	var bob_offset_x = sin(headbob_timer * headbob_frequency * headbob_frequency_multiplier) * headbob_amplitude * 0.5
+	camera.position = original_camera_position + Vector3(bob_offset_x, bob_offset_y, 0)
 
 # --- Gestion séparée du tir et rechargement ---
 func _handle_shooting() -> void:
@@ -142,6 +163,26 @@ func _handle_shooting() -> void:
 	# Gestion du rechargement - délégué entièrement au revolver
 	if Input.is_action_just_pressed("reload"):
 		revolver_sprite.start_reload()
+
+# --- Gestion du tir avec Raycast ---
+func _handle_shot() -> void:
+	print("_handle_shot() appelée !")
+	
+	if not raycast.is_colliding():
+		print("Raycast ne touche rien")
+		return
+		
+	print("Raycast en collision !")
+	var collider = raycast.get_collider()
+	print("Collider: ", collider)
+	
+	if not collider or not collider.has_method("take_damage"):
+		print("Collider n'a pas de méthode take_damage")
+		return
+		
+	print("Ennemi a la méthode take_damage, envoi des dégâts...")
+	collider.take_damage(revolver_damage)
+	print("Ennemi touché pour ", revolver_damage, " dégâts!")
 
 # --- Effet de recul lors du tir ---
 func _trigger_recoil() -> void:
@@ -159,9 +200,11 @@ func _trigger_recoil() -> void:
 
 # --- Application de l'offset de kickback ---
 func _apply_kickback_offset(progress: float) -> void:
-	if shake_timer <= 0:  # Ne pas interférer avec le shake
-		var kickback_offset = Vector3(0, 0, recoil_kickback * progress)
-		camera.position = original_camera_position + kickback_offset
+	if shake_timer > 0:  # Ne pas interférer avec le shake
+		return
+		
+	var kickback_offset = Vector3(0, 0, recoil_kickback * progress)
+	camera.position = original_camera_position + kickback_offset
 
 # --- Fonction d'atténuation EaseOutElastic pour la courbe du shake ---
 func ease_out_elastic(t: float) -> float:
@@ -173,6 +216,7 @@ func ease_out_elastic(t: float) -> float:
 # --- Mise à jour de la physique du joueur ---
 func _physics_process(delta: float) -> void:
 	_handle_freeze_state(delta)
+	
 	if is_frozen:
 		return
 		
@@ -184,13 +228,15 @@ func _physics_process(delta: float) -> void:
 
 # --- Gestion de l'état de freeze ---
 func _handle_freeze_state(delta: float) -> void:
-	if is_frozen:
-		freeze_timer -= delta
-		if freeze_timer <= 0:
-			is_frozen = false
-			freeze_timer = 0.0
-		velocity.x = 0.0
-		velocity.z = 0.0
+	if not is_frozen:
+		return
+		
+	freeze_timer -= delta
+	if freeze_timer <= 0:
+		is_frozen = false
+		freeze_timer = 0.0
+	velocity.x = 0.0
+	velocity.z = 0.0
 
 # --- Gestion de la gravité et du saut ---
 func _handle_gravity_and_jump(delta: float) -> void:
@@ -200,28 +246,38 @@ func _handle_gravity_and_jump(delta: float) -> void:
 
 # --- Gestion de l'atterrissage après slam ---
 func _handle_slam_landing() -> void:
-	if is_on_floor() and is_slamming:
-		is_slamming = false
-		is_frozen = true
-		freeze_timer = freeze_duration_after_slam
-		start_camera_shake()
+	if not (is_on_floor() and is_slamming):
+		return
+		
+	is_slamming = false
+	is_frozen = true
+	freeze_timer = freeze_duration_after_slam
+	start_camera_shake()
 
-# --- Gestion du mouvement horizontal ---
+# --- Gestion du mouvement horizontal (VERSION REFACTORISÉE) ---
 func _handle_movement(delta: float) -> void:
 	var input_dir = Input.get_vector("left", "right", "up", "down")
-	if input_dir != Vector2.ZERO:
-		var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-		if not is_frozen:
-			if not is_accelerating:
-				is_accelerating = true
-				acceleration_timer = 0.0
-			acceleration_timer += delta
-			var speed_ratio = min(acceleration_timer / acceleration_duration, 1.0)
-			current_speed = max_speed * speed_ratio
-			velocity.x = direction.x * current_speed
-			velocity.z = direction.z * current_speed
-	else:
+	
+	# Early return - si pas d'input ou frozen, arrêter le mouvement
+	if input_dir == Vector2.ZERO or is_frozen:
 		is_accelerating = false
 		current_speed = 0.0
 		velocity.x = 0.0
 		velocity.z = 0.0
+		return
+	
+	# Calculer la direction de mouvement
+	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	
+	# Gérer l'accélération
+	if not is_accelerating:
+		is_accelerating = true
+		acceleration_timer = 0.0
+	
+	acceleration_timer += delta
+	var speed_ratio = min(acceleration_timer / acceleration_duration, 1.0)
+	current_speed = max_speed * speed_ratio
+	
+	# Appliquer la vitesse
+	velocity.x = direction.x * current_speed
+	velocity.z = direction.z * current_speed
