@@ -32,7 +32,7 @@ extends CharacterBody3D
 @export var recoil_kickback: float = 0.08
 
 @export_group("Combat")
-@export var revolver_damage: int = 50  # Dégâts du revolver
+@export var revolver_damage: int = 25  # Dégâts du revolver
 
 # --- Variables internes ---
 var current_speed: float = 0.0
@@ -86,14 +86,20 @@ func _ready() -> void:
 	original_camera_position = camera.position
 	original_camera_rotation = camera.rotation_degrees
 	
-	# Créer le raycast s'il n'existe pas
+	# S'assurer que le RayCast3D est correctement configuré
 	if not raycast:
+		# Créer si manquant (sécurité)
 		raycast = RayCast3D.new()
 		camera.add_child(raycast)
-		raycast.target_position = Vector3(0, 0, -100)  # 100 unités vers l'avant
-		raycast.enabled = true
-		# Configurer pour ignorer la Map (layer 1) et ne détecter que layer 2
-		raycast.collision_mask = 2  # Ne détecte que la layer 2
+	# Configuration robuste même s'il existe déjà dans la scène
+	raycast.target_position = Vector3(0, 0, -1000)  # Portée vers l'avant
+	raycast.enabled = true
+	raycast.collision_mask = 2  # Ne détecter que la layer 2 (ennemis)
+	if raycast.has_method("set_exclude_parent_body"):
+		# Godot 4 expose exclude_parent comme propriété, mais on garde une compat de méthode
+		raycast.set_exclude_parent_body(true)
+	elif "exclude_parent" in raycast:
+		raycast.exclude_parent = true
 	
 	# Connexion du signal de tir du revolver avec vérification
 	if revolver_sprite:
@@ -167,6 +173,8 @@ func _handle_shooting() -> void:
 # --- Gestion du tir avec Raycast ---
 func _handle_shot() -> void:
 	print("_handle_shot() appelée !")
+	# Mettre à jour immédiatement le raycast pour éviter un frame de retard
+	raycast.force_raycast_update()
 	
 	if not raycast.is_colliding():
 		print("Raycast ne touche rien")

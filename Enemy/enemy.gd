@@ -67,10 +67,30 @@ func _die():
 	is_alive = false
 	is_frozen = true
 	print("Ennemi éliminé !")
+	_disable_collisions()
 	
 	# Freeze pendant 1 seconde puis disparition
 	await get_tree().create_timer(death_freeze_duration).timeout
 	queue_free()
+
+func _disable_collisions():
+	# Désactiver collisions du corps
+	var body_shape: CollisionShape3D = get_node_or_null("CollisionShape3D")
+	if body_shape:
+		body_shape.disabled = true
+	
+	# Désactiver l'Area3D et sa forme
+	var area: Area3D = get_node_or_null("Area3D")
+	if area:
+		area.monitoring = false
+		area.monitorable = false
+		var area_shape: CollisionShape3D = area.get_node_or_null("CollisionShape3D")
+		if area_shape:
+			area_shape.disabled = true
+	
+	# Retirer des layers/masks pour ne plus être raycastable
+	collision_layer = 0
+	collision_mask = 0
 
 # === GETTERS POUR DEBUG/HUD ===
 func get_health_percentage() -> float:
