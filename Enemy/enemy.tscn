@@ -211,6 +211,7 @@ animations = [{
 
 [node name="Enemy" type="CharacterBody3D"]
 script = ExtResource("1_px1sc")
+impact_color_3 = Color(0.660735, 0.206853, 0.973314, 1)
 
 [node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)

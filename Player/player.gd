@@ -175,25 +175,18 @@ func _handle_shooting() -> void:
 
 # --- Gestion du tir avec Raycast ---
 func _handle_shot() -> void:
-	print("_handle_shot() appelée !")
 	# Mettre à jour immédiatement le raycast pour éviter un frame de retard
 	raycast.force_raycast_update()
 	
 	if not raycast.is_colliding():
-		print("Raycast ne touche rien")
 		return
 		
-	print("Raycast en collision !")
 	var collider = raycast.get_collider()
-	print("Collider: ", collider)
 	
 	if not collider or not collider.has_method("take_damage"):
-		print("Collider n'a pas de méthode take_damage")
 		return
 		
-	print("Ennemi a la méthode take_damage, envoi des dégâts...")
 	collider.take_damage(revolver_damage)
-	print("Ennemi touché pour ", revolver_damage, " dégâts!")
 	
 	# Créer l'effet d'impact au point de collision
 	_create_impact_effect(raycast.get_collision_point(), collider)
@@ -222,22 +215,15 @@ func _apply_kickback_offset(progress: float) -> void:
 
 # --- Création de l'effet d'impact ---
 func _create_impact_effect(impact_position: Vector3, target_collider: Node):
-	print("Création de l'effet d'impact à la position: ", impact_position)
 	var impact_effect = IMPACT_EFFECT_SCENE.instantiate()
 	get_tree().current_scene.add_child(impact_effect)
 	impact_effect.global_position = impact_position
-	print("Effet d'impact créé et ajouté à la scène")
 	
 	# Récupérer les couleurs d'impact de l'ennemi touché
 	if target_collider.has_method("get_impact_colors"):
 		var impact_colors = target_collider.get_impact_colors()
-		if impact_colors.size() >= 3:
-			impact_effect.set_sprite_colors(impact_colors[0], impact_colors[1], impact_colors[2])
-			print("Couleurs d'impact: ", impact_colors[0], " | ", impact_colors[1], " | ", impact_colors[2])
-		else:
-			print("Pas assez de couleurs d'impact, utilisation des couleurs par défaut")
-	else:
-		print("Ennemi sans couleurs d'impact définies, utilisation des couleurs par défaut")
+		if impact_colors.size() >= 4:
+			impact_effect.set_impact_colors(impact_colors)
 
 # --- Fonction pour trouver le sprite dans un ennemi ---
 func _find_sprite_in_target(target: Node) -> Node:

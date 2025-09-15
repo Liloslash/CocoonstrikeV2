@@ -12,9 +12,10 @@ extends CharacterBody3D
 @export var death_freeze_duration: float = 1.0  # Durée du freeze avant disparition
 
 @export_group("Effets d'Impact")
-@export var impact_color_1: Color = Color.WHITE    # Couleur dominante de l'impact
-@export var impact_color_2: Color = Color.ORANGE   # Couleur secondaire de l'impact
-@export var impact_color_3: Color = Color.RED      # Couleur tertiaire de l'impact
+@export var impact_color_1: Color = Color(1.0, 0.5, 0.5, 1.0)  # Rouge clair
+@export var impact_color_2: Color = Color.GREEN    # Couleur 2 (veines vertes)
+@export var impact_color_3: Color = Color.PURPLE   # Couleur 3 (corps violet)
+@export var impact_color_4: Color = Color.BLACK    # Couleur 4 (détails noirs)
 
 # === VARIABLES INTERNES ===
 var current_health: int
@@ -59,7 +60,6 @@ func take_damage(damage: int):
 		return
 	
 	current_health -= damage
-	print("Ennemi touché ! Vie restante: ", current_health, "/", max_health)
 	
 	# Vérification de la mort
 	if current_health <= 0:
@@ -71,7 +71,6 @@ func _die():
 		
 	is_alive = false
 	is_frozen = true
-	print("Ennemi éliminé !")
 	_disable_collisions()
 	
 	# Freeze pendant 1 seconde puis disparition
@@ -106,4 +105,4 @@ func is_dead() -> bool:
 
 # === GETTERS POUR LES COULEURS D'IMPACT ===
 func get_impact_colors() -> Array[Color]:
-	return [impact_color_1, impact_color_2, impact_color_3]
+	return [impact_color_1, impact_color_2, impact_color_3, impact_color_4]
