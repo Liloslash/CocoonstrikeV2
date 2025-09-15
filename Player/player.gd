@@ -59,6 +59,9 @@ var headbob_timer: float = 0.0
 # --- Combat ---
 @onready var raycast: RayCast3D = $Camera3D/RayCast3D  # Raycast pour les tirs
 
+# --- Effet d'impact ---
+const IMPACT_EFFECT_SCENE = preload("res://Effects/ImpactEffect.tscn")
+
 # --- Référence au revolver dans le HUD ---
 @onready var revolver_sprite = $HUD_Layer/Revolver
 var revolver_connected: bool = false
@@ -191,6 +194,9 @@ func _handle_shot() -> void:
 	print("Ennemi a la méthode take_damage, envoi des dégâts...")
 	collider.take_damage(revolver_damage)
 	print("Ennemi touché pour ", revolver_damage, " dégâts!")
+	
+	# Créer l'effet d'impact au point de collision
+	_create_impact_effect(raycast.get_collision_point(), collider)
 
 # --- Effet de recul lors du tir ---
 func _trigger_recoil() -> void:
@@ -213,6 +219,40 @@ func _apply_kickback_offset(progress: float) -> void:
 		
 	var kickback_offset = Vector3(0, 0, recoil_kickback * progress)
 	camera.position = original_camera_position + kickback_offset
+
+# --- Création de l'effet d'impact ---
+func _create_impact_effect(impact_position: Vector3, target_collider: Node):
+	print("Création de l'effet d'impact à la position: ", impact_position)
+	var impact_effect = IMPACT_EFFECT_SCENE.instantiate()
+	get_tree().current_scene.add_child(impact_effect)
+	impact_effect.global_position = impact_position
+	print("Effet d'impact créé et ajouté à la scène")
+	
+	# Récupérer les couleurs d'impact de l'ennemi touché
+	if target_collider.has_method("get_impact_colors"):
+		var impact_colors = target_collider.get_impact_colors()
+		if impact_colors.size() >= 3:
+			impact_effect.set_sprite_colors(impact_colors[0], impact_colors[1], impact_colors[2])
+			print("Couleurs d'impact: ", impact_colors[0], " | ", impact_colors[1], " | ", impact_colors[2])
+		else:
+			print("Pas assez de couleurs d'impact, utilisation des couleurs par défaut")
+	else:
+		print("Ennemi sans couleurs d'impact définies, utilisation des couleurs par défaut")
+
+# --- Fonction pour trouver le sprite dans un ennemi ---
+func _find_sprite_in_target(target: Node) -> Node:
+	# Chercher un AnimatedSprite3D dans la cible
+	var animated_sprite = target.get_node_or_null("AnimatedSprite3D")
+	if animated_sprite:
+		return animated_sprite
+	
+	# Chercher récursivement dans les enfants
+	for child in target.get_children():
+		var sprite = _find_sprite_in_target(child)
+		if sprite:
+			return sprite
+	
+	return null
 
 # --- Fonction d'atténuation EaseOutElastic pour la courbe du shake ---
 func ease_out_elastic(t: float) -> float:
