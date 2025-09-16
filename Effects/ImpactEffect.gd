@@ -73,7 +73,7 @@ func _apply_all_colors():
 		add_child(color_particles)
 		
 		# Configuration des particules pour effet localisé
-		color_particles.amount = int(particle_count / impact_colors.size())  # Répartir le nombre total
+		color_particles.amount = int(float(particle_count) / float(impact_colors.size()))  # Répartir le nombre total
 		color_particles.lifetime = effect_duration
 		color_particles.one_shot = true
 		color_particles.explosiveness = 1.0
