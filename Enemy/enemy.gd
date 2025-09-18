@@ -17,6 +17,11 @@ extends CharacterBody3D
 @export var impact_color_3: Color = Color.PURPLE   # Couleur 3 (corps violet)
 @export var impact_color_4: Color = Color.BLACK    # Couleur 4 (détails noirs)
 
+@export_group("Effet de Rougissement")
+@export var red_flash_duration: float = 0.2  # Durée du rougissement (0.2 secondes)
+@export var red_flash_intensity: float = 1.5  # Intensité du rouge (1.5 pour un effet bien visible)
+@export var red_flash_color: Color = Color.RED  # Couleur du rougissement
+
 # === VARIABLES INTERNES ===
 var current_health: int
 var is_alive: bool = true
@@ -60,6 +65,9 @@ func take_damage(damage: int):
 		return
 	
 	current_health -= damage
+	
+	# Effet de rougissement au moment de l'impact
+	_create_red_flash()
 	
 	# Vérification de la mort
 	if current_health <= 0:
@@ -106,3 +114,33 @@ func is_dead() -> bool:
 # === GETTERS POUR LES COULEURS D'IMPACT ===
 func get_impact_colors() -> Array[Color]:
 	return [impact_color_1, impact_color_2, impact_color_3, impact_color_4]
+
+# === EFFET DE ROUGISSEMENT ===
+func _create_red_flash():
+	# Vérification que l'ennemi est vivant et a un sprite
+	if not is_alive or not sprite:
+		return
+	
+	# Sauvegarde de la couleur originale
+	var original_color = sprite.modulate
+	
+	# Création du tween pour l'effet de rougissement
+	var flash_tween = create_tween()
+	
+	# Calcul de la couleur de rougissement
+	var flash_color = Color(
+		red_flash_color.r * red_flash_intensity,
+		red_flash_color.g * red_flash_intensity,
+		red_flash_color.b * red_flash_intensity,
+		red_flash_color.a
+	)
+	
+	# Phase 1 : Apparition rapide du rouge (EASE_OUT)
+	flash_tween.tween_property(sprite, "modulate", flash_color, red_flash_duration * 0.3)
+	flash_tween.set_trans(Tween.TRANS_QUAD)
+	flash_tween.set_ease(Tween.EASE_OUT)
+	
+	# Phase 2 : Retour à la couleur originale (EASE_OUT)
+	flash_tween.tween_property(sprite, "modulate", original_color, red_flash_duration * 0.7)
+	flash_tween.set_trans(Tween.TRANS_QUAD)
+	flash_tween.set_ease(Tween.EASE_OUT)

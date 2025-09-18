@@ -21,6 +21,11 @@ signal shot_fired
 @export var fire_rate: float = 0.5  # Délai minimum entre deux tirs (en secondes)
 @export var shot_detection_frame: int = 2  # Frame où le tir se déclenche dans l'animation
 
+@export_group("Tremblement du Rechargement")
+@export var shake_intensity: float = 3.0  # Intensité du tremblement (en pixels)
+@export var shake_duration: float = 0.15  # Durée du tremblement pour chaque balle
+@export var shake_frequency: float = 20.0  # Fréquence du tremblement (oscillations par seconde)
+
 
 @onready var animation_player = $AnimationPlayer
 var base_position: Vector2
@@ -166,6 +171,9 @@ func _add_next_bullet():
 	bullets_added += 1
 	current_ammo += 1
 	
+	# Déclenchement du tremblement à chaque balle ajoutée
+	_create_reload_shake()
+	
 	await audio_player.finished
 	
 	if reload_state == ReloadState.RELOAD_INTERRUPTED:
@@ -235,6 +243,47 @@ func _play_empty_click_sound():
 	else:
 		empty_click_audio_player.stream = sound_empty_click
 		empty_click_audio_player.play()
+
+# === FONCTION DE TREMBLEMENT PENDANT LE RECHARGEMENT ===
+func _create_reload_shake():
+	# On s'assure qu'on est bien en position de rechargement
+	if reload_state != ReloadState.RELOAD_ADDING_BULLETS:
+		return
+	
+	# Création d'un tween pour le tremblement
+	var shake_tween = create_tween()
+	shake_tween.set_loops()  # Le tween se répète
+	
+	# Calcul du nombre d'oscillations basé sur la durée et la fréquence
+	var oscillations = int(shake_duration * shake_frequency)
+	
+	# Création du pattern de tremblement
+	for i in range(oscillations):
+		# Calcul de l'intensité qui diminue progressivement
+		var current_intensity = shake_intensity * (1.0 - float(i) / float(oscillations))
+		
+		# Direction aléatoire pour le tremblement
+		var random_direction = Vector2(
+			randf_range(-1.0, 1.0),
+			randf_range(-1.0, 1.0)
+		).normalized()
+		
+		# Position de tremblement autour de la position de rechargement
+		var shake_offset = random_direction * current_intensity
+		var target_position = reload_position + shake_offset
+		
+		# Durée de chaque oscillation
+		var oscillation_duration = shake_duration / float(oscillations)
+		
+		# Ajout du mouvement au tween
+		shake_tween.tween_property(self, "position", target_position, oscillation_duration)
+	
+	# Retour à la position de rechargement à la fin
+	shake_tween.tween_property(self, "position", reload_position, 0.05)
+	
+	# Arrêt du tween après la durée totale
+	await get_tree().create_timer(shake_duration).timeout
+	shake_tween.kill()
 
 
 func _on_animation_finished():

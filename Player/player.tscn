@@ -185,6 +185,8 @@ tween_duration = 0.03
 reload_down_duration = 0.15
 reload_up_duration = 0.1
 fire_rate = 0.3
+shake_intensity = 4.0
+shake_duration = 0.2
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="HUD_Layer/Revolver"]
 libraries = {

@@ -104,6 +104,14 @@ Enemy (CharacterBody3D)
 - **AnimationPlayer :** Sway_Idle (balancement)
 - **SpriteFrames :** 11 frames d'animation de tir
 
+#### **Effets de Rechargement :**
+- **Tremblement :** Micro-recul à chaque balle ajoutée
+- **Intensité :** 3.0 pixels (ajustable)
+- **Durée :** 0.15 secondes par balle
+- **Fréquence :** 20 oscillations/seconde
+- **Décroissance :** Intensité qui diminue progressivement
+- **Direction :** Aléatoire pour chaque oscillation
+
 ### ✅ **SYSTÈME D'ENNEMIS**
 
 #### **Statistiques :**
@@ -188,7 +196,7 @@ Enemy (CharacterBody3D)
 ### **PRIORITÉS ACTUELLES :**
 1. **Ajout d'un effet visuel sur l'enemy** au moment de l'impact des tirs (à définir)
 2. **Recherche et implémentation de plusieurs sons** pour enemy et player (bruit de pas pour le player, bruit d'impact pour le slam, son dégât et mort enemy)
-3. **Ajout d'un mouvement du revolver** au moment de l'ajout de balle à l'unité
+3. ✅ **Ajout d'un mouvement du revolver** au moment de l'ajout de balle à l'unité - **TERMINÉ !**
 4. **Modification du comportement de l'enemy** : shaking au moment du dégât, effet de mort plus recherché (explosion en pixel art?)
 
 ---
@@ -233,10 +241,18 @@ Enemy (CharacterBody3D)
 - **Signals** pour la communication entre nodes
 - **Gestion d'erreurs** robuste
 
+### **Paramètres du Tremblement (Revolver) :**
+- **shake_intensity :** 3.0 pixels (intensité du tremblement)
+- **shake_duration :** 0.15 secondes (durée par balle)
+- **shake_frequency :** 20.0 oscillations/seconde
+- **Fonction :** `_create_reload_shake()` (ligne 244-283)
+- **Déclenchement :** À chaque balle ajoutée dans `_add_next_bullet()`
+
 ---
 
 ---
 
 *Documentation générée le 19 décembre 2024*
+*Dernière mise à jour : 19 décembre 2024 - Ajout du tremblement du revolver*
 *Projet développé avec Godot Engine v4.4.1*
 
