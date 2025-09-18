@@ -21,7 +21,7 @@ effect_duration = 0.16
 particle_count = 15
 explosion_force_min = 1.0
 explosion_force_max = 8.0
-cube_size = 0.03
+cube_size = 0.045
 
 [node name="GPUParticles3D" type="GPUParticles3D" parent="."]
 emitting = false
