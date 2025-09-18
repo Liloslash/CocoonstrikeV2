@@ -39,3 +39,5 @@ transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 1.14653, -7)
 collision_layer = 3
 collision_mask = 3
 max_health = 500
+impact_color_2 = Color(0.40019, 1, 0.369744, 1)
+impact_color_3 = Color(0.685821, 0.297101, 0.981954, 1)

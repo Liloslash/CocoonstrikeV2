@@ -21,6 +21,7 @@ signal shot_fired
 @export var fire_rate: float = 0.5  # Délai minimum entre deux tirs (en secondes)
 @export var shot_detection_frame: int = 2  # Frame où le tir se déclenche dans l'animation
 
+
 @onready var animation_player = $AnimationPlayer
 var base_position: Vector2
 
@@ -234,6 +235,7 @@ func _play_empty_click_sound():
 	else:
 		empty_click_audio_player.stream = sound_empty_click
 		empty_click_audio_player.play()
+
 
 func _on_animation_finished():
 	if animation == "GunShotAnim":

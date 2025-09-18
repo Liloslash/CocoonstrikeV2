@@ -185,23 +185,11 @@ Enemy (CharacterBody3D)
 
 ## 🚀 **ROADMAP ET AMÉLIORATIONS**
 
-### **Priorité HAUTE :**
-1. **✅ Système de collisions** - CONFIGURÉ
-2. **✅ Effets d'impact** - IMPLÉMENTÉ
-3. **🔄 Tir des ennemis** - Système similaire au joueur
-4. **🔄 Pathfinding** - IA de déplacement des ennemis
-
-### **Priorité MOYENNE :**
-5. **Système de vagues** - Spawning dynamique d'ennemis
-6. **Collectibles** - Objets à ramasser entre les vagues
-7. **Pièges/Barricades** - Mécaniques défensives
-8. **Audio ambiant** - Bruits de pas, sons d'ambiance
-
-### **Priorité BASSE :**
-9. **Polissage** - Effets visuels supplémentaires
-10. **Optimisation** - Performance et mémoire
-11. **UI/UX** - Interface utilisateur améliorée
-12. **Sons d'ambiance** - Immersion audio
+### **PRIORITÉS ACTUELLES :**
+1. **Ajout d'un effet visuel sur l'enemy** au moment de l'impact des tirs (à définir)
+2. **Recherche et implémentation de plusieurs sons** pour enemy et player (bruit de pas pour le player, bruit d'impact pour le slam, son dégât et mort enemy)
+3. **Ajout d'un mouvement du revolver** au moment de l'ajout de balle à l'unité
+4. **Modification du comportement de l'enemy** : shaking au moment du dégât, effet de mort plus recherché (explosion en pixel art?)
 
 ---
 
@@ -246,17 +234,6 @@ Enemy (CharacterBody3D)
 - **Gestion d'erreurs** robuste
 
 ---
-
-## 🏆 **CONCLUSION**
-
-Le projet **Cocoonstrike - Mortal Butterflies** est dans un **excellent état** avec toutes les fonctionnalités de base implémentées et fonctionnelles. Le système d'effets d'impact récemment ajouté apporte une **satisfaction visuelle** importante au gameplay.
-
-**Prochaines étapes prioritaires :**
-1. Implémenter l'IA des ennemis
-2. Créer le système de vagues
-3. Ajouter les collectibles et pièges
-
-Le projet est **prêt pour la phase de développement avancé** ! 🚀✨
 
 ---
 
