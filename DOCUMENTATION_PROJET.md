@@ -5,29 +5,29 @@
 ## 📑 NAVIGATION RAPIDE
 
 **=== INFORMATIONS GÉNÉRALES ===**
-- Ligne 15 : Informations du projet
-- Ligne 25 : Concept du jeu
+- Ligne 34 : Informations du projet
+- Ligne 44 : Concept du jeu
 
 **=== ARCHITECTURE ===**
-- Ligne 35 : Structure des scènes
-- Ligne 50 : Scene Player
-- Ligne 60 : Scene Enemy
+- Ligne 58 : Structure des scènes
+- Ligne 71 : Scene Player
+- Ligne 84 : Scene Enemy
 
 **=== SYSTÈMES ===**
-- Ligne 80 : Système Joueur
-- Ligne 120 : Système Revolver
-- Ligne 180 : Système Ennemis
-- Ligne 240 : Effets d'Impact
+- Ligne 96 : Système Joueur
+- Ligne 119 : Système Revolver
+- Ligne 146 : Système Ennemis
+- Ligne 173 : Effets d'Impact
 
 **=== RESSOURCES ===**
-- Ligne 280 : Assets Audio
-- Ligne 300 : Assets Visuels
-- Ligne 320 : Configuration
+- Ligne 190 : Assets Audio
+- Ligne 209 : Assets Visuels
+- Ligne 227 : Configuration
 
 **=== ÉTAT DU PROJET ===**
-- Ligne 340 : Fonctionnel
-- Ligne 360 : En cours
-- Ligne 380 : Roadmap
+- Ligne 249 : Fonctionnel
+- Ligne 258 : En cours
+- Ligne 269 : Roadmap
 
 ---
 
