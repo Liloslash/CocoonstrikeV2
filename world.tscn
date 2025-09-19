@@ -1,9 +1,15 @@
-[gd_scene load_steps=8 format=3 uid="uid://duveuss376vek"]
+[gd_scene load_steps=9 format=3 uid="uid://duveuss376vek"]
 
 [ext_resource type="PackedScene" uid="uid://on8dmdl0asvj" path="res://Maps/environments/Arena.glb" id="1_fj7yv"]
 [ext_resource type="PackedScene" uid="uid://danq5m8lo3862" path="res://Maps/obstacles/Obstacles.glb" id="2_tlwt5"]
 [ext_resource type="PackedScene" uid="uid://blpn5lfg8ub4b" path="res://Player/player.tscn" id="3_tlwt5"]
 [ext_resource type="PackedScene" uid="uid://smwg3iv40p4o" path="res://Enemy/enemy.tscn" id="4_aqk2v"]
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_aqk2v"]
+geometry_parsed_geometry_type = 1
+agent_height = 1.0
+agent_max_climb = 0.2
+region_min_size = 0.1
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tlwt5"]
 sky_top_color = Color(0.0885772, 0.129562, 0.304281, 1)
@@ -26,6 +32,9 @@ ambient_light_source = 3
 
 [node name="Obstacles" parent="." instance=ExtResource("2_tlwt5")]
 
+[node name="Navigation" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_aqk2v")
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_036b0")
 
@@ -35,7 +44,7 @@ recoil_intensity = 0.08
 recoil_kickback = 0.2
 
 [node name="Enemy" parent="." instance=ExtResource("4_aqk2v")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 1.14653, -7)
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -7.199, 1.15, -9.922)
 collision_layer = 3
 collision_mask = 3
 max_health = 500

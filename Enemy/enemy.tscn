@@ -206,6 +206,8 @@ animations = [{
 }]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wgogq"]
+radius = 0.375363
+height = 1.35575
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_2j8qn"]
 
@@ -213,8 +215,13 @@ animations = [{
 script = ExtResource("1_px1sc")
 impact_color_3 = Color(0.660735, 0.206853, 0.973314, 1)
 
+[node name="NavigationAgent" type="NavigationAgent3D" parent="."]
+path_max_distance = 10.01
+height = 2.0
+max_speed = 3.0
+
 [node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 0, 0, 0)
 billboard = 2
 texture_filter = 2
 sprite_frames = SubResource("SpriteFrames_q40vv")

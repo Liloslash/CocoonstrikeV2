@@ -28,6 +28,11 @@ var is_alive: bool = true
 var is_frozen: bool = false
 var player_reference: Node3D = null
 
+# === NAVIGATION ===
+@onready var nav_agent: NavigationAgent3D = $NavigationAgent
+var target_position: Vector3
+var is_navigating: bool = false
+
 # === COMPOSANTS ===
 @onready var sprite: AnimatedSprite3D = $AnimatedSprite3D  # Le sprite 2D billboard
 
@@ -38,8 +43,14 @@ func _ready():
 	# Mettre l'ennemi sur la layer 2 pour le raycast
 	collision_layer = 2
 	
+	# Configuration de la navigation
+	_setup_navigation()
+	
 	# Recherche du joueur dans la scène
 	_find_player()
+	
+	# Commencer à naviguer vers le joueur
+	_start_navigation()
 
 func _find_player():
 	# Cherche le joueur dans la scène (adaptez selon votre structure)
@@ -48,16 +59,57 @@ func _find_player():
 		player_reference = world.get_node_or_null("Player")
 	
 	if not player_reference:
-		# Recherche alternative
+		# Recherche alternative - chercher directement dans la scène
 		player_reference = get_tree().get_first_node_in_group("player")
+	
+	if not player_reference:
+		# Recherche directe par nom de nœud
+		player_reference = get_node("/root/World/Player")
+	
+	# DEBUG : Vérifier si le joueur est trouvé
+	if player_reference:
+		print("Joueur trouvé ! Position: ", player_reference.global_position)
+	else:
+		print("ERREUR : Joueur non trouvé !")
+		print("DEBUG : Recherche dans les groupes disponibles...")
+		print("Groupes: ", get_tree().get_nodes_in_group("world"))
+		print("Groupes: ", get_tree().get_nodes_in_group("player"))
 
 func _physics_process(_delta):
 	if not is_alive or is_frozen:
 		return
 	
-	# Pour l'instant, l'ennemi reste statique
-	# TODO: Ajouter logique de mouvement/pathfinding plus tard
-	pass
+	# Navigation vers le joueur
+	_update_navigation()
+	
+	# MOUVEMENT AVEC ÉVITEMENT SIMPLE
+	if is_navigating and player_reference:
+		# Calculer la direction vers le joueur
+		var direction_to_player = (player_reference.global_position - global_position).normalized()
+		
+		# Vérifier s'il y a un obstacle devant
+		var space_state = get_world_3d().direct_space_state
+		var query = PhysicsRayQueryParameters3D.create(
+			global_position, 
+			global_position + direction_to_player * 2.0
+		)
+		var result = space_state.intersect_ray(query)
+		
+		# Si obstacle détecté, contourner
+		if result:
+			# Direction perpendiculaire pour contourner
+			var avoid_direction = Vector3(-direction_to_player.z, 0, direction_to_player.x)
+			velocity = avoid_direction * move_speed
+		else:
+			# Pas d'obstacle, aller droit au but
+			velocity = direction_to_player * move_speed
+		
+		move_and_slide()
+		
+		# DEBUG
+		print("Direction vers joueur: ", direction_to_player)
+		print("Obstacle détecté: ", result.size() > 0)
+		print("Velocity: ", velocity)
 
 # === SYSTÈME DE DÉGÂTS ===
 func take_damage(damage: int):
@@ -144,3 +196,51 @@ func _create_red_flash():
 	flash_tween.tween_property(sprite, "modulate", original_color, red_flash_duration * 0.7)
 	flash_tween.set_trans(Tween.TRANS_QUAD)
 	flash_tween.set_ease(Tween.EASE_OUT)
+
+# === SYSTÈME DE NAVIGATION ===
+func _setup_navigation():
+	# Configuration du NavigationAgent
+	nav_agent.velocity_computed.connect(_on_velocity_computed)
+	nav_agent.target_reached.connect(_on_target_reached)
+	
+	# Paramètres du NavigationAgent
+	nav_agent.radius = 0.5
+	nav_agent.height = 2.0
+	nav_agent.max_speed = move_speed
+	nav_agent.path_max_distance = 10.0
+	
+	# DEBUG
+	print("Navigation setup terminé !")
+
+func _start_navigation():
+	if not player_reference:
+		print("ERREUR : Pas de joueur pour la navigation !")
+		return
+	
+	target_position = player_reference.global_position
+	nav_agent.target_position = target_position
+	is_navigating = true
+	
+	# DEBUG
+	print("Navigation démarrée ! Target: ", target_position)
+	print("Position ennemi: ", global_position)
+
+func _update_navigation():
+	if not player_reference or not is_navigating:
+		return
+	
+	# Mettre à jour la destination si le joueur bouge significativement
+	var new_target = player_reference.global_position
+	if new_target.distance_to(target_position) > 1.0:
+		target_position = new_target
+		nav_agent.target_position = target_position
+
+func _on_velocity_computed(safe_velocity: Vector3):
+	# Le NavigationAgent a calculé une vitesse sûre
+	velocity = safe_velocity
+	move_and_slide()
+
+func _on_target_reached():
+	# L'ennemi a atteint sa destination
+	print("Ennemi arrivé !")
+	is_navigating = false

@@ -12,11 +12,12 @@
 - Ligne 58 : Structure des scènes
 - Ligne 71 : Scene Player
 - Ligne 84 : Scene Enemy
+- Ligne 93 : Navigation et Pathfinding
 
 **=== SYSTÈMES ===**
 - Ligne 96 : Système Joueur
 - Ligne 119 : Système Revolver
-- Ligne 146 : Système Ennemis
+- Ligne 146 : Système Ennemis (Pathfinding)
 - Ligne 173 : Effets d'Impact
 
 **=== RESSOURCES ===**
@@ -87,8 +88,18 @@ Player (CharacterBody3D)
 Enemy (CharacterBody3D)
 ├── AnimatedSprite3D (billboard activé)
 ├── CollisionShape3D (collisions environnement)
+├── NavigationAgent3D (pathfinding)
 └── Area3D (détection/dégâts)
 	└── CollisionShape3D
+```
+
+### Navigation et Pathfinding
+
+```
+World (Node principal)
+├── Navigation (NavigationRegion3D) - Zone navigable
+├── Arena (Node3D) - Sol navigable
+└── Obstacles (Node3D) - Obstacles à éviter
 ```
 
 ---
@@ -146,15 +157,22 @@ Enemy (CharacterBody3D)
 ## ⚙️ SYSTÈME D'ENNEMIS
 
 ### Statistiques
-- **Vie :** 100 points (configurable)
-- **Collision Layer :** 2 (détectable par raycast)
-- **Vitesse :** 3.0 (non utilisée)
+- **Vie :** 500 points (configurable)
+- **Collision Layer :** 3 (détectable par raycast)
+- **Vitesse :** 3.0 (mouvement vers joueur)
 - **Portée :** 15.0 (non utilisée)
 
 ### Comportement
 - **États :** Vivant/mort, gelé/actif
 - **Mort :** Freeze 1s puis disparition
 - **Collisions :** Désactivées à la mort
+
+### Pathfinding et Navigation
+- **NavigationAgent3D :** Calcul de chemin vers joueur
+- **Raycast d'évitement :** Détection d'obstacles à 2.0 unités
+- **Contournement :** Tourne à droite quand obstacle détecté
+- **Recherche joueur :** Automatique au démarrage
+- **Fonctions :** _setup_navigation(), _update_navigation(), _start_navigation()
 
 ### Couleurs d'Impact
 - **4 couleurs exportables** dans l'inspecteur
@@ -251,12 +269,13 @@ Enemy (CharacterBody3D)
 ### ✅ FONCTIONNEL
 - Player complet (mouvement, tir, effets)
 - Revolver complet (animations, sons, munitions)
-- Enemy basique (vie, dégâts, mort)
+- Enemy complet (vie, dégâts, mort, pathfinding)
 - Système de collisions configuré
 - Effets d'impact pixel explosion
+- Pathfinding ennemis (raycast d'évitement d'obstacles)
 
 ### 🔄 EN COURS
-- IA ennemis (pathfinding, tir)
+- Amélioration du système d'évitement d'obstacles
 - Système de vagues
 
 ### ❌ À IMPLÉMENTER
@@ -290,6 +309,12 @@ Enemy (CharacterBody3D)
 - **red_flash_color :** Rouge pur
 - **Fonction :** _create_red_flash() (ligne 115-143)
 
+### Paramètres Pathfinding (Enemy)
+- **move_speed :** 3.0 (vitesse de déplacement)
+- **raycast_distance :** 2.0 (distance de détection d'obstacles)
+- **avoid_direction :** Vector3(-direction.z, 0, direction.x) (contournement à droite)
+- **Fonctions :** _physics_process() (ligne 78-112), _setup_navigation(), _update_navigation()
+
 ### Performance
 - Une seule map pour optimiser
 - Sprites 2D billboard pour ennemis
@@ -299,5 +324,5 @@ Enemy (CharacterBody3D)
 ---
 
 *Documentation générée le 19 décembre 2024*  
-*Dernière mise à jour : 19 décembre 2024*  
+*Dernière mise à jour : 19 décembre 2024 - Pathfinding implémenté*  
 *Projet développé avec Godot Engine v4.4.1*
