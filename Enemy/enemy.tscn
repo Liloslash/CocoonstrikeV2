@@ -207,9 +207,10 @@ animations = [{
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wgogq"]
 radius = 0.375363
-height = 1.35575
+height = 1.5
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_2j8qn"]
+height = 1.58141
 
 [node name="Enemy" type="CharacterBody3D"]
 script = ExtResource("1_px1sc")
@@ -221,8 +222,7 @@ height = 2.0
 max_speed = 3.0
 
 [node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]
-transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 0, 0, 0)
-billboard = 2
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
 texture_filter = 2
 sprite_frames = SubResource("SpriteFrames_q40vv")
 animation = &"WalkAnim"
@@ -234,4 +234,5 @@ shape = SubResource("CapsuleShape3D_wgogq")
 [node name="Area3D" type="Area3D" parent="."]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.132256, 0)
 shape = SubResource("CapsuleShape3D_2j8qn")

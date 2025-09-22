@@ -1,4 +1,4 @@
-# 🎮 COCOONSTRIKE - REBUILD
+# 🎮 cocoonstrike - rebuild
 
 ---
 
@@ -86,7 +86,7 @@ Player (CharacterBody3D)
 
 ```
 Enemy (CharacterBody3D)
-├── AnimatedSprite3D (billboard activé)
+├── AnimatedSprite3D (billboard désactivé - rotation manuelle)
 ├── CollisionShape3D (collisions environnement)
 ├── NavigationAgent3D (pathfinding)
 └── Area3D (détection/dégâts)
@@ -166,6 +166,7 @@ World (Node principal)
 - **États :** Vivant/mort, gelé/actif
 - **Mort :** Freeze 1s puis disparition
 - **Collisions :** Désactivées à la mort
+- **Rotation :** Regarde toujours vers le joueur (axe X/Z uniquement)
 
 ### Pathfinding et Navigation
 - **NavigationAgent3D :** Calcul de chemin vers joueur
@@ -173,6 +174,13 @@ World (Node principal)
 - **Contournement :** Tourne à droite quand obstacle détecté
 - **Recherche joueur :** Automatique au démarrage
 - **Fonctions :** _setup_navigation(), _update_navigation(), _start_navigation()
+
+### Système de Rotation
+- **Billboard :** Désactivé pour contrôle manuel
+- **Rotation automatique :** Vers le joueur en temps réel
+- **Axe de rotation :** X/Z uniquement (pas de rotation verticale)
+- **Fonction :** _update_sprite_rotation() dans _physics_process()
+- **Méthode :** look_at() avec direction normalisée (Y = 0)
 
 ### Couleurs d'Impact
 - **4 couleurs exportables** dans l'inspecteur
@@ -287,11 +295,18 @@ World (Node principal)
 
 ## 🚀 ROADMAP
 
+### 🔥 PRIORITÉS CRITIQUES
+1. **🚨 PATHFINDING VRAI** - NavigationMesh non fonctionnelle !
+   - NavigationMesh reste vide (pas de grille bleue visible)
+   - NavigationAgent3D inutile (next_path_position = même position)
+   - Système actuel = simple évitement basique (raycast + tourner à droite)
+   - **OBJECTIF :** Implémenter du vrai pathfinding avec NavigationMesh fonctionnelle
+
 ### PRIORITÉS ACTUELLES
-1. ✅ **Effet visuel enemy** à l'impact - **TERMINÉ !**
-2. **Sons supplémentaires** (pas player, impact slam, dégât/mort enemy)
-3. ✅ **Mouvement revolver** à l'ajout de balle - **TERMINÉ !**
-4. **Comportement enemy** : shaking dégât, mort plus recherchée
+2. ✅ **Effet visuel enemy** à l'impact - **TERMINÉ !**
+3. **Sons supplémentaires** (pas player, impact slam, dégât/mort enemy)
+4. ✅ **Mouvement revolver** à l'ajout de balle - **TERMINÉ !**
+5. **Comportement enemy** : shaking dégât, mort plus recherchée
 
 ---
 
@@ -315,14 +330,21 @@ World (Node principal)
 - **avoid_direction :** Vector3(-direction.z, 0, direction.x) (contournement à droite)
 - **Fonctions :** _physics_process() (ligne 78-112), _setup_navigation(), _update_navigation()
 
+### Paramètres Rotation (Enemy)
+- **billboard :** false (désactivé dans enemy.tscn)
+- **direction_calculation :** (player_position - enemy_position).normalized()
+- **y_component :** 0 (ignoré pour rotation horizontale uniquement)
+- **Fonction :** _update_sprite_rotation() (ligne 220-234)
+- **look_at_target :** global_position + direction_to_player
+
 ### Performance
 - Une seule map pour optimiser
-- Sprites 2D billboard pour ennemis
+- Sprites 2D avec rotation manuelle (billboard désactivé)
 - GPUParticles3D pour effets
 - Sons optimisés avec superposition
 
 ---
 
 *Documentation générée le 19 décembre 2024*  
-*Dernière mise à jour : 19 décembre 2024 - Pathfinding implémenté*  
+*Dernière mise à jour : 19 décembre 2024 - Système de rotation ennemis implémenté*  
 *Projet développé avec Godot Engine v4.4.1*

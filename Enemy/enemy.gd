@@ -66,14 +66,9 @@ func _find_player():
 		# Recherche directe par nom de nœud
 		player_reference = get_node("/root/World/Player")
 	
-	# DEBUG : Vérifier si le joueur est trouvé
-	if player_reference:
-		print("Joueur trouvé ! Position: ", player_reference.global_position)
-	else:
-		print("ERREUR : Joueur non trouvé !")
-		print("DEBUG : Recherche dans les groupes disponibles...")
-		print("Groupes: ", get_tree().get_nodes_in_group("world"))
-		print("Groupes: ", get_tree().get_nodes_in_group("player"))
+	# Vérifier si le joueur est trouvé
+	if not player_reference:
+		push_error("ERREUR : Joueur non trouvé pour la navigation !")
 
 func _physics_process(_delta):
 	if not is_alive or is_frozen:
@@ -82,34 +77,14 @@ func _physics_process(_delta):
 	# Navigation vers le joueur
 	_update_navigation()
 	
-	# MOUVEMENT AVEC ÉVITEMENT SIMPLE
+	# ROTATION DU SPRITE VERS LE JOUEUR
+	_update_sprite_rotation()
+	
+	# MOUVEMENT VIA NAVIGATIONAGENT3D
 	if is_navigating and player_reference:
-		# Calculer la direction vers le joueur
-		var direction_to_player = (player_reference.global_position - global_position).normalized()
-		
-		# Vérifier s'il y a un obstacle devant
-		var space_state = get_world_3d().direct_space_state
-		var query = PhysicsRayQueryParameters3D.create(
-			global_position, 
-			global_position + direction_to_player * 2.0
-		)
-		var result = space_state.intersect_ray(query)
-		
-		# Si obstacle détecté, contourner
-		if result:
-			# Direction perpendiculaire pour contourner
-			var avoid_direction = Vector3(-direction_to_player.z, 0, direction_to_player.x)
-			velocity = avoid_direction * move_speed
-		else:
-			# Pas d'obstacle, aller droit au but
-			velocity = direction_to_player * move_speed
-		
-		move_and_slide()
-		
-		# DEBUG
-		print("Direction vers joueur: ", direction_to_player)
-		print("Obstacle détecté: ", result.size() > 0)
-		print("Velocity: ", velocity)
+		# Le NavigationAgent3D calcule automatiquement le chemin
+		# et appelle _on_velocity_computed() avec la vitesse optimale
+		pass  # Le mouvement est géré par _on_velocity_computed()
 
 # === SYSTÈME DE DÉGÂTS ===
 func take_damage(damage: int):
@@ -209,21 +184,18 @@ func _setup_navigation():
 	nav_agent.max_speed = move_speed
 	nav_agent.path_max_distance = 10.0
 	
-	# DEBUG
-	print("Navigation setup terminé !")
+	# Navigation setup terminé
 
 func _start_navigation():
 	if not player_reference:
 		print("ERREUR : Pas de joueur pour la navigation !")
 		return
 	
-	target_position = player_reference.global_position
-	nav_agent.target_position = target_position
+	#target_position = player_reference.global_position
+	#nav_agent.target_position = target_position
 	is_navigating = true
 	
-	# DEBUG
-	print("Navigation démarrée ! Target: ", target_position)
-	print("Position ennemi: ", global_position)
+	# Navigation démarrée
 
 func _update_navigation():
 	if not player_reference or not is_navigating:
@@ -236,11 +208,27 @@ func _update_navigation():
 		nav_agent.target_position = target_position
 
 func _on_velocity_computed(safe_velocity: Vector3):
-	# Le NavigationAgent a calculé une vitesse sûre
+	# Le NavigationAgent3D a calculé une vitesse sûre pour éviter les obstacles
 	velocity = safe_velocity
 	move_and_slide()
 
 func _on_target_reached():
 	# L'ennemi a atteint sa destination
-	print("Ennemi arrivé !")
 	is_navigating = false
+
+# === ROTATION DU SPRITE VERS LE JOUEUR ===
+func _update_sprite_rotation():
+	# Vérifier que l'ennemi est vivant, a un sprite et un joueur de référence
+	if not is_alive or not sprite or not player_reference:
+		return
+	
+	# Calculer la direction vers le joueur (SEULEMENT sur l'axe X/Z)
+	var direction_to_player = (player_reference.global_position - global_position)
+	direction_to_player.y = 0  # Ignorer l'axe Y (hauteur)
+	direction_to_player = direction_to_player.normalized()
+	
+	# Créer un point cible devant l'ennemi dans la direction du joueur (même hauteur)
+	var look_target = global_position + direction_to_player
+	
+	# Faire tourner le sprite pour regarder vers le joueur (rotation uniquement sur Y)
+	sprite.look_at(look_target, Vector3.UP)

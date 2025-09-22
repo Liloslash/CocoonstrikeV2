@@ -3,11 +3,11 @@ extends CharacterBody3D
 # --- Paramètres exportés ---
 @export_group("Mouvement")
 @export var max_speed: float = 9.5
-@export var jump_velocity: float = 6.0
+@export var jump_velocity: float = 5.8
 @export var acceleration_duration: float = 0.5
-@export var slam_velocity: float = -25.0
-@export var freeze_duration_after_slam: float = 0.5
-@export var min_time_before_slam: float = 0.3
+@export var slam_velocity: float = -33.0
+@export var freeze_duration_after_slam: float = 0.3
+@export var min_time_before_slam: float = 0.4
 
 @export_group("Contrôles")
 @export var mouse_sensitivity: float = 0.002

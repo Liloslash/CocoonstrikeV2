@@ -44,7 +44,7 @@ recoil_intensity = 0.08
 recoil_kickback = 0.2
 
 [node name="Enemy" parent="." instance=ExtResource("4_aqk2v")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -7.199, 1.15, -9.922)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.199, 0.75, -9.922)
 collision_layer = 3
 collision_mask = 3
 max_health = 500

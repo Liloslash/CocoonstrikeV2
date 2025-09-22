@@ -147,11 +147,7 @@ _data = {
 
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_v0iea")
-jump_velocity = 5.8
 acceleration_duration = 0.4
-slam_velocity = -33.0
-freeze_duration_after_slam = 0.3
-min_time_before_slam = 0.4
 shake_intensity = 0.8
 shake_duration = 0.8
 headbob_amplitude = 0.06
