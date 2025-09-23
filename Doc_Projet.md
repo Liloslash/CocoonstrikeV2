@@ -16,19 +16,20 @@
 
 **=== SYSTÈMES ===**
 - Ligne 96 : Système Joueur
-- Ligne 119 : Système Revolver
-- Ligne 146 : Système Ennemis (Pathfinding)
-- Ligne 173 : Effets d'Impact
+- Ligne 130 : Système de Saut Avancé
+- Ligne 154 : Système Revolver
+- Ligne 181 : Système Ennemis (Pathfinding)
+- Ligne 208 : Effets d'Impact
 
 **=== RESSOURCES ===**
-- Ligne 190 : Assets Audio
-- Ligne 209 : Assets Visuels
-- Ligne 227 : Configuration
+- Ligne 233 : Assets Audio
+- Ligne 252 : Assets Visuels
+- Ligne 270 : Configuration
 
 **=== ÉTAT DU PROJET ===**
-- Ligne 249 : Fonctionnel
-- Ligne 258 : En cours
-- Ligne 269 : Roadmap
+- Ligne 292 : Fonctionnel
+- Ligne 301 : En cours
+- Ligne 312 : Roadmap
 
 ---
 
@@ -108,7 +109,6 @@ World (Node principal)
 
 ### Mouvement FPS
 - **Contrôles :** WASD + Souris
-- **Saut :** Espace (jump_velocity = 5.8)
 - **Slam :** Q (slam_velocity = -33.0)
 - **Accélération :** 0.4s
 - **Freeze après slam :** 0.3s
@@ -124,6 +124,48 @@ World (Node principal)
 - **Dégâts :** 25 points par tir
 - **Signal :** shot_fired du revolver
 - **Impact :** Particules colorées
+
+---
+
+## ⚙️ SYSTÈME DE SAUT AVANCÉ
+
+### Mécanique de Saut Boost
+- **Déclenchement :** Espace (quand au sol)
+- **Durée de poussée :** 0.5s
+- **Force initiale :** 25.0 (vitesse de poussée)
+- **Multiplicateur de force :** 5.0 (accélération progressive)
+- **Gravité réduite :** 0.6x pendant la montée
+
+### Hauteur et Contrôle
+- **Hauteur maximale :** 2.1m (relative au point de saut)
+- **Flottement au sommet :** 0.03s (suspension très courte)
+- **Gravité de chute :** 1.1x (chute légèrement plus rapide)
+
+### Courbe de Saut
+- **Type :** Ease-in quadratique (accélération progressive)
+- **Feeling :** Montée rapide et puissante, comme "aspiré" vers le sommet
+- **Physique :** Force progressive appliquée sur la durée du boost
+
+### Slam Aérien
+- **Déclenchement :** Q (en l'air ou pendant le flottement)
+- **Vitesse :** -33.0 (plonge rapide)
+- **Temps minimum :** 0.4s après le saut
+- **Gel après impact :** 0.3s
+
+### Variables Exportées (Éditeur)
+- `jump_boost_duration` : Durée de la poussée rapide
+- `jump_boost_velocity` : Force de la poussée initiale
+- `jump_boost_force_multiplier` : Multiplicateur de force maximale
+- `jump_gravity_multiplier` : Gravité réduite pendant la montée
+- `jump_hover_duration` : Temps de flottement au sommet
+- `max_jump_height` : Hauteur maximale relative au point de saut
+- `fall_gravity_multiplier` : Multiplicateur de gravité pour la chute
+
+### Fonctions Clés
+- `_start_jump_boost()` : Initialise la poussée avec vélocité de base
+- `_handle_jump_boost()` : Gère la force progressive et la transition vers le flottement
+- `_handle_gravity_and_jump()` : Applique la gravité selon l'état du saut
+- `_reset_jump_states()` : Remet à zéro tous les états de saut
 
 ---
 
@@ -276,6 +318,7 @@ World (Node principal)
 
 ### ✅ FONCTIONNEL
 - Player complet (mouvement, tir, effets)
+- Système de saut avancé (boost, flottement, slam)
 - Revolver complet (animations, sons, munitions)
 - Enemy complet (vie, dégâts, mort, pathfinding)
 - Système de collisions configuré
@@ -296,21 +339,35 @@ World (Node principal)
 ## 🚀 ROADMAP
 
 ### 🔥 PRIORITÉS CRITIQUES
-1. **🚨 PATHFINDING VRAI** - NavigationMesh non fonctionnelle !
+1. **🎯 FINALISER LA MÉCANIQUE DE SAUT** - Effet d'arrivée au sommet !
+   - Améliorer l'effet visuel/physique d'arrivée au sommet du saut
+   - Polir la transition entre boost et flottement
+   - Affiner la courbe de saut pour un feeling optimal
+   - **OBJECTIF :** Saut parfait avec effet "aspiré" au sommet
+
+2. **🚨 PATHFINDING VRAI** - NavigationMesh non fonctionnelle !
    - NavigationMesh reste vide (pas de grille bleue visible)
    - NavigationAgent3D inutile (next_path_position = même position)
    - Système actuel = simple évitement basique (raycast + tourner à droite)
    - **OBJECTIF :** Implémenter du vrai pathfinding avec NavigationMesh fonctionnelle
 
 ### PRIORITÉS ACTUELLES
-2. ✅ **Effet visuel enemy** à l'impact - **TERMINÉ !**
 3. **Sons supplémentaires** (pas player, impact slam, dégât/mort enemy)
-4. ✅ **Mouvement revolver** à l'ajout de balle - **TERMINÉ !**
-5. **Comportement enemy** : shaking dégât, mort plus recherchée
+4. **Comportement enemy** : shaking dégât, mort plus recherchée
 
 ---
 
 ## 🎯 RÉFÉRENCE RAPIDE
+
+### Paramètres Saut Avancé (Player)
+- **jump_boost_duration :** 0.5s (durée de la poussée)
+- **jump_boost_velocity :** 25.0 (force initiale)
+- **jump_boost_force_multiplier :** 5.0 (accélération progressive)
+- **jump_gravity_multiplier :** 0.6 (gravité réduite)
+- **jump_hover_duration :** 0.03s (flottement au sommet)
+- **max_jump_height :** 2.1m (hauteur maximale)
+- **fall_gravity_multiplier :** 1.1 (gravité de chute)
+- **Fonctions :** _start_jump_boost(), _handle_jump_boost(), _reset_jump_states()
 
 ### Paramètres Tremblement (Revolver)
 - **shake_intensity :** 3.0 pixels
@@ -346,5 +403,5 @@ World (Node principal)
 ---
 
 *Documentation générée le 19 décembre 2024*  
-*Dernière mise à jour : 19 décembre 2024 - Système de rotation ennemis implémenté*  
+*Dernière mise à jour : 19 décembre 2024 - Système de saut avancé implémenté*  
 *Projet développé avec Godot Engine v4.4.1*

@@ -147,15 +147,6 @@ _data = {
 
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_v0iea")
-acceleration_duration = 0.4
-shake_intensity = 0.8
-shake_duration = 0.8
-headbob_amplitude = 0.06
-headbob_frequency = 6.0
-recoil_intensity = 0.03
-recoil_duration = 0.4
-recoil_rotation = 1.5
-recoil_kickback = 0.25
 
 [node name="Camera3D" type="Camera3D" parent="."]
 

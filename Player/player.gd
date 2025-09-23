@@ -3,33 +3,41 @@ extends CharacterBody3D
 # --- Paramètres exportés ---
 @export_group("Mouvement")
 @export var max_speed: float = 9.5
-@export var jump_velocity: float = 5.8
-@export var acceleration_duration: float = 0.5
+@export var acceleration_duration: float = 0.4
 @export var slam_velocity: float = -33.0
 @export var freeze_duration_after_slam: float = 0.3
 @export var min_time_before_slam: float = 0.4
+
+@export_group("Jump Boost")
+@export var jump_boost_duration: float = 0.5  # Durée de la poussée rapide
+@export var jump_boost_velocity: float = 25.0  # Force de la poussée initiale
+@export var jump_boost_force_multiplier: float = 5.0  # Multiplicateur de force maximale
+@export var jump_gravity_multiplier: float = 0.6  # Gravité réduite pendant la montée
+@export var jump_hover_duration: float = 0.03  # Temps de flottement au sommet
+@export var max_jump_height: float = 2.1  # Hauteur maximale relative au point de saut
+@export var fall_gravity_multiplier: float = 1.1  # Multiplicateur de gravité pour la chute
 
 @export_group("Contrôles")
 @export var mouse_sensitivity: float = 0.002
 
 @export_group("Camera Shake")
-@export var shake_intensity: float = 0.25
-@export var shake_duration: float = 0.5
+@export var shake_intensity: float = 0.8
+@export var shake_duration: float = 0.8
 @export var shake_rotation: float = 5
 @export var shake_elastic_power: float = -10.0
 @export var shake_elastic_cycles: float = 10.0
 @export var shake_elastic_offset: float = 0.75
 
 @export_group("Head Bob")
-@export var headbob_amplitude: float = 0.05
-@export var headbob_frequency: float = 8.0
+@export var headbob_amplitude: float = 0.06
+@export var headbob_frequency: float = 6.0
 @export var headbob_frequency_multiplier: float = 2.0
 
 @export_group("Effets de Tir")
-@export var recoil_intensity: float = 0.15
-@export var recoil_duration: float = 0.2
-@export var recoil_rotation: float = 3.0
-@export var recoil_kickback: float = 0.08
+@export var recoil_intensity: float = 0.03
+@export var recoil_duration: float = 0.4
+@export var recoil_rotation: float = 1.5
+@export var recoil_kickback: float = 0.25
 
 @export_group("Combat")
 @export var revolver_damage: int = 25  # Dégâts du revolver
@@ -43,6 +51,16 @@ var is_slamming: bool = false
 var is_frozen: bool = false
 var freeze_timer: float = 0.0
 var jump_time: float = 0.0
+
+# --- Variables Jump Boost ---
+var is_jump_boosting: bool = false
+var jump_boost_timer: float = 0.0
+var jump_start_height: float = 0.0  # Hauteur Y du point de départ du saut
+var jump_boost_force: float = 0.0  # Force d'accélération progressive
+
+# --- Variables Hover (Flottement) ---
+var is_hovering: bool = false
+var hover_timer: float = 0.0
 
 # --- Camera Shake interne ---
 var camera: Camera3D
@@ -75,12 +93,16 @@ func _input(event: InputEvent) -> void:
 		rotate_y(-event.relative.x * mouse_sensitivity)
 		
 	if event.is_action_pressed("jump") and is_on_floor() and not is_frozen:
-		velocity.y = jump_velocity
+		_start_jump_boost()
 		jump_time = 0.0
 		
 	if event.is_action_pressed("slam") and not is_on_floor() and jump_time >= min_time_before_slam and can_slam and not is_slamming and not is_frozen:
 		is_slamming = true
 		velocity.y = slam_velocity
+		# Arrêter le flottement si on slam
+		if is_hovering:
+			is_hovering = false
+			hover_timer = 0.0
 
 # --- Initialisation ---
 func _ready() -> void:
@@ -275,8 +297,12 @@ func _handle_freeze_state(delta: float) -> void:
 # --- Gestion de la gravité et du saut ---
 func _handle_gravity_and_jump(delta: float) -> void:
 	if not is_on_floor():
-		velocity.y += get_gravity().y * delta
+		_handle_jump_boost(delta)
 		jump_time += delta
+	else:
+		# Réinitialiser tous les états de saut à l'atterrissage SEULEMENT si on n'est pas en train de sauter
+		if not is_jump_boosting and not is_hovering:
+			_reset_jump_states()
 
 # --- Gestion de l'atterrissage après slam ---
 func _handle_slam_landing() -> void:
@@ -315,3 +341,83 @@ func _handle_movement(delta: float) -> void:
 	# Appliquer la vitesse
 	velocity.x = direction.x * current_speed
 	velocity.z = direction.z * current_speed
+
+# --- Fonctions Jump Boost ---
+
+# --- Démarrage du boost de saut ---
+func _start_jump_boost() -> void:
+	is_jump_boosting = true
+	jump_boost_timer = 0.0
+	jump_start_height = global_position.y  # Enregistrer la hauteur de départ
+	jump_boost_force = 0.0  # Commencer avec une force nulle
+	# Commencer avec une vitesse initiale plus forte
+	velocity.y = jump_boost_velocity * 0.3
+
+# --- Réinitialisation des états de saut ---
+func _reset_jump_states() -> void:
+	is_jump_boosting = false
+	jump_boost_timer = 0.0
+	jump_boost_force = 0.0
+	is_hovering = false
+	hover_timer = 0.0
+	jump_start_height = 0.0
+
+# --- Gestion du boost de saut ---
+func _handle_jump_boost(delta: float) -> void:
+	if is_jump_boosting:
+		jump_boost_timer += delta
+		
+		# Calculer la hauteur actuelle par rapport au point de départ
+		var current_height_above_start = global_position.y - jump_start_height
+		
+		# Si on a atteint ou dépassé la hauteur maximale, commencer le flottement
+		if current_height_above_start >= max_jump_height:
+			is_jump_boosting = false
+			is_hovering = true
+			hover_timer = 0.0
+			velocity.y = 0.0  # Arrêter la montée
+			return
+		
+		# Phase 1: Force d'accélération progressive
+		if jump_boost_timer <= jump_boost_duration:
+			# Calculer la force d'accélération progressive
+			var boost_progress = jump_boost_timer / jump_boost_duration
+			var target_force = jump_boost_velocity * jump_boost_force_multiplier  # Force maximale
+			
+			# Accélération progressive de la force (ease-in quad)
+			jump_boost_force = target_force * ease_in_quad(boost_progress)
+			
+			# Appliquer la force d'accélération (ajouter à la vitesse existante)
+			velocity.y += jump_boost_force * delta
+		else:
+			# Phase 2: Gravité normale après le boost (mais on reste en boost jusqu'à la hauteur max)
+			velocity.y += get_gravity().y * delta
+	
+	elif is_hovering:
+		# Phase 3: Flottement au sommet
+		hover_timer += delta
+		
+		
+		# Maintenir la vitesse verticale à 0 (flottement parfait)
+		velocity.y = 0.0
+		
+		# Si le temps de flottement est écoulé, arrêter le flottement
+		if hover_timer >= jump_hover_duration:
+			is_hovering = false
+			hover_timer = 0.0
+	else:
+		# Gravité normale quand pas de boost ni de flottement
+		velocity.y += get_gravity().y * fall_gravity_multiplier * delta
+
+# --- Fonctions d'easing ---
+func ease_out_quad(t: float) -> float:
+	return 1.0 - (1.0 - t) * (1.0 - t)
+
+func ease_out_expo(t: float) -> float:
+	return 1.0 - pow(2.0, -10.0 * t)
+
+func ease_in_expo(t: float) -> float:
+	return pow(2.0, 10.0 * (t - 1.0))
+
+func ease_in_quad(t: float) -> float:
+	return t * t
