@@ -1,8 +1,12 @@
-[gd_scene load_steps=21 format=3 uid="uid://blpn5lfg8ub4b"]
+[gd_scene load_steps=25 format=3 uid="uid://blpn5lfg8ub4b"]
 
 [ext_resource type="Script" uid="uid://co6b1qlsqhx6s" path="res://Player/player.gd" id="1_v0iea"]
 [ext_resource type="Texture2D" uid="uid://80v0rg0temi1" path="res://Assets/Sprites/Guns/Revolver.png" id="2_4ntmi"]
 [ext_resource type="Script" uid="uid://dimgs8cip0pd1" path="res://Revolver/revolver.gd" id="3_btcbx"]
+[ext_resource type="Script" uid="uid://cywep22q5nkjy" path="res://Player/PlayerCamera.gd" id="4_vtle1"]
+[ext_resource type="Script" uid="uid://yihmwlm1gdcc" path="res://Player/PlayerMovement.gd" id="5_od3ui"]
+[ext_resource type="Script" uid="uid://bx60wab5cy035" path="res://Player/PlayerCombat.gd" id="6_00tjw"]
+[ext_resource type="Script" uid="uid://djauqrp7mylji" path="res://Player/PlayerInput.gd" id="7_x3vf3"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_rpqav"]
 
@@ -179,3 +183,15 @@ shake_duration = 0.2
 libraries = {
 &"": SubResource("AnimationLibrary_k53q1")
 }
+
+[node name="PlayerCamera" type="Node" parent="."]
+script = ExtResource("4_vtle1")
+
+[node name="PlayerMovement" type="Node" parent="."]
+script = ExtResource("5_od3ui")
+
+[node name="PlayerCombat" type="Node" parent="."]
+script = ExtResource("6_00tjw")
+
+[node name="PlayerInput" type="Node" parent="."]
+script = ExtResource("7_x3vf3")

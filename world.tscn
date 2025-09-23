@@ -40,8 +40,6 @@ environment = SubResource("Environment_036b0")
 
 [node name="Player" parent="." instance=ExtResource("3_tlwt5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-recoil_intensity = 0.08
-recoil_kickback = 0.2
 
 [node name="Enemy" parent="." instance=ExtResource("4_aqk2v")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.199, 0.75, -9.922)
