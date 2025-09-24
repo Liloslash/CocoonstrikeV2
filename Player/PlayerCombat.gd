@@ -67,9 +67,7 @@ func _connect_revolver() -> void:
 		revolver_connected = false
 
 # === GESTION DU TIR ===
-func _process(_delta: float) -> void:
-	# La gestion des inputs est maintenant dans PlayerInput.gd
-	pass
+# (La gestion des inputs est maintenant dans PlayerInput.gd)
 
 # === GESTION DU TIR AVEC RAYCAST ===
 func _handle_shot() -> void:
@@ -101,20 +99,6 @@ func _create_impact_effect(impact_position: Vector3, target_collider: Node):
 		if impact_colors.size() >= 4:
 			impact_effect.set_impact_colors(impact_colors)
 
-# === FONCTION POUR TROUVER LE SPRITE DANS UN ENNEMI ===
-func _find_sprite_in_target(target: Node) -> Node:
-	# Chercher un AnimatedSprite3D dans la cible
-	var animated_sprite = target.get_node_or_null("AnimatedSprite3D")
-	if animated_sprite:
-		return animated_sprite
-	
-	# Chercher récursivement dans les enfants
-	for child in target.get_children():
-		var sprite = _find_sprite_in_target(child)
-		if sprite:
-			return sprite
-	
-	return null
 
 # === FONCTIONS PUBLIQUES POUR LE JOUEUR ===
 func trigger_recoil() -> void:

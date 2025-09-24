@@ -175,6 +175,7 @@ libraries = {
 
 [node name="PlayerCamera" type="Camera3D" parent="."]
 script = ExtResource("4_vtle1")
+recoil_rotation = 1.0
 
 [node name="Camera3D" type="Camera3D" parent="."]
 
@@ -189,7 +190,6 @@ debug_color = Color(0.213589, 0.599834, 0.620549, 0.42)
 
 [node name="PlayerMovement" type="Node" parent="."]
 script = ExtResource("5_od3ui")
-jump_boost_force_multiplier = 1.0
 
 [node name="PlayerCombat" type="Node" parent="."]
 script = ExtResource("6_00tjw")

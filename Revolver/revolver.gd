@@ -34,7 +34,6 @@ var base_position: Vector2
 var current_ammo: int  # Balles actuelles dans le barillet
 
 # === SYSTÈME DE CADENCE ===
-var last_shot_time: float = 0.0  # Temps du dernier tir
 var can_shoot: bool = true        # Peut-on tirer ?
 var is_shooting: bool = false     # Est-on en train de tirer ?
 
@@ -98,24 +97,26 @@ func _ready():
 	add_child(empty_click_audio_player)
 
 func play_shot_animation():
-	if is_shooting:
+	# Vérifications consolidées
+	if is_shooting or not can_shoot:
 		return
-	elif reload_state == ReloadState.RELOAD_ADDING_BULLETS:
+	
+	# Gestion du rechargement en cours
+	if reload_state == ReloadState.RELOAD_ADDING_BULLETS:
 		_interrupt_reload()
-		return
-	elif current_ammo <= 0:
-		_play_empty_click_sound()
 		return
 	elif reload_state != ReloadState.IDLE:
 		return
-	elif not can_shoot:
+	
+	# Gestion du tir à vide
+	if current_ammo <= 0:
+		_play_empty_click_sound()
+		_create_weapon_shake()
 		return
 	
 	is_shooting = true
 	current_ammo -= 1
 	can_shoot = false
-	# OPTIMISATION : Utilisation du temps plus efficace
-	last_shot_time = Time.get_ticks_msec() * 0.001  # Conversion en secondes
 	
 	_start_fire_rate_timer()
 	
@@ -172,7 +173,7 @@ func _add_next_bullet():
 	current_ammo += 1
 	
 	# Déclenchement du tremblement à chaque balle ajoutée
-	_create_reload_shake()
+	_create_weapon_shake()
 	
 	await audio_player.finished
 	
@@ -244,18 +245,19 @@ func _play_empty_click_sound():
 		empty_click_audio_player.stream = sound_empty_click
 		empty_click_audio_player.play()
 
-# === FONCTION DE TREMBLEMENT PENDANT LE RECHARGEMENT ===
-func _create_reload_shake():
-	# On s'assure qu'on est bien en position de rechargement
-	if reload_state != ReloadState.RELOAD_ADDING_BULLETS:
-		return
-	
+# === FONCTION DE TREMBLEMENT DE L'ARME ===
+func _create_weapon_shake():
 	# Création d'un tween pour le tremblement
 	var shake_tween = create_tween()
 	shake_tween.set_loops()  # Le tween se répète
 	
 	# Calcul du nombre d'oscillations basé sur la durée et la fréquence
 	var oscillations = int(shake_duration * shake_frequency)
+	
+	# Déterminer la position de référence selon l'état
+	var reference_position = base_position
+	if reload_state == ReloadState.RELOAD_ADDING_BULLETS:
+		reference_position = reload_position
 	
 	# Création du pattern de tremblement
 	for i in range(oscillations):
@@ -268,9 +270,9 @@ func _create_reload_shake():
 			randf_range(-1.0, 1.0)
 		).normalized()
 		
-		# Position de tremblement autour de la position de rechargement
+		# Position de tremblement autour de la position de référence
 		var shake_offset = random_direction * current_intensity
-		var target_position = reload_position + shake_offset
+		var target_position = reference_position + shake_offset
 		
 		# Durée de chaque oscillation
 		var oscillation_duration = shake_duration / float(oscillations)
@@ -278,8 +280,8 @@ func _create_reload_shake():
 		# Ajout du mouvement au tween
 		shake_tween.tween_property(self, "position", target_position, oscillation_duration)
 	
-	# Retour à la position de rechargement à la fin
-	shake_tween.tween_property(self, "position", reload_position, 0.05)
+	# Retour à la position de référence à la fin
+	shake_tween.tween_property(self, "position", reference_position, 0.05)
 	
 	# Arrêt du tween après la durée totale
 	await get_tree().create_timer(shake_duration).timeout

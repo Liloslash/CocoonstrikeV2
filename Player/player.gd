@@ -12,7 +12,6 @@ extends CharacterBody3D
 @onready var movement_component: PlayerMovement = $PlayerMovement
 @onready var combat_component: PlayerCombat = $PlayerCombat
 @onready var input_component: PlayerInput = $PlayerInput
-var camera: Camera3D
 
 # --- Combat ---
 # (Les variables de combat sont maintenant dans le composant PlayerCombat)
@@ -29,7 +28,6 @@ func _unhandled_input(event: InputEvent) -> void:
 # --- Initialisation ---
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	camera = $Camera3D
 	
 	# Initialiser les composants
 	movement_component.setup_player(self)
@@ -55,10 +53,7 @@ func _on_slam_landed() -> void:
 # --- Gestion du tremblement, head bob et détection tir ---
 func _process(_delta: float) -> void:
 	# Déléguer la gestion de la caméra au composant
-	camera_component.current_speed = movement_component.get_current_speed()
 	camera_component._process(_delta)
-	# Déléguer la gestion du combat au composant
-	combat_component._process(_delta)
 
 # --- Mise à jour de la physique du joueur ---
 func _physics_process(delta: float) -> void:
