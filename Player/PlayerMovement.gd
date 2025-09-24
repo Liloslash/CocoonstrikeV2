@@ -21,6 +21,9 @@ class_name PlayerMovement
 # === RÉFÉRENCES ===
 var player: CharacterBody3D
 
+# === SIGNAUX ===
+signal slam_landed
+
 # === VARIABLES INTERNES ===
 var current_speed: float = 0.0
 var is_accelerating: bool = false
@@ -93,7 +96,9 @@ func _handle_slam_landing() -> void:
 	is_slamming = false
 	is_frozen = true
 	freeze_timer = freeze_duration_after_slam
-	# Le shake sera géré par le composant caméra
+	
+	# Émettre le signal pour déclencher le camera shake
+	slam_landed.emit()
 
 # === GESTION DU MOUVEMENT HORIZONTAL ===
 func _handle_movement(delta: float) -> void:

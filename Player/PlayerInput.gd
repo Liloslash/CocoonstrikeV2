@@ -40,12 +40,10 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	# Gestion des actions de combat (just_pressed)
 	if event.is_action("shot") and event.is_pressed():
-		if combat_component.is_revolver_connected():
-			combat_component.revolver_sprite.play_shot_animation()
+		combat_component.trigger_shot()
 	
 	if event.is_action("reload") and event.is_pressed():
-		if combat_component.is_revolver_connected():
-			combat_component.revolver_sprite.start_reload()
+		combat_component.trigger_reload()
 
 # === FONCTIONS PUBLIQUES ===
 func set_mouse_sensitivity(sensitivity: float) -> void:

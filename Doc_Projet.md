@@ -1,4 +1,4 @@
-# 🎮 cocoonstrike - rebuild
+# 📋 DOC_PROJET
 
 ---
 
@@ -11,28 +11,31 @@
 **=== ARCHITECTURE ===**
 - Ligne 63 : Structure des scènes
 - Ligne 76 : Scene Player (Architecture Modulaire)
-- Ligne 177 : Scene Enemy
-- Ligne 188 : Navigation et Pathfinding
+- Ligne 91 : Architecture Modulaire du Joueur
+- Ligne 189 : Scene Enemy
+- Ligne 200 : Navigation et Pathfinding
 
 **=== SYSTÈMES ===**
-- Ligne 199 : Système Joueur
-- Ligne 221 : Système de Saut Avancé
-- Ligne 263 : Système Revolver
-- Ligne 290 : Système Ennemis (Pathfinding)
-- Ligne 332 : Effets d'Impact
+- Ligne 213 : Système Joueur
+- Ligne 235 : Système de Saut Avancé
+- Ligne 277 : Système Revolver
+- Ligne 304 : Système Ennemis (Pathfinding)
+- Ligne 346 : Effets d'Impact
 
 **=== RESSOURCES ===**
-- Ligne 349 : Assets Audio
-- Ligne 368 : Assets Visuels
-- Ligne 386 : Configuration
+- Ligne 363 : Assets Audio
+- Ligne 382 : Assets Visuels
+- Ligne 400 : Configuration
 
 **=== ÉTAT DU PROJET ===**
-- Ligne 408 : Fonctionnel
-- Ligne 420 : En cours
-- Ligne 437 : Roadmap
+- Ligne 422 : Fonctionnel
+- Ligne 433 : En cours
+- Ligne 437 : À implémenter
+- Ligne 442 : Récent
+- Ligne 454 : Roadmap
 
 **=== RÉFÉRENCES ===**
-- Ligne 458 : Référence Rapide
+- Ligne 475 : Référence Rapide
 
 ---
 
@@ -77,11 +80,11 @@ World (Node principal)
 
 ```
 Player (CharacterBody3D) - ORCHESTRATEUR
-├── PlayerCamera (Node) - Gestion caméra
+├── PlayerCamera (Camera3D) - Gestion caméra (hérite de Camera3D)
 ├── PlayerMovement (Node) - Mouvement et saut
 ├── PlayerCombat (Node) - Tir et raycast
 ├── PlayerInput (Node) - Gestion des inputs
-├── Camera3D
+├── Camera3D (référence pour compatibilité)
 │   └── RayCast3D (collision_mask = 2)
 ├── CollisionShape3D (CapsuleShape3D)
 ├── AudioStreamPlayer3D (bruits de pas)
@@ -94,20 +97,23 @@ Player (CharacterBody3D) - ORCHESTRATEUR
 
 **Principe :** Séparation des responsabilités en composants spécialisés
 
-#### PlayerCamera.gd (135 lignes)
+#### PlayerCamera.gd (119 lignes)
+- **Type :** `extends Camera3D` (hérite directement de Camera3D)
 - **Responsabilités :** Shake, head bob, recul de tir
 - **Paramètres :** Intensité, durée, fréquence des effets
 - **Fonctions clés :** `start_camera_shake()`, `trigger_recoil()`
+- **Avantage :** Accès direct aux propriétés de la caméra (position, rotation)
 
 #### PlayerMovement.gd (231 lignes)
 - **Responsabilités :** Mouvement, saut boost, slam
 - **Paramètres :** Vitesse, accélération, gravité, hauteur de saut
 - **Fonctions clés :** `start_jump()`, `start_slam()`, `get_current_speed()`
 
-#### PlayerCombat.gd (131 lignes)
+#### PlayerCombat.gd (121 lignes)
 - **Responsabilités :** Tir, raycast, dégâts, effets d'impact
 - **Paramètres :** Dégâts du revolver
-- **Fonctions clés :** Gestion automatique du tir et rechargement
+- **Fonctions clés :** `trigger_shot()`, `trigger_reload()`, `trigger_recoil()`
+- **Communication :** Connexion directe avec PlayerCamera pour le recul
 
 #### PlayerInput.gd (56 lignes)
 - **Responsabilités :** Gestion des inputs (souris, clavier)
@@ -115,8 +121,9 @@ Player (CharacterBody3D) - ORCHESTRATEUR
 - **Fonctions clés :** Délégation des actions aux composants
 
 #### player.gd (70 lignes) - ORCHESTRATEUR
-- **Responsabilités :** Coordination des composants
-- **Fonctions clés :** `_ready()`, `_process()`, `_physics_process()`
+- **Responsabilités :** Coordination des composants et gestion des signaux
+- **Fonctions clés :** `_ready()`, `_process()`, `_physics_process()`, `_on_slam_landed()`
+- **Signaux :** Connexion `slam_landed` → camera shake, `shot_fired` → recul
 
 ### Diagramme d'Architecture Modulaire
 
@@ -127,12 +134,12 @@ Player (CharacterBody3D) - ORCHESTRATEUR
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────┐ │
 │  │PlayerCamera │  │PlayerMovement│ │PlayerCombat │  │Input│ │
-│  │    (Node)   │  │    (Node)   │  │    (Node)   │  │(Node│ │
+│  │(Camera3D)   │  │    (Node)   │  │    (Node)   │  │(Node│ │
 │  │             │  │             │  │             │  │     │ │
 │  │ • Shake     │  │ • Mouvement │  │ • Tir       │  │ •   │ │
 │  │ • Head Bob  │  │ • Saut      │  │ • Raycast   │  │     │ │
 │  │ • Recul     │  │ • Slam      │  │ • Dégâts    │  │     │ │
-│  │ • 135 lignes│  │ • 231 lignes│  │ • 131 lignes│  │ 56  │ │
+│  │ • 119 lignes│  │ • 231 lignes│  │ • 121 lignes│  │ 56  │ │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────┘ │
 ├─────────────────────────────────────────────────────────────┤
 │                    COMPOSANTS PHYSIQUES                    │
@@ -150,6 +157,16 @@ Player (CharacterBody3D) - ORCHESTRATEUR
 
 AVANT : player.gd (424 lignes) - TOUT MÉLANGÉ
 APRÈS : 4 composants + orchestrateur (70 lignes) - SÉPARÉ
+
+### Communication entre Composants
+
+#### Signaux Utilisés
+- **`slam_landed`** : PlayerMovement → player.gd → PlayerCamera (camera shake)
+- **`shot_fired`** : Revolver → PlayerCombat → PlayerCamera (recul)
+
+#### Références Directes
+- **PlayerCombat** → **PlayerCamera** : Communication directe pour le recul
+- **player.gd** → **Tous les composants** : Orchestration et délégation
 ```
 
 ### Avantages de l'Architecture Modulaire
@@ -408,10 +425,11 @@ World (Node principal)
 ## 📊 ÉTAT ACTUEL
 
 ### ✅ FONCTIONNEL
-- **Architecture modulaire** : Player refactorisé en 4 composants spécialisés
+- **Architecture modulaire** : Player refactorisé en 4 composants spécialisés + orchestrateur
 - **Player complet** : Mouvement, tir, effets (orchestré par composants)
-- **Système de saut avancé** : Boost, flottement, slam (PlayerMovement.gd)
-- **Revolver complet** : Animations, sons, munitions
+- **Communication robuste** : Signaux et références directes entre composants
+- **Système de saut avancé** : Boost, flottement, slam avec camera shake (PlayerMovement.gd)
+- **Revolver complet** : Animations, sons, munitions, recul de caméra
 - **Enemy complet** : Vie, dégâts, mort, pathfinding
 - **Système de collisions** : Configuré et optimisé
 - **Effets d'impact** : Pixel explosion avec couleurs dynamiques
@@ -429,8 +447,10 @@ World (Node principal)
 ### 🆕 RÉCENT (Décembre 2024)
 - **Refactorisation majeure** : Architecture modulaire du joueur
 - **Réduction de complexité** : player.gd passé de 424 à 70 lignes
-- **Séparation des responsabilités** : 4 composants spécialisés
+- **Séparation des responsabilités** : 4 composants spécialisés + orchestrateur
 - **Amélioration de la maintenabilité** : Code plus propre et évolutif
+- **Corrections d'architecture** : PlayerCamera hérite de Camera3D, communication robuste
+- **Résolution des bugs** : Double son de tir, communication recul, références @onready
 
 ---
 
@@ -460,6 +480,7 @@ World (Node principal)
 ### Architecture Modulaire (Player)
 
 #### PlayerCamera.gd
+- **Type :** `extends Camera3D` (hérite de Camera3D)
 - **shake_intensity :** 0.8 (intensité du shake)
 - **shake_duration :** 0.8s (durée du shake)
 - **headbob_amplitude :** 0.06 (amplitude du head bob)
@@ -474,7 +495,8 @@ World (Node principal)
 
 #### PlayerCombat.gd
 - **revolver_damage :** 25 (dégâts par tir)
-- **Fonctions :** Gestion automatique du tir et rechargement
+- **Fonctions :** `trigger_shot()`, `trigger_reload()`, `trigger_recoil()`
+- **Communication :** Connexion directe avec PlayerCamera
 
 #### PlayerInput.gd
 - **mouse_sensitivity :** 0.002 (sensibilité souris)
@@ -522,8 +544,4 @@ World (Node principal)
 - Sons optimisés avec superposition
 
 ---
-
-*Documentation générée le 19 décembre 2024*  
-*Dernière mise à jour : 19 décembre 2024 - Architecture modulaire implémentée*  
-*Projet développé avec Godot Engine v4.4.1*
 

@@ -8,8 +8,6 @@
 [ext_resource type="Script" uid="uid://bx60wab5cy035" path="res://Player/PlayerCombat.gd" id="6_00tjw"]
 [ext_resource type="Script" uid="uid://djauqrp7mylji" path="res://Player/PlayerInput.gd" id="7_x3vf3"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_rpqav"]
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_gwnis"]
 atlas = ExtResource("2_4ntmi")
 region = Rect2(0, 0, 128, 128)
@@ -149,19 +147,10 @@ _data = {
 &"Sway_Idle": SubResource("Animation_btcbx")
 }
 
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_rpqav"]
+
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_v0iea")
-
-[node name="Camera3D" type="Camera3D" parent="."]
-
-[node name="RayCast3D" type="RayCast3D" parent="Camera3D"]
-collision_mask = 2
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-shape = SubResource("CapsuleShape3D_rpqav")
-debug_color = Color(0.213589, 0.599834, 0.620549, 0.42)
-
-[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="."]
 
 [node name="HUD_Layer" type="CanvasLayer" parent="."]
 
@@ -184,11 +173,23 @@ libraries = {
 &"": SubResource("AnimationLibrary_k53q1")
 }
 
-[node name="PlayerCamera" type="Node" parent="."]
+[node name="PlayerCamera" type="Camera3D" parent="."]
 script = ExtResource("4_vtle1")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+
+[node name="RayCast3D" type="RayCast3D" parent="Camera3D"]
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_rpqav")
+debug_color = Color(0.213589, 0.599834, 0.620549, 0.42)
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="."]
 
 [node name="PlayerMovement" type="Node" parent="."]
 script = ExtResource("5_od3ui")
+jump_boost_force_multiplier = 1.0
 
 [node name="PlayerCombat" type="Node" parent="."]
 script = ExtResource("6_00tjw")

@@ -32,19 +32,25 @@ func _ready() -> void:
 	camera = $Camera3D
 	
 	# Initialiser les composants
-	camera_component.setup_camera(camera)
 	movement_component.setup_player(self)
-	combat_component.setup_player(self)
 	input_component.setup_player(self, movement_component, combat_component)
 	
 	# Connexion du signal de tir du revolver pour le recul
 	if combat_component.is_revolver_connected():
 		var revolver_sprite = combat_component.revolver_sprite
-		revolver_sprite.shot_fired.connect(_trigger_recoil)
+		revolver_sprite.shot_fired.connect(combat_component.trigger_recoil)
+	
+	# Connexion du signal de slam pour le camera shake
+	movement_component.slam_landed.connect(_on_slam_landed)
 
 # --- Fonction générique pour déclencher le tremblement de caméra ---
 func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: float = -1.0) -> void:
 	camera_component.start_camera_shake(intensity, duration, rot)
+
+# --- Gestionnaire du signal de slam ---
+func _on_slam_landed() -> void:
+	# Déclencher un camera shake intense pour l'atterrissage
+	camera_component.start_camera_shake(1.2, 0.8, 8.0)
 
 # --- Gestion du tremblement, head bob et détection tir ---
 func _process(_delta: float) -> void:
@@ -53,12 +59,6 @@ func _process(_delta: float) -> void:
 	camera_component._process(_delta)
 	# Déléguer la gestion du combat au composant
 	combat_component._process(_delta)
-
-
-# --- Effet de recul lors du tir ---
-func _trigger_recoil() -> void:
-	camera_component.trigger_recoil()
-
 
 # --- Mise à jour de la physique du joueur ---
 func _physics_process(delta: float) -> void:

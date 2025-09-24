@@ -202,7 +202,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"WalkAnim",
-"speed": 5.0
+"speed": 11.0
 }]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wgogq"]
@@ -215,6 +215,8 @@ height = 1.58141
 [node name="Enemy" type="CharacterBody3D"]
 script = ExtResource("1_px1sc")
 impact_color_3 = Color(0.660735, 0.206853, 0.973314, 1)
+red_flash_duration = 0.4
+red_flash_intensity = 5.0
 
 [node name="NavigationAgent" type="NavigationAgent3D" parent="."]
 path_max_distance = 10.01
@@ -227,6 +229,8 @@ texture_filter = 2
 sprite_frames = SubResource("SpriteFrames_q40vv")
 animation = &"WalkAnim"
 autoplay = "Idle"
+frame = 9
+frame_progress = 0.715645
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_wgogq")

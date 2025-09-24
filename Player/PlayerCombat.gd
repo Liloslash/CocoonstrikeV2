@@ -8,23 +8,26 @@ class_name PlayerCombat
 # === RÉFÉRENCES ===
 var player: CharacterBody3D
 var raycast: RayCast3D
+var revolver_sprite: Node
+var camera_component: PlayerCamera
 
 # === EFFET D'IMPACT ===
 const IMPACT_EFFECT_SCENE = preload("res://Effects/ImpactEffect.tscn")
 
 # === RÉFÉRENCE AU REVOLVER DANS LE HUD ===
-var revolver_sprite: Node
 var revolver_connected: bool = false
 
 # === INITIALISATION ===
 func _ready() -> void:
-	# Le joueur sera assigné par le script principal
-	pass
-
-func setup_player(player_node: CharacterBody3D) -> void:
-	player = player_node
-	raycast = player.get_node("Camera3D/RayCast3D")
-	revolver_sprite = player.get_node("HUD_Layer/Revolver")
+	# Récupérer les références de manière robuste
+	player = get_parent()
+	if not player:
+		push_error("PlayerCombat: Parent non trouvé")
+		return
+		
+	raycast = player.get_node_or_null("Camera3D/RayCast3D")
+	revolver_sprite = player.get_node_or_null("HUD_Layer/Revolver")
+	camera_component = player.get_node_or_null("PlayerCamera")
 	
 	# Configuration du raycast
 	_setup_raycast()
@@ -36,8 +39,13 @@ func setup_player(player_node: CharacterBody3D) -> void:
 func _setup_raycast() -> void:
 	if not raycast:
 		# Créer si manquant (sécurité)
-		raycast = RayCast3D.new()
-		player.get_node("Camera3D").add_child(raycast)
+		var camera = player.get_node_or_null("Camera3D")
+		if camera:
+			raycast = RayCast3D.new()
+			camera.add_child(raycast)
+		else:
+			push_error("PlayerCombat: Camera3D non trouvée pour créer le raycast")
+			return
 	
 	# Configuration robuste même s'il existe déjà dans la scène
 	raycast.target_position = Vector3(0, 0, -1000)  # Portée vers l'avant
@@ -60,20 +68,8 @@ func _connect_revolver() -> void:
 
 # === GESTION DU TIR ===
 func _process(_delta: float) -> void:
-	_handle_shooting()
-
-func _handle_shooting() -> void:
-	if not revolver_connected:
-		return
-		
-	# Gestion du tir
-	if Input.is_action_just_pressed("shot"):
-		revolver_sprite.play_shot_animation()
-		# Le recul sera déclenché par le signal shot_fired du revolver
-	
-	# Gestion du rechargement - délégué entièrement au revolver
-	if Input.is_action_just_pressed("reload"):
-		revolver_sprite.start_reload()
+	# La gestion des inputs est maintenant dans PlayerInput.gd
+	pass
 
 # === GESTION DU TIR AVEC RAYCAST ===
 func _handle_shot() -> void:
@@ -123,8 +119,19 @@ func _find_sprite_in_target(target: Node) -> Node:
 # === FONCTIONS PUBLIQUES POUR LE JOUEUR ===
 func trigger_recoil() -> void:
 	# Cette fonction sera appelée par le signal du revolver
-	# Le recul sera géré par le composant caméra
-	pass
+	# Déclencher le recul de la caméra
+	if camera_component:
+		camera_component.trigger_recoil()
 
 func is_revolver_connected() -> bool:
 	return revolver_connected
+
+func trigger_shot() -> void:
+	if not revolver_connected:
+		return
+	revolver_sprite.play_shot_animation()
+
+func trigger_reload() -> void:
+	if not revolver_connected:
+		return
+	revolver_sprite.start_reload()
