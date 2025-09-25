@@ -7,28 +7,51 @@ signal shot_fired
 @export_group("Animation")
 @export var tween_duration := 0.12  # Durée du tween de position
 
-@export_group("Munitions")
+@export_group("Ammunition")
 @export var max_ammo: int = 6       # Maximum de balles (6 coups)
 @export var start_ammo: int = 6     # Munitions au début
 
-@export_group("Rechargement - Positions")
-@export var reload_offset_y: float = 200.0  # Distance vers le bas pour le rechargement
+@export_group("Reload Animation")
+@export var reload_offset_y: float = 170.0  # Distance vers le bas pour le rechargement (réduit de 15%)
 @export var reload_down_duration: float = 0.3   # Durée pour descendre l'arme
 @export var reload_up_duration: float = 0.3     # Durée pour remonter l'arme
 @export var interrupt_up_duration: float = 0.2  # Durée pour remonter en cas d'interruption
 
-@export_group("Cadence de Tir")
+@export_group("Shooting")
 @export var fire_rate: float = 0.5  # Délai minimum entre deux tirs (en secondes)
 @export var shot_detection_frame: int = 2  # Frame où le tir se déclenche dans l'animation
 
-@export_group("Tremblement du Rechargement")
+@export_group("Reload Shake")
 @export var shake_intensity: float = 3.0  # Intensité du tremblement (en pixels)
 @export var shake_duration: float = 0.15  # Durée du tremblement pour chaque balle
 @export var shake_frequency: float = 20.0  # Fréquence du tremblement (oscillations par seconde)
 
 
+@export_group("Position")
+@export var base_position_offset: Vector2 = Vector2.ZERO  # Décalage de la position de base
+
+@export_group("Sway System")
+@export var idle_sway_amplitude: Vector3 = Vector3(2.0, 0.5, 0.5)  # Amplitude du sway idle (X, Y, Z)
+@export var idle_sway_frequency: float = 1.0  # Fréquence du sway idle (Hz)
+@export var movement_sway_amplitude: Vector3 = Vector3(9.0, 1.0, 2.0)  # Amplitude du sway movement (X, Y, Z)
+@export var movement_sway_frequency: float = 5.0  # Fréquence du sway movement (Hz)
+@export var sway_transition_speed: float = 3.0  # Vitesse de transition entre idle/movement
+@export var sway_smoothness: float = 2.0  # Lissage du mouvement de sway
+
+
 @onready var animation_player = $AnimationPlayer
 var base_position: Vector2
+
+# === SYSTÈME DE SWAY ===
+var is_sway_active: bool = false
+var current_sway_amplitude: Vector3 = Vector3.ZERO
+var current_sway_frequency: float = 0.0
+var sway_time: float = 0.0
+var sway_tween: Tween
+var target_sway_amplitude: Vector3 = Vector3.ZERO
+var target_sway_frequency: float = 0.0
+var is_movement_sway: bool = false  # Pour distinguer idle/movement
+
 
 # === SYSTÈME DE MUNITIONS ===
 var current_ammo: int  # Balles actuelles dans le barillet
@@ -71,7 +94,6 @@ func _ready():
 	current_ammo = start_ammo
 	
 	play("Idle")
-	animation_player.play("Sway_Idle")
 	connect("animation_finished", Callable(self, "_on_animation_finished"))
 	
 	# Connexion du signal frame_changed pour détecter le moment du tir
@@ -95,6 +117,14 @@ func _ready():
 	# Lecteur audio séparé pour les clics vides (permet la superposition)
 	empty_click_audio_player = AudioStreamPlayer2D.new()
 	add_child(empty_click_audio_player)
+	
+	# === INITIALISATION DU SWAY ===
+	_start_sway_system()
+
+# === GESTION PRINCIPALE ===
+func _process(_delta: float) -> void:
+	_update_sway(_delta)
+
 
 func play_shot_animation():
 	# Vérifications consolidées
@@ -111,18 +141,23 @@ func play_shot_animation():
 	# Gestion du tir à vide
 	if current_ammo <= 0:
 		_play_empty_click_sound()
-		_create_weapon_shake()
+		_create_weapon_shake_at_position(position)  # Utiliser la position actuelle
 		return
 	
 	is_shooting = true
 	current_ammo -= 1
 	can_shoot = false
 	
+	# Arrêter le sway pendant le tir
+	stop_sway()
+	
 	_start_fire_rate_timer()
 	
 	animation_player.stop()
 	var tween = create_tween()
+	tween.set_parallel(true)
 	tween.tween_property(self, "position", base_position, tween_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "rotation_degrees", 0.0, tween_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	await tween.finished
 	play("GunShotAnim")
 
@@ -144,6 +179,12 @@ func start_reload():
 	bullets_to_add = max_ammo - current_ammo
 	bullets_added = 0
 	
+	# Arrêter le sway avec transition fluide
+	stop_sway()
+	
+	# Attendre que la transition soit terminée
+	await get_tree().create_timer(0.3).timeout
+	
 	animation_player.stop()
 	var tween = create_tween()
 	tween.set_parallel(true)
@@ -152,6 +193,10 @@ func start_reload():
 	tween.tween_property(self, "rotation_degrees", -45.0, reload_down_duration)
 	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	await tween.finished
+	
+	# Tremblement IMMÉDIAT quand la rotation se termine
+	# Forcer l'utilisation de reload_position comme référence
+	_create_weapon_shake_at_position(reload_position)
 	
 	_play_sound(sound_open)
 	await audio_player.finished
@@ -196,7 +241,8 @@ func _finish_reload():
 	await tween.finished
 	
 	reload_state = ReloadState.IDLE
-	animation_player.play("Sway_Idle")
+	# Reprendre le sway après le rechargement
+	resume_sway()
 
 # === INTERRUPTION DU RECHARGEMENT ===
 func _interrupt_reload():
@@ -214,36 +260,30 @@ func _interrupt_reload():
 	await tween.finished
 	
 	reload_state = ReloadState.IDLE
-	animation_player.play("Sway_Idle")
+	# Reprendre le sway après l'interruption
+	resume_sway()
 
-# === UTILITAIRE POUR JOUER LES SONS ===
+# === UTILITAIRES POUR JOUER LES SONS ===
 func _play_sound(sound: AudioStream):
 	audio_player.stream = sound
 	audio_player.play()
 
-# === UTILITAIRE POUR JOUER LES SONS DE TIR (avec superposition) ===
 func _play_gunshot_sound():
-	if gunshot_audio_player.playing:
-		var temp_player = AudioStreamPlayer2D.new()
-		add_child(temp_player)
-		temp_player.stream = sound_gunshot
-		temp_player.play()
-		temp_player.finished.connect(func(): temp_player.queue_free())
-	else:
-		gunshot_audio_player.stream = sound_gunshot
-		gunshot_audio_player.play()
+	_play_sound_with_superposition(gunshot_audio_player, sound_gunshot)
 
-# === UTILITAIRE POUR JOUER LES SONS DE CLIC VIDE (avec superposition) ===
 func _play_empty_click_sound():
-	if empty_click_audio_player.playing:
+	_play_sound_with_superposition(empty_click_audio_player, sound_empty_click)
+
+func _play_sound_with_superposition(target_player: AudioStreamPlayer2D, sound: AudioStream):
+	if target_player.playing:
 		var temp_player = AudioStreamPlayer2D.new()
 		add_child(temp_player)
-		temp_player.stream = sound_empty_click
+		temp_player.stream = sound
 		temp_player.play()
 		temp_player.finished.connect(func(): temp_player.queue_free())
 	else:
-		empty_click_audio_player.stream = sound_empty_click
-		empty_click_audio_player.play()
+		target_player.stream = sound
+		target_player.play()
 
 # === FONCTION DE TREMBLEMENT DE L'ARME ===
 func _create_weapon_shake():
@@ -258,6 +298,22 @@ func _create_weapon_shake():
 	var reference_position = base_position
 	if reload_state == ReloadState.RELOAD_ADDING_BULLETS:
 		reference_position = reload_position
+	
+	_create_shake_animation(shake_tween, oscillations, reference_position)
+
+# === FONCTION DE TREMBLEMENT AVEC POSITION SPÉCIFIÉE ===
+func _create_weapon_shake_at_position(target_position: Vector2):
+	# Création d'un tween pour le tremblement
+	var shake_tween = create_tween()
+	shake_tween.set_loops()  # Le tween se répète
+	
+	# Calcul du nombre d'oscillations basé sur la durée et la fréquence
+	var oscillations = int(shake_duration * shake_frequency)
+	
+	_create_shake_animation(shake_tween, oscillations, target_position)
+
+# === ANIMATION DE TREMBLEMENT COMMUNE ===
+func _create_shake_animation(shake_tween: Tween, oscillations: int, reference_position: Vector2):
 	
 	# Création du pattern de tremblement
 	for i in range(oscillations):
@@ -287,12 +343,147 @@ func _create_weapon_shake():
 	await get_tree().create_timer(shake_duration).timeout
 	shake_tween.kill()
 
+# === SYSTÈME DE SWAY ===
+
+# --- Initialisation du système de sway ---
+func _start_sway_system() -> void:
+	is_sway_active = true
+	is_movement_sway = false
+	current_sway_amplitude = idle_sway_amplitude
+	current_sway_frequency = idle_sway_frequency
+	target_sway_amplitude = idle_sway_amplitude
+	target_sway_frequency = idle_sway_frequency
+	sway_time = 0.0
+
+# --- Mise à jour du sway ---
+func _update_sway(delta: float) -> void:
+	if not is_sway_active:
+		return
+	
+	# Ne pas appliquer le sway pendant le rechargement
+	if reload_state != ReloadState.IDLE:
+		return
+	
+	# Mise à jour du temps pour l'animation
+	sway_time += delta * current_sway_frequency
+	
+	# Calcul du mouvement circulaire sur les 3 axes
+	var sway_offset = _calculate_sway_movement()
+	
+	# Application du mouvement à la position
+	position = base_position + Vector2(sway_offset.x, sway_offset.y)
+	
+	# Application de la rotation Z (profondeur simulée)
+	rotation_degrees = sway_offset.z
+
+# --- Calcul du mouvement de sway circulaire ---
+func _calculate_sway_movement() -> Vector3:
+	# Calculer les deux patterns
+	var idle_x = sin(sway_time) * idle_sway_amplitude.x
+	var idle_y = cos(sway_time * 0.7) * idle_sway_amplitude.y
+	var idle_z = sin(sway_time * 1.3) * idle_sway_amplitude.z
+	
+	var movement_rhythm = sin(sway_time * 2.0)
+	var movement_x = movement_rhythm * movement_sway_amplitude.x
+	var movement_y = abs(movement_rhythm) * movement_sway_amplitude.y
+	var movement_z = sin(sway_time * 0.3) * movement_sway_amplitude.z
+	
+	# Interpolation fluide entre les deux patterns
+	var transition_factor = _get_sway_transition_factor()
+	
+	var x_offset = lerp(idle_x, movement_x, transition_factor)
+	var y_offset = lerp(idle_y, movement_y, transition_factor)
+	var z_offset = lerp(idle_z, movement_z, transition_factor)
+	
+	return Vector3(x_offset, y_offset, z_offset)
+
+# --- Calcul du facteur de transition ---
+func _get_sway_transition_factor() -> float:
+	if is_movement_sway:
+		# Transition vers movement : utiliser la progression du tween
+		if sway_tween and sway_tween.is_valid():
+			# Calculer la progression du tween (0.0 à 1.0)
+			var elapsed = sway_tween.get_total_elapsed_time()
+			var duration = 1.0 / sway_transition_speed
+			return min(elapsed / duration, 1.0)
+		else:
+			return 1.0
+	else:
+		# Transition vers idle : utiliser la progression du tween
+		if sway_tween and sway_tween.is_valid():
+			var elapsed = sway_tween.get_total_elapsed_time()
+			var duration = 1.0 / sway_transition_speed
+			return 1.0 - min(elapsed / duration, 1.0)
+		else:
+			return 0.0
+
+# --- Transition vers le sway idle ---
+func set_sway_idle() -> void:
+	if not is_movement_sway:
+		return
+	
+	is_movement_sway = false
+	target_sway_amplitude = idle_sway_amplitude
+	target_sway_frequency = idle_sway_frequency
+	_transition_sway_parameters()
+
+# --- Transition vers le sway movement ---
+func set_sway_movement() -> void:
+	if is_movement_sway:
+		return
+	
+	is_movement_sway = true
+	target_sway_amplitude = movement_sway_amplitude
+	target_sway_frequency = movement_sway_frequency
+	_transition_sway_parameters()
+
+# --- Transition fluide des paramètres de sway ---
+func _transition_sway_parameters() -> void:
+	if sway_tween:
+		sway_tween.kill()
+	
+	sway_tween = create_tween()
+	sway_tween.set_parallel(true)
+	sway_tween.tween_method(_update_sway_amplitude, current_sway_amplitude, target_sway_amplitude, 1.0 / sway_transition_speed)
+	sway_tween.tween_method(_update_sway_frequency, current_sway_frequency, target_sway_frequency, 1.0 / sway_transition_speed)
+
+# --- Mise à jour de l'amplitude de sway ---
+func _update_sway_amplitude(new_amplitude: Vector3) -> void:
+	current_sway_amplitude = new_amplitude
+
+# --- Mise à jour de la fréquence de sway ---
+func _update_sway_frequency(new_frequency: float) -> void:
+	current_sway_frequency = new_frequency
+
+# --- Arrêt du sway (pour les tirs, rechargement, etc.) ---
+func stop_sway() -> void:
+	is_sway_active = false
+	if sway_tween:
+		sway_tween.kill()
+	
+	# Transition fluide vers la position de base
+	var return_tween = create_tween()
+	return_tween.set_parallel(true)
+	return_tween.tween_property(self, "position", base_position, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	return_tween.tween_property(self, "rotation_degrees", 0.0, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+# --- Reprise du sway ---
+func resume_sway() -> void:
+	is_sway_active = true
+
+# --- Fonction publique pour définir l'état de mouvement ---
+func set_movement_state(is_moving: bool) -> void:
+	if is_moving:
+		set_sway_movement()
+	else:
+		set_sway_idle()
 
 func _on_animation_finished():
 	if animation == "GunShotAnim":
 		is_shooting = false
+		# Reprendre le sway après le tir
+		resume_sway()
 		play("Idle")
-		animation_player.play("Sway_Idle")
 
 func _on_frame_changed():
 	if animation == "GunShotAnim":

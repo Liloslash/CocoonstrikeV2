@@ -19,20 +19,18 @@ var revolver_connected: bool = false
 
 # === INITIALISATION ===
 func _ready() -> void:
-	# Récupérer les références de manière robuste
 	player = get_parent()
 	if not player:
 		push_error("PlayerCombat: Parent non trouvé")
 		return
-		
+	
+	# Récupération des références
 	raycast = player.get_node_or_null("Camera3D/RayCast3D")
 	revolver_sprite = player.get_node_or_null("HUD_Layer/Revolver")
 	camera_component = player.get_node_or_null("PlayerCamera")
 	
-	# Configuration du raycast
+	# Configuration des systèmes
 	_setup_raycast()
-	
-	# Connexion du revolver
 	_connect_revolver()
 
 # === CONFIGURATION DU RAYCAST ===
@@ -66,8 +64,6 @@ func _connect_revolver() -> void:
 		push_error("Revolver sprite non trouvé dans HUD_Layer/Revolver")
 		revolver_connected = false
 
-# === GESTION DU TIR ===
-# (La gestion des inputs est maintenant dans PlayerInput.gd)
 
 # === GESTION DU TIR AVEC RAYCAST ===
 func _handle_shot() -> void:

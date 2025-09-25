@@ -158,7 +158,7 @@ script = ExtResource("1_v0iea")
 position = Vector2(872.5, 481.5)
 scale = Vector2(2.60156, 2.60156)
 sprite_frames = SubResource("SpriteFrames_gwnis")
-animation = &"GunShotAnim"
+animation = &"Idle"
 autoplay = "Idle"
 script = ExtResource("3_btcbx")
 tween_duration = 0.03
@@ -167,6 +167,8 @@ reload_up_duration = 0.1
 fire_rate = 0.3
 shake_intensity = 4.0
 shake_duration = 0.2
+base_position_offset = Vector2(0, 10)
+movement_sway_frequency = 7.0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="HUD_Layer/Revolver"]
 libraries = {
@@ -175,6 +177,8 @@ libraries = {
 
 [node name="PlayerCamera" type="Camera3D" parent="."]
 script = ExtResource("4_vtle1")
+shake_intensity = 0.3
+shake_duration = 2.2
 recoil_rotation = 1.0
 
 [node name="Camera3D" type="Camera3D" parent="."]
@@ -190,6 +194,9 @@ debug_color = Color(0.213589, 0.599834, 0.620549, 0.42)
 
 [node name="PlayerMovement" type="Node" parent="."]
 script = ExtResource("5_od3ui")
+freeze_duration_after_slam = 1.1
+jump_height = 3.5
+jump_velocity = 4.0
 
 [node name="PlayerCombat" type="Node" parent="."]
 script = ExtResource("6_00tjw")

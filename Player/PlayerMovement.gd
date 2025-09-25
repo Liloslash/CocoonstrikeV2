@@ -120,26 +120,14 @@ func _handle_movement(delta: float) -> void:
 	_apply_movement_velocity(direction)
 
 # === FONCTIONS DE SAUT ===
-
-# --- Calcul de la vélocité de saut ---
 func _calculate_jump_velocity() -> void:
 	if not player:
 		return
+	
 	# Formule physique : v = sqrt(2 * g * h)
-	# où g = gravité et h = hauteur désirée
 	var gravity = abs(player.get_gravity().y)
-	if gravity > 0:
-		jump_velocity = sqrt(2.0 * gravity * jump_height)
-	else:
-		# Fallback si la gravité n'est pas encore initialisée
-		jump_velocity = sqrt(2.0 * 9.8 * jump_height)
+	jump_velocity = sqrt(2.0 * max(gravity, 9.8) * jump_height)
 
-# --- Recalcul automatique quand la hauteur change ---
-func _validate_property(property: Dictionary) -> void:
-	if property.name == "jump_height":
-		property.usage = PROPERTY_USAGE_EDITOR
-		# Recalculer la vélocité quand la hauteur change
-		call_deferred("_calculate_jump_velocity")
 
 # === FONCTIONS PUBLIQUES POUR LE JOUEUR ===
 func start_jump() -> void:
@@ -168,7 +156,6 @@ func is_slamming_state() -> bool:
 	return is_slamming
 
 # === FONCTIONS UTILITAIRES PRIVÉES ===
-
 
 # --- Arrêt du mouvement ---
 func _stop_movement() -> void:

@@ -13,8 +13,6 @@ extends CharacterBody3D
 @onready var combat_component: PlayerCombat = $PlayerCombat
 @onready var input_component: PlayerInput = $PlayerInput
 
-# --- Combat ---
-# (Les variables de combat sont maintenant dans le composant PlayerCombat)
 
 # --- Gestion des inputs ---
 func _input(event: InputEvent) -> void:
@@ -48,12 +46,16 @@ func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: fl
 # --- Gestionnaire du signal de slam ---
 func _on_slam_landed() -> void:
 	# Déclencher un camera shake intense pour l'atterrissage
-	camera_component.start_camera_shake(1.2, 0.8, 8.0)
+	# Utiliser la durée configurée dans l'inspecteur
+	camera_component.start_camera_shake(1.2, -1.0, 8.0)
 
 # --- Gestion du tremblement, head bob et détection tir ---
 func _process(_delta: float) -> void:
 	# Déléguer la gestion de la caméra au composant
 	camera_component._process(_delta)
+	
+	# Mettre à jour l'état de mouvement du revolver
+	_update_revolver_movement_state()
 
 # --- Mise à jour de la physique du joueur ---
 func _physics_process(delta: float) -> void:
@@ -62,3 +64,17 @@ func _physics_process(delta: float) -> void:
 	
 	# Appliquer le mouvement
 	move_and_slide()
+
+# --- Mise à jour de l'état de mouvement du revolver ---
+func _update_revolver_movement_state() -> void:
+	if not combat_component.is_revolver_connected():
+		return
+	
+	var revolver_sprite = combat_component.revolver_sprite
+	
+	# Ne pas envoyer d'état pendant le tir ou le rechargement
+	if revolver_sprite.is_shooting or revolver_sprite.reload_state != revolver_sprite.ReloadState.IDLE:
+		return
+	
+	# Transmettre l'état de mouvement au revolver
+	revolver_sprite.set_movement_state(movement_component.is_moving())
