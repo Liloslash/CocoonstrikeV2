@@ -44,10 +44,8 @@ var headbob_transition_progress: float = 0.0
 var is_jumping: bool = false
 var jump_start_height: float = 0.0
 var jump_max_height: float = 0.0
-var player_node: CharacterBody3D
 
-# Effets de Tir
-var _current_kickback: float = 0.0
+# Effets de Tir - pas de variable globale nécessaire
 
 # === RÉFÉRENCES CACHÉES ===
 var movement_component: PlayerMovement
@@ -56,7 +54,7 @@ var movement_component: PlayerMovement
 func _ready() -> void:
 	original_camera_position = position
 	original_camera_rotation = rotation_degrees
-	player_node = get_parent() as CharacterBody3D
+	var player_node = get_parent() as CharacterBody3D
 	movement_component = player_node.get_node_or_null("PlayerMovement")
 
 # === GESTION PRINCIPALE ===
@@ -209,18 +207,15 @@ func trigger_recoil() -> void:
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_BACK)
 	
-	# Stocker le kickback variable pour _apply_kickback_offset
-	_current_kickback = current_kickback
-	
-	# Recul puis retour à la position normale
-	tween.tween_method(_apply_kickback_offset, 0.0, 1.0, current_duration * 0.3)
-	tween.tween_method(_apply_kickback_offset, 1.0, 0.0, current_duration * 0.7)
+	# Recul puis retour à la position normale avec closure
+	tween.tween_method(_apply_kickback_offset.bind(current_kickback), 0.0, 1.0, current_duration * 0.3)
+	tween.tween_method(_apply_kickback_offset.bind(current_kickback), 1.0, 0.0, current_duration * 0.7)
 
-func _apply_kickback_offset(progress: float) -> void:
+func _apply_kickback_offset(kickback_strength: float, progress: float) -> void:
 	if not active_shakes.is_empty():  # Ne pas interférer avec le shake
 		return
 		
-	var kickback_offset = Vector3(0, 0, _current_kickback * progress)
+	var kickback_offset = Vector3(0, 0, kickback_strength * progress)
 	position = original_camera_position + kickback_offset
 
 
@@ -246,11 +241,11 @@ func update_jump_height(current_height: float) -> void:
 		jump_max_height = current_height
 
 func _handle_jump_look_down(delta: float) -> void:
-	if not player_node or jump_max_height <= jump_start_height:
+	if not movement_component or jump_max_height <= jump_start_height:
 		return
 		
 	# Calculer le progrès du saut (0 = début, 0.5 = milieu, 1.0 = sommet)
-	var current_height = player_node.global_position.y
+	var current_height = movement_component.player.global_position.y
 	var height_range = jump_max_height - jump_start_height
 	
 	# Éviter la division par zéro

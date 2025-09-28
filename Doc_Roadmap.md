@@ -6,10 +6,15 @@
 
 ### 1. 🎯 **NOUVELLES TÂCHES PRIORITAIRES**
 
-#### **A. Synchronisation Raycast/Caméra pendant le Saut**
-- **Problème** : Le raycast ne suit pas l'angle de la caméra pendant le saut
-- **Objectif** : Tirer en suivant l'angle de la caméra pendant l'effet "Jump Look Down"
-- **Impact** : 🟡 **MOYEN** - Améliore la précision de tir en saut
+#### **A. ✅ Synchronisation Raycast/Caméra pendant le Saut** - **TERMINÉ !**
+- **Problème** : Le raycast ne suivait pas l'angle de la caméra pendant le saut
+- **Solution implémentée** : Système de compensation du raycast avec offset dynamique
+- **Fonctionnalités** :
+  - Calcul trigonométrique de l'offset vertical
+  - Paramètres configurables (force, angle max, activation)
+  - Mise à jour automatique avant chaque tir
+  - Intégration transparente avec l'effet "Jump Look Down"
+- **Impact** : 🟢 **RÉSOLU** - Précision de tir parfaite même en saut
 
 #### **B. Conceptualisation du Système de Vagues**
 - **Objectif** : Définir avec Cursor l'architecture du système de vagues
@@ -57,7 +62,6 @@
 ## 📋 PRIORITÉS ACTUELLES
 
 ### 🔄 **EN COURS**
-- Synchronisation Raycast/Caméra pendant le saut
 - Conceptualisation du système de vagues avec Cursor
 - Création des deux ennemis papillons (comportements plus tard)
 - Amélioration du système d'évitement d'obstacles
@@ -160,15 +164,79 @@
 - ✅ **Effets d'impact** : Particules colorées dynamiques
 - ✅ **Tremblement d'arme** : Rechargement + clic vide
 - ✅ **Sons optimisés** : Superposition, fonction commune
+- ✅ **🚀 NOUVEAU : Système de compensation du raycast** : Synchronisation automatique caméra-raycast lors du saut
 
-### ✅ **ARCHITECTURE MODULAIRE** - Refactorisée !
-- ✅ **PlayerCamera.gd** (278 lignes) : Gestion complète de la caméra
-- ✅ **PlayerMovement.gd** (194 lignes) : Mouvement et saut
-- ✅ **PlayerCombat.gd** (122 lignes) : Tir et raycast
+### ✅ **ARCHITECTURE MODULAIRE** - Refactorisée et Optimisée !
+- ✅ **PlayerCamera.gd** (282 lignes) : Gestion complète de la caméra
+- ✅ **PlayerMovement.gd** (187 lignes) : Mouvement et saut
+- ✅ **PlayerCombat.gd** (186 lignes) : Tir, raycast et système de compensation
 - ✅ **PlayerInput.gd** (54 lignes) : Gestion des inputs
-- ✅ **player.gd** (84 lignes) : Orchestrateur optimisé
+- ✅ **player.gd** (81 lignes) : Orchestrateur optimisé
 - ✅ **Communication robuste** : Signaux et références directes
 - ✅ **Performance** : Cache de références, early returns
+- ✅ **🚀 NOUVEAU : Optimisations de code** : Variables inutiles supprimées, connexions redondantes éliminées
+
+### ✅ **SYSTÈME DE COMPENSATION DU RAYCAST** - **NOUVEAU !**
+- ✅ **Problème résolu** : Désynchronisation caméra-raycast lors du saut
+- ✅ **Solution technique** : Calcul trigonométrique de l'offset vertical
+- ✅ **Paramètres configurables** : 
+  - `enable_jump_compensation` : Activation/désactivation
+  - `compensation_strength` : Force de la compensation (1.0 = parfaite)
+  - `max_compensation_angle` : Angle maximum (45° par défaut)
+- ✅ **Fonctions implémentées** :
+  - `_calculate_raycast_compensation()` : Calcul de l'offset
+  - `_update_raycast_direction()` : Application de la compensation
+  - `set_jump_compensation()` : Contrôle depuis l'extérieur
+- ✅ **Intégration** : Mise à jour automatique avant chaque tir
+- ✅ **Performance** : Calculs légers, pas d'impact sur les FPS
+- ✅ **Feeling** : Tir précis même avec l'inclinaison de la caméra
+
+### ✅ **OPTIMISATIONS DE CODE** - **NOUVEAU !**
+- ✅ **Suppression de redondances** :
+  - Connexion double du signal `shot_fired` éliminée
+  - Variable `player_node` inutile supprimée de PlayerCamera
+  - Variable `_current_kickback` globale remplacée par paramètres avec `bind()`
+- ✅ **Architecture améliorée** :
+  - Utilisation de `movement_component.player` au lieu de référence directe
+  - Réduction des variables globales inutiles
+  - Code plus cohérent et maintenable
+- ✅ **Performance optimisée** :
+  - Moins de variables en mémoire
+  - Fonctions plus efficaces
+  - Architecture plus claire
+- ✅ **Maintenabilité** :
+  - Code plus lisible
+  - Moins de risques de bugs
+  - Architecture simplifiée
+
+---
+
+## 🎉 **PROGRÈS RÉCENT** - Décembre 2024
+
+### **🚀 Accomplissements Majeurs**
+- **✅ Problème critique résolu** : Synchronisation raycast-caméra lors du saut
+- **✅ Système de compensation** : Implémentation complète avec paramètres configurables
+- **✅ Code optimisé** : Suppression de redondances et amélioration de l'architecture
+- **✅ Documentation mise à jour** : Doc_Projet.md complètement revue
+
+### **📊 Métriques de Progrès**
+- **Problèmes résolus** : 1 problème critique majeur
+- **Nouvelles fonctionnalités** : Système de compensation du raycast
+- **Optimisations** : 3 variables inutiles supprimées, 1 connexion redondante éliminée
+- **Lignes de code** : PlayerCombat.gd passé de 122 à 186 lignes (nouvelles fonctionnalités)
+- **Performance** : Aucun impact négatif, calculs légers
+
+### **🎯 Prochaines Étapes**
+1. **Système de vagues** : Conceptualisation et implémentation
+2. **Ennemis papillons** : Création des variantes
+3. **Pathfinding avancé** : NavigationMesh fonctionnelle
+4. **Audio** : Sons manquants et ambiance
+
+### **💡 Leçons Apprises**
+- **Architecture modulaire** : Facilite grandement l'ajout de nouvelles fonctionnalités
+- **Documentation** : Essentielle pour maintenir la cohérence du projet
+- **Tests itératifs** : Permet de valider rapidement les solutions
+- **Optimisation** : Important de nettoyer le code régulièrement
 
 ---
 

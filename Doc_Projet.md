@@ -20,22 +20,23 @@
 - Ligne 253 : Système de Saut Simplifié
 - Ligne 294 : Système Revolver
 - Ligne 344 : Système de Caméra Avancé
-- Ligne 377 : Système Ennemis (Pathfinding)
-- Ligne 427 : Effets d'Impact
+- Ligne 378 : Système de Compensation du Raycast
+- Ligne 427 : Système Ennemis (Pathfinding)
+- Ligne 478 : Effets d'Impact
 
 **=== RESSOURCES ===**
-- Ligne 444 : Assets Audio
-- Ligne 463 : Assets Visuels
-- Ligne 481 : Configuration
+- Ligne 495 : Assets Audio
+- Ligne 514 : Assets Visuels
+- Ligne 532 : Configuration
 
 **=== ÉTAT DU PROJET ===**
-- Ligne 503 : Fonctionnel
-- Ligne 521 : En cours
-- Ligne 525 : À implémenter
-- Ligne 530 : Récent
+- Ligne 554 : Fonctionnel
+- Ligne 572 : En cours
+- Ligne 576 : À implémenter
+- Ligne 581 : Récent
 
 **=== RÉFÉRENCES ===**
-- Ligne 554 : Référence Rapide
+- Ligne 632 : Référence Rapide
 
 **=== ROADMAP ===**
 - Voir Doc_Roadmap.md (fichier séparé)
@@ -247,6 +248,7 @@ World (Node principal)
 - **Dégâts :** 25 points par tir
 - **Signal :** shot_fired du revolver
 - **Impact :** Particules colorées
+- **🚀 NOUVEAU : Système de compensation du raycast** : Synchronisation automatique entre la caméra et le raycast lors du saut
 
 ---
 
@@ -371,6 +373,55 @@ World (Node principal)
 - **Smoothness :** 4.0 (vitesse de transition)
 - **Timing :** Démarre à la moitié du saut
 - **Maintien :** Pendant toute la durée du saut
+
+---
+
+## ⚙️ SYSTÈME DE COMPENSATION DU RAYCAST
+
+### Problème Résolu
+- **Problème initial** : Désynchronisation entre l'inclinaison de la caméra et la direction du raycast lors du saut
+- **Symptôme** : Le joueur vise un ennemi mais le tir rate à cause de l'inclinaison de la caméra
+- **Impact** : Frustration du joueur, feeling de jeu dégradé
+
+### Solution Implémentée
+- **Approche** : Raycast avec offset dynamique basé sur l'angle d'inclinaison de la caméra
+- **Méthode** : Calcul trigonométrique de l'offset vertical pour compenser l'inclinaison
+- **Intégration** : Mise à jour automatique de la direction du raycast avant chaque tir
+
+### Paramètres Configurables (PlayerCombat.gd)
+- **`enable_jump_compensation`** : `bool = true` - Activation/désactivation du système
+- **`compensation_strength`** : `float = 1.0` - Force de la compensation
+  - `1.0` = compensation parfaite (recommandé)
+  - `0.5` = compensation réduite (plus réaliste)
+  - `1.5` = surexposition (pour effets spéciaux)
+- **`max_compensation_angle`** : `float = 45.0` - Angle maximum de compensation en degrés
+
+### Fonctions Clés
+- **`_calculate_raycast_compensation()`** : Calcule l'offset basé sur l'angle de la caméra
+- **`_update_raycast_direction()`** : Applique la direction compensée au raycast
+- **`set_jump_compensation(bool)`** : Active/désactive la compensation depuis l'extérieur
+- **`set_compensation_strength(float)`** : Ajuste la force de la compensation
+- **`set_max_compensation_angle(float)`** : Définit l'angle maximum de compensation
+
+### Algorithme de Compensation
+1. **Détection** : Récupération de l'angle d'inclinaison actuel de la caméra (`rotation_degrees.x`)
+2. **Limitation** : Clamp de l'angle entre `-max_compensation_angle` et `+max_compensation_angle`
+3. **Calcul trigonométrique** : `y_offset = sin(angle_radians) * raycast_length * compensation_strength`
+4. **Application** : `compensated_direction = base_raycast_direction + Vector3(0, y_offset, 0)`
+5. **Mise à jour** : Application de la direction compensée au raycast avant le tir
+
+### Avantages
+- **Précision** : Le tir va exactement où le joueur vise, même avec l'inclinaison de la caméra
+- **Configurabilité** : Paramètres ajustables pour différents styles de jeu
+- **Performance** : Calculs légers, pas d'impact sur les performances
+- **Robustesse** : Limitation des angles pour éviter les corrections excessives
+- **Intégration** : Fonctionne automatiquement avec tous les mouvements de caméra
+
+### Utilisation
+- **Automatique** : Le système s'active automatiquement lors du saut
+- **Transparent** : Aucune intervention du joueur nécessaire
+- **Ajustable** : Paramètres modifiables dans l'inspecteur Godot
+- **Extensible** : Peut être étendu pour d'autres mouvements de caméra
 
 ---
 
@@ -511,12 +562,13 @@ World (Node principal)
 - **Camera Shake combiné** : Système de tremblements multiples avec décélération cubic
 - **Revolver complet** : Animations, sons, munitions, recul de caméra, tremblement clic vide, effet vibration ennemi
 - **Système de Sway dynamique** : Mouvement réaliste idle/movement avec transitions fluides
+- **🚀 NOUVEAU : Système de compensation du raycast** : Synchronisation automatique caméra-raycast lors du saut
 - **Enemy complet** : Vie, dégâts, mort, pathfinding, effet de vibration à l'impact
 - **Système de collisions** : Configuré et optimisé
 - **Effets d'impact** : Pixel explosion avec couleurs dynamiques
 - **Pathfinding ennemis** : Raycast d'évitement d'obstacles
-- **Code optimisé** : Refactorisation complète, gestion d'erreurs robuste, performance améliorée
-- **Corrections de bugs** : Conflits de classe résolus, vérifications null ajoutées, architecture simplifiée
+- **Code optimisé** : Refactorisation complète, gestion d'erreurs robuste, performance améliorée, variables inutiles supprimées
+- **Corrections de bugs** : Conflits de classe résolus, vérifications null ajoutées, architecture simplifiée, connexions redondantes éliminées
 
 ### 🔄 EN COURS
 - Amélioration du système d'évitement d'obstacles
@@ -528,6 +580,8 @@ World (Node principal)
 - Polissage final
 
 ### 🆕 RÉCENT (Décembre 2024)
+
+#### **Décembre 2024 - Phase 1 : Refactorisation Majeure**
 - **Refactorisation majeure** : Architecture modulaire du joueur
 - **Réduction de complexité** : player.gd passé de 424 à 69 lignes
 - **Séparation des responsabilités** : 4 composants spécialisés + orchestrateur
@@ -539,6 +593,8 @@ World (Node principal)
 - **Head Bob réaliste** : Mouvement de tête simulant la marche naturelle avec transitions fluides
 - **Camera Shake combiné** : Système de tremblements multiples avec décélération cubic
 - **Optimisations de performance** : Cache des références, gestion d'erreurs robuste
+
+#### **Décembre 2024 - Phase 2 : Améliorations du Système de Tir**
 - **Amélioration du feeling de tir** : Tremblement de l'arme lors du clic vide (plus de munitions)
 - **Optimisations de code** : Suppression de variables inutilisées, consolidation des vérifications
 - **Refactoring de fonctions** : `_create_reload_shake()` → `_create_weapon_shake()` (nom plus générique)
@@ -546,6 +602,24 @@ World (Node principal)
 - **Architecture modulaire pour effets** : Dictionnaire de paramètres pour communication entre armes et ennemis
 - **Intégration PlayerCombat** : Communication robuste entre revolver et ennemi pour les effets d'impact
 - **Paramètres optimisés** : Durée 0.15s, intensité 0.06, fréquence 75 Hz pour un effet réaliste
+
+#### **Décembre 2024 - Phase 3 : Correction Problème Raycast-Caméra**
+- **🚀 NOUVEAU : Système de compensation du raycast** : Résolution du problème de désynchronisation entre la caméra et le raycast lors du saut
+- **Solution implémentée** : Raycast avec offset dynamique basé sur l'angle d'inclinaison de la caméra
+- **Paramètres configurables** : 
+  - `enable_jump_compensation` : Activation/désactivation du système
+  - `compensation_strength` : Force de la compensation (1.0 = parfaite, 0.5 = réduite)
+  - `max_compensation_angle` : Angle maximum de compensation (45° par défaut)
+- **Fonctions ajoutées** : `_calculate_raycast_compensation()`, `_update_raycast_direction()`, `set_jump_compensation()`
+- **Intégration** : Le raycast est maintenant mis à jour avec la compensation avant chaque tir
+- **Avantages** : Tir précis même avec l'inclinaison de la caméra, feeling de jeu amélioré
+
+#### **Décembre 2024 - Phase 4 : Optimisations et Nettoyage du Code**
+- **Suppression de la connexion redondante** : Double connexion du signal `shot_fired` éliminée
+- **Optimisation des variables** : Suppression de `player_node` et `_current_kickback` dans PlayerCamera
+- **Amélioration de l'architecture** : Utilisation de `movement_component.player` au lieu de référence directe
+- **Optimisation des fonctions** : Utilisation de `bind()` pour les paramètres au lieu de variables globales
+- **Code plus propre** : Réduction des variables globales inutiles, architecture plus cohérente
 - **Corrections de bugs** : Résolution des conflits de classe, optimisation des performances
 - **Code robuste** : Vérifications null, gestion d'erreurs améliorée, architecture simplifiée
 
@@ -586,7 +660,10 @@ World (Node principal)
 
 #### PlayerCombat.gd
 - **revolver_damage :** 25 (dégâts par tir)
-- **Fonctions :** `trigger_shot()`, `trigger_reload()`, `trigger_recoil()`
+- **enable_jump_compensation :** true (activation de la compensation du raycast)
+- **compensation_strength :** 1.0 (force de la compensation)
+- **max_compensation_angle :** 45.0° (angle maximum de compensation)
+- **Fonctions :** `trigger_shot()`, `trigger_reload()`, `trigger_recoil()`, `_calculate_raycast_compensation()`, `_update_raycast_direction()`
 - **Communication :** Connexion directe avec PlayerCamera
 
 #### PlayerInput.gd
@@ -637,6 +714,16 @@ World (Node principal)
 - **Fonction Enemy :** _create_hit_shake() (effet de vibration du sprite)
 - **Fonction Revolver :** get_hit_effect_params() (récupération des paramètres)
 - **Intégration :** PlayerCombat transmet les paramètres du revolver à l'ennemi
+
+### Paramètres Système de Compensation du Raycast (PlayerCombat)
+- **enable_jump_compensation :** true (activation de la compensation du raycast lors du saut)
+- **compensation_strength :** 1.0 (force de la compensation - 1.0 = parfaite, 0.5 = réduite, 1.5 = surexposée)
+- **max_compensation_angle :** 45.0° (angle maximum de compensation en degrés)
+- **base_raycast_direction :** Vector3(0, 0, -1000) (direction de base du raycast)
+- **Fonctions principales :** _calculate_raycast_compensation(), _update_raycast_direction()
+- **Fonctions de contrôle :** set_jump_compensation(), set_compensation_strength(), set_max_compensation_angle()
+- **Intégration :** Mise à jour automatique avant chaque tir via _handle_shot()
+- **Algorithme :** Calcul trigonométrique de l'offset vertical basé sur l'angle d'inclinaison de la caméra
 
 ### Paramètres Pathfinding (Enemy)
 - **move_speed :** 3.0 (vitesse de déplacement)

@@ -195,7 +195,7 @@ script = ExtResource("5_od3ui")
 max_speed = 9.1
 freeze_duration_after_slam = 1.1
 jump_height = 3.5
-fall_gravity_multiplier = 0.6
+fall_gravity_multiplier = 0.8
 
 [node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="."]
 

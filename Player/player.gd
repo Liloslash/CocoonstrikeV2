@@ -31,16 +31,14 @@ func _ready() -> void:
 	movement_component.setup_player(self)
 	input_component.setup_player(self, movement_component, combat_component)
 	
-	# Connexion du signal de tir du revolver pour le recul
-	if combat_component.is_revolver_connected():
-		var revolver_sprite = combat_component.revolver_sprite
-		revolver_sprite.shot_fired.connect(combat_component.trigger_recoil)
+	# La connexion du signal de tir est déjà gérée dans PlayerCombat._connect_revolver()
 	
 	# Connexion du signal de slam pour le camera shake
 	movement_component.slam_landed.connect(_on_slam_landed)
 
 # --- Fonction générique pour déclencher le tremblement de caméra ---
 func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: float = -1.0) -> void:
+	# Déléguer directement à la caméra (wrapper pour l'API publique)
 	camera_component.start_camera_shake(intensity, duration, rot)
 
 # --- Gestionnaire du signal de slam ---
