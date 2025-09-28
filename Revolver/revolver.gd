@@ -21,14 +21,17 @@ signal shot_fired
 @export var fire_rate: float = 0.5  # Délai minimum entre deux tirs (en secondes)
 @export var shot_detection_frame: int = 2  # Frame où le tir se déclenche dans l'animation
 
+@export_group("Hit Effect")
+@export var hit_shake_duration: float = 0.15  # Durée de la vibration sur l'ennemi
+@export var hit_shake_intensity: float = 0.06  # Intensité de la vibration (en unités)
+@export var hit_shake_frequency: float = 75.0  # Fréquence de la vibration (oscillations par seconde)
+@export var hit_shake_axes: Vector3 = Vector3(1.0, 1.0, 0.0)  # Axes de vibration (X, Y, Z)
+
 @export_group("Reload Shake")
 @export var shake_intensity: float = 3.0  # Intensité du tremblement (en pixels)
 @export var shake_duration: float = 0.15  # Durée du tremblement pour chaque balle
 @export var shake_frequency: float = 20.0  # Fréquence du tremblement (oscillations par seconde)
 
-
-@export_group("Position")
-@export var base_position_offset: Vector2 = Vector2.ZERO  # Décalage de la position de base
 
 @export_group("Sway System")
 @export var idle_sway_amplitude: Vector3 = Vector3(2.0, 0.5, 0.5)  # Amplitude du sway idle (X, Y, Z)
@@ -36,7 +39,6 @@ signal shot_fired
 @export var movement_sway_amplitude: Vector3 = Vector3(9.0, 1.0, 2.0)  # Amplitude du sway movement (X, Y, Z)
 @export var movement_sway_frequency: float = 5.0  # Fréquence du sway movement (Hz)
 @export var sway_transition_speed: float = 3.0  # Vitesse de transition entre idle/movement
-@export var sway_smoothness: float = 2.0  # Lissage du mouvement de sway
 
 
 @onready var animation_player = $AnimationPlayer
@@ -54,7 +56,7 @@ var is_movement_sway: bool = false  # Pour distinguer idle/movement
 
 
 # === SYSTÈME DE MUNITIONS ===
-var current_ammo: int  # Balles actuelles dans le barillet
+var current_ammo: int = 0  # Balles actuelles dans le barillet
 
 # === SYSTÈME DE CADENCE ===
 var can_shoot: bool = true        # Peut-on tirer ?
@@ -285,23 +287,15 @@ func _play_sound_with_superposition(target_player: AudioStreamPlayer2D, sound: A
 		target_player.stream = sound
 		target_player.play()
 
-# === FONCTION DE TREMBLEMENT DE L'ARME ===
+# === FONCTIONS DE TREMBLEMENT DE L'ARME ===
 func _create_weapon_shake():
-	# Création d'un tween pour le tremblement
-	var shake_tween = create_tween()
-	shake_tween.set_loops()  # Le tween se répète
-	
-	# Calcul du nombre d'oscillations basé sur la durée et la fréquence
-	var oscillations = int(shake_duration * shake_frequency)
-	
 	# Déterminer la position de référence selon l'état
 	var reference_position = base_position
 	if reload_state == ReloadState.RELOAD_ADDING_BULLETS:
 		reference_position = reload_position
 	
-	_create_shake_animation(shake_tween, oscillations, reference_position)
+	_create_weapon_shake_at_position(reference_position)
 
-# === FONCTION DE TREMBLEMENT AVEC POSITION SPÉCIFIÉE ===
 func _create_weapon_shake_at_position(target_position: Vector2):
 	# Création d'un tween pour le tremblement
 	var shake_tween = create_tween()
@@ -314,7 +308,6 @@ func _create_weapon_shake_at_position(target_position: Vector2):
 
 # === ANIMATION DE TREMBLEMENT COMMUNE ===
 func _create_shake_animation(shake_tween: Tween, oscillations: int, reference_position: Vector2):
-	
 	# Création du pattern de tremblement
 	for i in range(oscillations):
 		# Calcul de l'intensité qui diminue progressivement
@@ -490,3 +483,13 @@ func _on_frame_changed():
 		if frame == shot_detection_frame:
 			shot_fired.emit()
 			_play_gunshot_sound()
+
+# === FONCTION POUR CRÉER LES PARAMÈTRES D'EFFET ===
+func get_hit_effect_params() -> Dictionary:
+	# Retourne un dictionnaire avec les paramètres d'effet du revolver
+	return {
+		"duration": hit_shake_duration,
+		"intensity": hit_shake_intensity,
+		"frequency": hit_shake_frequency,
+		"axes": hit_shake_axes
+	}

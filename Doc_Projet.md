@@ -296,7 +296,7 @@ World (Node principal)
 ### Munitions
 - **Capacité :** 6 balles max
 - **Rechargement :** Animation fluide + sons
-- **Cadence :** 0.3s entre tirs
+- **Cadence :** 0.5s entre tirs
 - **États :** IDLE, RELOAD_STARTING, RELOAD_ADDING_BULLETS, RELOAD_INTERRUPTED
 
 ### Audio
@@ -330,6 +330,14 @@ World (Node principal)
 - **Feedback visuel :** Simulation du mouvement du poignet
 - **Cohérence :** Même effet que lors du rechargement
 - **Système de sons optimisé :** Fonction commune `_play_sound_with_superposition()`
+
+### Système d'Effet de Vibration Ennemi
+- **Fonctionnalité :** Vibration du sprite ennemi lors de l'impact de tir
+- **Architecture modulaire :** Classe `HitEffectParams` pour paramètres personnalisables
+- **Communication :** PlayerCombat transmet les paramètres du revolver à l'ennemi
+- **Paramètres par défaut :** Durée 0.15s, intensité 0.06, fréquence 75 Hz
+- **Axes configurables :** Vector3(1.0, 1.0, 0.0) pour vibration X et Y
+- **Extensibilité :** Facilement adaptable pour d'autres armes ou types de tir
 
 ---
 
@@ -405,6 +413,14 @@ World (Node principal)
 - **Intensité :** 1.5
 - **Transition :** EASE_OUT
 - **Déclenchement :** À l'impact
+
+### Système d'Effet de Vibration
+- **Fonctionnalité :** Vibration du sprite ennemi lors de l'impact
+- **Paramètres personnalisables :** Durée, intensité, fréquence, axes
+- **Architecture :** Système modulaire avec classe `HitEffectParams`
+- **Intégration :** Communication entre revolver et ennemi via PlayerCombat
+- **Valeurs par défaut :** 0.15s, 0.06 intensité, 75 Hz, axes X/Y
+- **Avantages :** Extensible pour d'autres armes, paramètres ajustables par arme
 
 ---
 
@@ -493,9 +509,9 @@ World (Node principal)
 - **Système de saut simplifié** : Saut simple avec effet de caméra "Jump Look Down"
 - **Head Bob réaliste** : Mouvement de tête simulant la marche naturelle avec transitions fluides
 - **Camera Shake combiné** : Système de tremblements multiples avec décélération cubic
-- **Revolver complet** : Animations, sons, munitions, recul de caméra, tremblement clic vide
+- **Revolver complet** : Animations, sons, munitions, recul de caméra, tremblement clic vide, effet vibration ennemi
 - **Système de Sway dynamique** : Mouvement réaliste idle/movement avec transitions fluides
-- **Enemy complet** : Vie, dégâts, mort, pathfinding
+- **Enemy complet** : Vie, dégâts, mort, pathfinding, effet de vibration à l'impact
 - **Système de collisions** : Configuré et optimisé
 - **Effets d'impact** : Pixel explosion avec couleurs dynamiques
 - **Pathfinding ennemis** : Raycast d'évitement d'obstacles
@@ -525,6 +541,10 @@ World (Node principal)
 - **Amélioration du feeling de tir** : Tremblement de l'arme lors du clic vide (plus de munitions)
 - **Optimisations de code** : Suppression de variables inutilisées, consolidation des vérifications
 - **Refactoring de fonctions** : `_create_reload_shake()` → `_create_weapon_shake()` (nom plus générique)
+- **Système d'effet de vibration ennemi** : Vibration du sprite ennemi lors de l'impact avec paramètres personnalisables
+- **Architecture modulaire pour effets** : Classe `HitEffectParams` pour communication entre armes et ennemis
+- **Intégration PlayerCombat** : Communication robuste entre revolver et ennemi pour les effets d'impact
+- **Paramètres optimisés** : Durée 0.15s, intensité 0.06, fréquence 75 Hz pour un effet réaliste
 
 ---
 
@@ -583,8 +603,6 @@ World (Node principal)
 - **movement_sway_amplitude :** Vector3(9.0, 1.0, 2.0) (amplitude movement X, Y, Z)
 - **movement_sway_frequency :** 5.0 Hz (fréquence movement)
 - **sway_transition_speed :** 3.0 (vitesse de transition entre idle/movement)
-- **sway_smoothness :** 2.0 (lissage du mouvement)
-- **base_position_offset :** Vector2.ZERO (décalage de position)
 
 ### Paramètres Tremblement (Revolver)
 - **shake_intensity :** 3.0 pixels
@@ -594,11 +612,28 @@ World (Node principal)
 - **Utilisation :** Rechargement ET clic vide
 - **Position adaptative :** position actuelle (clic vide) ou reload_position (rechargement)
 
+### Paramètres Effet de Vibration (Revolver)
+- **hit_shake_duration :** 0.15s (durée de vibration sur ennemi)
+- **hit_shake_intensity :** 0.06 (intensité de vibration sur ennemi)
+- **hit_shake_frequency :** 75.0 Hz (fréquence d'oscillations sur ennemi)
+- **hit_shake_axes :** Vector3(1.0, 1.0, 0.0) (axes de vibration X, Y)
+- **Fonction :** get_hit_effect_params() (récupération des paramètres pour l'ennemi)
+
 ### Paramètres Rougissement (Enemy)
 - **red_flash_duration :** 0.2s
 - **red_flash_intensity :** 1.5
 - **red_flash_color :** Rouge pur
 - **Fonction :** _create_red_flash() (ligne 115-143)
+
+### Paramètres Effet de Vibration (Enemy + Revolver)
+- **Classe HitEffectParams :** Structure de données pour paramètres d'effet
+- **hit_shake_duration :** 0.15s (durée de vibration)
+- **hit_shake_intensity :** 0.06 (intensité de vibration)
+- **hit_shake_frequency :** 75.0 Hz (fréquence d'oscillations)
+- **hit_shake_axes :** Vector3(1.0, 1.0, 0.0) (axes X, Y activés)
+- **Fonction Enemy :** _create_hit_shake() (effet de vibration du sprite)
+- **Fonction Revolver :** get_hit_effect_params() (récupération des paramètres)
+- **Intégration :** PlayerCombat transmet les paramètres du revolver à l'ennemi
 
 ### Paramètres Pathfinding (Enemy)
 - **move_speed :** 3.0 (vitesse de déplacement)

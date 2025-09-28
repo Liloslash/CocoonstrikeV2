@@ -77,8 +77,20 @@ func _handle_shot() -> void:
 	
 	if not collider or not collider.has_method("take_damage"):
 		return
+	
+	# Récupérer les paramètres d'effet du revolver
+	var hit_effect_params = null
+	if revolver_sprite and revolver_sprite.has_method("get_hit_effect_params"):
+		var effect_data = revolver_sprite.get_hit_effect_params()
+		# Créer un objet HitEffectParams à partir des données du revolver
+		hit_effect_params = collider.HitEffectParams.new(
+			effect_data["duration"],
+			effect_data["intensity"],
+			effect_data["frequency"],
+			effect_data["axes"]
+		)
 		
-	collider.take_damage(revolver_damage)
+	collider.take_damage(revolver_damage, hit_effect_params)
 	
 	# Créer l'effet d'impact au point de collision
 	_create_impact_effect(raycast.get_collision_point(), collider)

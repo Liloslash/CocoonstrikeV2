@@ -23,9 +23,9 @@
 - ✅ **Paramètres ajustables** dans l'éditeur
 
 #### 🏃 **SYSTÈME DE MOUVEMENT** - Optimisé !
-- ✅ **Mouvement FPS** : WASD + souris
+- ✅ **Mouvement FPS** : ZQSD + souris
 - ✅ **Saut simplifié** : Hauteur 3.3m, calcul automatique de vélocité
-- ✅ **Slam aérien** : Q en l'air, vitesse -33.0
+- ✅ **Slam aérien** : A en l'air, vitesse -33.0
 - ✅ **Freeze après slam** : 0.3s de gel
 - ✅ **Accélération** : 0.4s pour atteindre la vitesse max
 

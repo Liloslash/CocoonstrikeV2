@@ -46,6 +46,41 @@
 - **Révolver futuriste** : Design qui inspire la puissance et la confiance
 - **Power shot** : Mécanique de tir spécial justifiée par l'armure
 
+## SYSTÈME D'ENNEMIS
+
+### Architecture des Ennemis
+- **3 types de base** : Papillons (léger), Monster (moyen), BigMonster (lourd)
+- **Recolorisations** : Chaque type a 2 variantes avec comportements différents
+- **Total final** : 6 ennemis uniques (3 types × 2 variantes)
+
+### PAPILLONS (Type Léger)
+
+#### Chaser (Papillon V1)
+- **Comportement** : Pathfinding direct vers le joueur + attaque corps à corps
+- **Attaque** : Jet de spores (animation) dans un rayon de 1.5m
+- **Dégâts** : 15 points par attaque
+- **Cooldown** : 3 secondes entre attaques
+- **Stats** : PV moyen, vitesse légèrement élevée
+- **Style** : Agressif, pression directe
+
+#### Peintre (Papillon V2 - Recolorisé)
+- **Comportement** : Déplacement libre sur la carte + contrôle de zone
+- **Attaque** : Lance des spores à intervalles de 8 secondes
+- **Effet spécial** : Zones de dégâts persistantes (DPS par seconde)
+- **Dégâts des zones** : 5 DPS (dégâts par seconde)
+- **Taille des zones** : Rayon de 1.5m
+- **Durée** : Tant que l'ennemi est en vie
+- **Limitation** : Maximum 3 zones simultanées par ennemi
+- **Remplacement** : 4ème spore → 1ère zone disparaît automatiquement
+- **Effet visuel** : Zones visibles (à créer)
+- **Style** : Tactique, pression indirecte
+
+### MONSTER (Type Moyen)
+- **2 variantes** : À définir (comportements différents)
+
+### BIG MONSTER (Type Lourd)
+- **2 variantes** : À définir (comportements différents)
+
 ## SYSTÈME DE PIÈGES
 
 ### Ressources : "Bric-à-brac"
