@@ -25,7 +25,7 @@ func _ready() -> void:
 		return
 	
 	# Récupération des références
-	raycast = player.get_node_or_null("Camera3D/RayCast3D")
+	raycast = player.get_node_or_null("PlayerCamera/RayCast3D")
 	revolver_sprite = player.get_node_or_null("HUD_Layer/Revolver")
 	camera_component = player.get_node_or_null("PlayerCamera")
 	
@@ -49,11 +49,7 @@ func _setup_raycast() -> void:
 	raycast.target_position = Vector3(0, 0, -1000)  # Portée vers l'avant
 	raycast.enabled = true
 	raycast.collision_mask = 2  # Ne détecter que la layer 2 (ennemis)
-	if raycast.has_method("set_exclude_parent_body"):
-		# Godot 4 expose exclude_parent comme propriété, mais on garde une compat de méthode
-		raycast.set_exclude_parent_body(true)
-	elif "exclude_parent" in raycast:
-		raycast.exclude_parent = true
+	raycast.exclude_parent = true  # Exclure le parent du raycast
 
 # === CONNEXION DU REVOLVER ===
 func _connect_revolver() -> void:
@@ -82,13 +78,13 @@ func _handle_shot() -> void:
 	var hit_effect_params = null
 	if revolver_sprite and revolver_sprite.has_method("get_hit_effect_params"):
 		var effect_data = revolver_sprite.get_hit_effect_params()
-		# Créer un objet HitEffectParams à partir des données du revolver
-		hit_effect_params = collider.HitEffectParams.new(
-			effect_data["duration"],
-			effect_data["intensity"],
-			effect_data["frequency"],
-			effect_data["axes"]
-		)
+		# Créer un dictionnaire avec les paramètres d'effet
+		hit_effect_params = {
+			"duration": effect_data["duration"],
+			"intensity": effect_data["intensity"],
+			"frequency": effect_data["frequency"],
+			"axes": effect_data["axes"]
+		}
 		
 	collider.take_damage(revolver_damage, hit_effect_params)
 	

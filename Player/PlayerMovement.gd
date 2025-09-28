@@ -43,7 +43,7 @@ func setup_player(player_node: CharacterBody3D) -> void:
 	# Récupérer la référence à la caméra avec vérification
 	camera_component = player.get_node_or_null("PlayerCamera") as PlayerCamera
 	# Calculer la vélocité de saut basée sur la hauteur désirée
-	call_deferred("_calculate_jump_velocity")
+	_calculate_jump_velocity()
 
 # === GESTION PRINCIPALE ===
 func _physics_process(delta: float) -> void:
@@ -87,6 +87,7 @@ func _handle_gravity_and_jump(delta: float) -> void:
 		if is_jumping_state:
 			is_jumping_state = false
 			jump_time = 0.0
+			can_slam = true  # Réactiver le slam pour le prochain saut
 			# Arrêter l'effet de regard vers le bas
 			if camera_component:
 				camera_component.stop_jump_look_down()
@@ -141,6 +142,7 @@ func start_jump() -> void:
 func start_slam() -> void:
 	if not player.is_on_floor() and jump_time >= min_time_before_slam and can_slam and not is_slamming and not is_frozen:
 		is_slamming = true
+		can_slam = false  # Empêcher les slams multiples
 		player.velocity.y = slam_velocity
 
 func get_current_speed() -> float:

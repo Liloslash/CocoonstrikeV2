@@ -5,37 +5,37 @@
 ## 📑 NAVIGATION RAPIDE
 
 **=== INFORMATIONS GÉNÉRALES ===**
-- Ligne 43 : Informations du projet
-- Ligne 53 : Concept du jeu
+- Ligne 45 : Informations du projet
+- Ligne 55 : Concept du jeu
 
 **=== ARCHITECTURE ===**
-- Ligne 67 : Structure des scènes
-- Ligne 80 : Scene Player (Architecture Modulaire)
-- Ligne 97 : Architecture Modulaire du Joueur
-- Ligne 206 : Scene Enemy
-- Ligne 217 : Navigation et Pathfinding
+- Ligne 69 : Structure des scènes
+- Ligne 82 : Scene Player (Architecture Modulaire)
+- Ligne 99 : Architecture Modulaire du Joueur
+- Ligne 208 : Scene Enemy
+- Ligne 219 : Navigation et Pathfinding
 
 **=== SYSTÈMES ===**
-- Ligne 228 : Système Joueur
-- Ligne 251 : Système de Saut Simplifié
-- Ligne 292 : Système Revolver
-- Ligne 334 : Système de Caméra Avancé
-- Ligne 367 : Système Ennemis (Pathfinding)
-- Ligne 409 : Effets d'Impact
+- Ligne 230 : Système Joueur
+- Ligne 253 : Système de Saut Simplifié
+- Ligne 294 : Système Revolver
+- Ligne 344 : Système de Caméra Avancé
+- Ligne 377 : Système Ennemis (Pathfinding)
+- Ligne 427 : Effets d'Impact
 
 **=== RESSOURCES ===**
-- Ligne 426 : Assets Audio
-- Ligne 445 : Assets Visuels
-- Ligne 463 : Configuration
+- Ligne 444 : Assets Audio
+- Ligne 463 : Assets Visuels
+- Ligne 481 : Configuration
 
 **=== ÉTAT DU PROJET ===**
-- Ligne 485 : Fonctionnel
-- Ligne 502 : En cours
-- Ligne 506 : À implémenter
-- Ligne 511 : Récent
+- Ligne 503 : Fonctionnel
+- Ligne 521 : En cours
+- Ligne 525 : À implémenter
+- Ligne 530 : Récent
 
 **=== RÉFÉRENCES ===**
-- Ligne 529 : Référence Rapide
+- Ligne 554 : Référence Rapide
 
 **=== ROADMAP ===**
 - Voir Doc_Roadmap.md (fichier séparé)
@@ -333,7 +333,7 @@ World (Node principal)
 
 ### Système d'Effet de Vibration Ennemi
 - **Fonctionnalité :** Vibration du sprite ennemi lors de l'impact de tir
-- **Architecture modulaire :** Classe `HitEffectParams` pour paramètres personnalisables
+- **Architecture modulaire :** Dictionnaire pour paramètres personnalisables
 - **Communication :** PlayerCombat transmet les paramètres du revolver à l'ennemi
 - **Paramètres par défaut :** Durée 0.15s, intensité 0.06, fréquence 75 Hz
 - **Axes configurables :** Vector3(1.0, 1.0, 0.0) pour vibration X et Y
@@ -417,7 +417,7 @@ World (Node principal)
 ### Système d'Effet de Vibration
 - **Fonctionnalité :** Vibration du sprite ennemi lors de l'impact
 - **Paramètres personnalisables :** Durée, intensité, fréquence, axes
-- **Architecture :** Système modulaire avec classe `HitEffectParams`
+- **Architecture :** Système modulaire avec dictionnaire de paramètres
 - **Intégration :** Communication entre revolver et ennemi via PlayerCombat
 - **Valeurs par défaut :** 0.15s, 0.06 intensité, 75 Hz, axes X/Y
 - **Avantages :** Extensible pour d'autres armes, paramètres ajustables par arme
@@ -516,6 +516,7 @@ World (Node principal)
 - **Effets d'impact** : Pixel explosion avec couleurs dynamiques
 - **Pathfinding ennemis** : Raycast d'évitement d'obstacles
 - **Code optimisé** : Refactorisation complète, gestion d'erreurs robuste, performance améliorée
+- **Corrections de bugs** : Conflits de classe résolus, vérifications null ajoutées, architecture simplifiée
 
 ### 🔄 EN COURS
 - Amélioration du système d'évitement d'obstacles
@@ -542,9 +543,11 @@ World (Node principal)
 - **Optimisations de code** : Suppression de variables inutilisées, consolidation des vérifications
 - **Refactoring de fonctions** : `_create_reload_shake()` → `_create_weapon_shake()` (nom plus générique)
 - **Système d'effet de vibration ennemi** : Vibration du sprite ennemi lors de l'impact avec paramètres personnalisables
-- **Architecture modulaire pour effets** : Classe `HitEffectParams` pour communication entre armes et ennemis
+- **Architecture modulaire pour effets** : Dictionnaire de paramètres pour communication entre armes et ennemis
 - **Intégration PlayerCombat** : Communication robuste entre revolver et ennemi pour les effets d'impact
 - **Paramètres optimisés** : Durée 0.15s, intensité 0.06, fréquence 75 Hz pour un effet réaliste
+- **Corrections de bugs** : Résolution des conflits de classe, optimisation des performances
+- **Code robuste** : Vérifications null, gestion d'erreurs améliorée, architecture simplifiée
 
 ---
 
@@ -626,7 +629,7 @@ World (Node principal)
 - **Fonction :** _create_red_flash() (ligne 115-143)
 
 ### Paramètres Effet de Vibration (Enemy + Revolver)
-- **Classe HitEffectParams :** Structure de données pour paramètres d'effet
+- **Dictionnaire de paramètres :** Structure de données pour paramètres d'effet
 - **hit_shake_duration :** 0.15s (durée de vibration)
 - **hit_shake_intensity :** 0.06 (intensité de vibration)
 - **hit_shake_frequency :** 75.0 Hz (fréquence d'oscillations)

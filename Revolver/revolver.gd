@@ -83,6 +83,7 @@ var sound_empty_click: AudioStream  # SON QUAND VIDE
 var audio_player: AudioStreamPlayer2D       # Pour les sons de rechargement
 var gunshot_audio_player: AudioStreamPlayer2D  # Pour les sons de tir (séparé)
 var empty_click_audio_player: AudioStreamPlayer2D  # Pour les sons de clic vide (séparé)
+var temp_audio_players: Array[AudioStreamPlayer2D] = []  # Pool d'objets temporaires
 
 # === POSITIONS POUR L'ANIMATION ===
 var reload_position: Vector2     # Position quand l'arme est baissée
@@ -119,6 +120,9 @@ func _ready():
 	# Lecteur audio séparé pour les clics vides (permet la superposition)
 	empty_click_audio_player = AudioStreamPlayer2D.new()
 	add_child(empty_click_audio_player)
+	
+	# === INITIALISATION DU POOL D'AUDIO PLAYERS ===
+	_initialize_audio_pool()
 	
 	# === INITIALISATION DU SWAY ===
 	_start_sway_system()
@@ -278,14 +282,37 @@ func _play_empty_click_sound():
 
 func _play_sound_with_superposition(target_player: AudioStreamPlayer2D, sound: AudioStream):
 	if target_player.playing:
-		var temp_player = AudioStreamPlayer2D.new()
-		add_child(temp_player)
+		# Utiliser un player du pool au lieu d'en créer un nouveau
+		var temp_player = _get_temp_audio_player()
 		temp_player.stream = sound
 		temp_player.play()
-		temp_player.finished.connect(func(): temp_player.queue_free())
+		temp_player.finished.connect(func(): _return_temp_audio_player(temp_player))
 	else:
 		target_player.stream = sound
 		target_player.play()
+
+# === GESTION DU POOL D'AUDIO PLAYERS ===
+func _initialize_audio_pool():
+	# Créer 3 AudioStreamPlayer2D en réserve
+	for i in range(3):
+		var temp_player = AudioStreamPlayer2D.new()
+		add_child(temp_player)
+		temp_audio_players.append(temp_player)
+
+func _get_temp_audio_player() -> AudioStreamPlayer2D:
+	# Chercher un player disponible
+	for player in temp_audio_players:
+		if not player.playing:
+			return player
+	# Si aucun disponible, en créer un nouveau
+	var new_player = AudioStreamPlayer2D.new()
+	add_child(new_player)
+	temp_audio_players.append(new_player)
+	return new_player
+
+func _return_temp_audio_player(_player: AudioStreamPlayer2D):
+	# Le player sera réutilisé automatiquement
+	pass
 
 # === FONCTIONS DE TREMBLEMENT DE L'ARME ===
 func _create_weapon_shake():
@@ -332,9 +359,8 @@ func _create_shake_animation(shake_tween: Tween, oscillations: int, reference_po
 	# Retour à la position de référence à la fin
 	shake_tween.tween_property(self, "position", reference_position, 0.05)
 	
-	# Arrêt du tween après la durée totale
-	await get_tree().create_timer(shake_duration).timeout
-	shake_tween.kill()
+	# Arrêt du tween après la durée totale (sans await)
+	shake_tween.tween_callback(func(): shake_tween.kill()).set_delay(shake_duration)
 
 # === SYSTÈME DE SWAY ===
 

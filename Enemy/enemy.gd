@@ -1,17 +1,7 @@
 extends CharacterBody3D
 
 # === CLASSE POUR LES PARAMÈTRES D'EFFET ===
-class HitEffectParams:
-	var shake_duration: float = 0.25
-	var shake_intensity: float = 0.1
-	var shake_frequency: float = 20.0
-	var shake_axes: Vector3 = Vector3(1.0, 1.0, 0.0)  # X, Y, Z (0.0 = désactivé, 1.0 = activé)
-	
-	func _init(duration: float = 0.25, intensity: float = 0.1, frequency: float = 20.0, axes: Vector3 = Vector3(1.0, 1.0, 0.0)):
-		shake_duration = duration
-		shake_intensity = intensity
-		shake_frequency = frequency
-		shake_axes = axes
+# (Définie dans HitEffectParams.gd)
 
 # === PARAMÈTRES EXPORTÉS ===
 @export_group("Statistiques")
@@ -100,7 +90,7 @@ func _physics_process(_delta):
 		pass  # Le mouvement est géré par _on_velocity_computed()
 
 # === SYSTÈME DE DÉGÂTS ===
-func take_damage(damage: int, hit_effect_params: HitEffectParams = null):
+func take_damage(damage: int, hit_effect_params: Dictionary = {}):
 	if not is_alive:
 		return
 	
@@ -190,7 +180,7 @@ func _create_red_flash():
 	flash_tween.set_ease(Tween.EASE_OUT)
 
 # === EFFET DE VIBRATION ===
-func _create_hit_shake(effect_params: HitEffectParams):
+func _create_hit_shake(effect_params: Dictionary):
 	# Vérification que l'ennemi est vivant et a un sprite
 	if not is_alive or not sprite:
 		return
@@ -203,19 +193,25 @@ func _create_hit_shake(effect_params: HitEffectParams):
 	var shake_tween = create_tween()
 	shake_tween.set_loops()  # Le tween se répète
 	
+	# Récupération des paramètres avec valeurs par défaut
+	var duration = effect_params.get("duration", 0.25)
+	var intensity = effect_params.get("intensity", 0.1)
+	var frequency = effect_params.get("frequency", 20.0)
+	var axes = effect_params.get("axes", Vector3(1.0, 1.0, 0.0))
+	
 	# Calcul du nombre d'oscillations basé sur la durée et la fréquence
-	var oscillations = int(effect_params.shake_duration * effect_params.shake_frequency)
+	var oscillations = int(duration * frequency)
 	
 	# Création du pattern de vibration
 	for i in range(oscillations):
 		# Calcul de l'intensité qui diminue progressivement
-		var current_intensity = effect_params.shake_intensity * (1.0 - float(i) / float(oscillations))
+		var current_intensity = intensity * (1.0 - float(i) / float(oscillations))
 		
 		# Direction aléatoire pour la vibration (seulement sur les axes activés)
 		var random_direction = Vector3(
-			randf_range(-1.0, 1.0) * effect_params.shake_axes.x,
-			randf_range(-1.0, 1.0) * effect_params.shake_axes.y,
-			randf_range(-1.0, 1.0) * effect_params.shake_axes.z
+			randf_range(-1.0, 1.0) * axes.x,
+			randf_range(-1.0, 1.0) * axes.y,
+			randf_range(-1.0, 1.0) * axes.z
 		).normalized()
 		
 		# Décalage de vibration
@@ -223,7 +219,7 @@ func _create_hit_shake(effect_params: HitEffectParams):
 		var shake_rotation_offset = Vector3(0, 0, random_direction.z * current_intensity)
 		
 		# Durée de chaque oscillation
-		var oscillation_duration = effect_params.shake_duration / float(oscillations)
+		var oscillation_duration = duration / float(oscillations)
 		
 		# Ajout du mouvement au tween (relatif à la position originale)
 		shake_tween.tween_property(sprite, "position", original_position + shake_offset, oscillation_duration)
@@ -234,7 +230,7 @@ func _create_hit_shake(effect_params: HitEffectParams):
 	shake_tween.tween_property(sprite, "rotation", original_rotation, 0.1)
 	
 	# Arrêt du tween après la durée totale
-	await get_tree().create_timer(effect_params.shake_duration).timeout
+	await get_tree().create_timer(duration).timeout
 	shake_tween.kill()
 	
 	# Forcer le retour à la position originale (sécurité)

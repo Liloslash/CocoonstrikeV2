@@ -64,6 +64,8 @@ func _process(delta: float) -> void:
 	# Récupérer la vitesse actuelle du joueur
 	if movement_component:
 		current_speed = movement_component.get_current_speed()
+	else:
+		current_speed = 0.0
 	
 	_handle_camera_shake(delta)
 	_handle_head_bob(delta)
