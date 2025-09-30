@@ -1,15 +1,14 @@
 extends CharacterBody3D
 
-# === CLASSE POUR LES PARAMÈTRES D'EFFET ===
-# (Définie dans HitEffectParams.gd)
+# === SYSTÈME D'ENNEMI ===
+# Gestion de la vie, dégâts, effets visuels et rotation vers le joueur
 
 # === PARAMÈTRES EXPORTÉS ===
 @export_group("Statistiques")
 @export var max_health: int = 100
 
 @export_group("Comportement")
-@export var move_speed: float = 3.0
-@export var detection_range: float = 15.0  # Distance de détection du joueur
+# (Variables de comportement supprimées - seront réimplémentées avec le nouveau système d'IA)
 
 @export_group("Animation de Mort")
 @export var death_freeze_duration: float = 1.0  # Durée du freeze avant disparition
@@ -25,16 +24,28 @@ extends CharacterBody3D
 @export var red_flash_intensity: float = 1.5  # Intensité du rouge (1.5 pour un effet bien visible)
 @export var red_flash_color: Color = Color.RED  # Couleur du rougissement
 
+@export_group("Gravité")
+@export var gravity_scale: float = 1.0
+@onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity") * gravity_scale
+
+@export_group("Slam Repoussement")
+@export var slam_push_force: float = 4.0  # Force du repoussement
+@export var slam_bond_duration: float = 0.6  # Durée du bond avant arrêt horizontal
+@export var slam_freeze_delay: float = 0.8  # Délai avant le freeze
+@export var slam_cooldown_time: float = 0.2  # Cooldown entre les slams
+
 # === VARIABLES INTERNES ===
 var current_health: int
 var is_alive: bool = true
 var is_frozen: bool = false
 var player_reference: Node3D = null
+var freeze_timer: float = 0.0
+var is_being_repelled: bool = false
+var pending_freeze_duration: float = 0.0
+var slam_cooldown: float = 0.0
 
 # === NAVIGATION ===
-@onready var nav_agent: NavigationAgent3D = $NavigationAgent
-var target_position: Vector3
-var is_navigating: bool = false
+# (Système de pathfinding supprimé - sera réimplémenté plus tard)
 
 # === COMPOSANTS ===
 @onready var sprite: AnimatedSprite3D = $AnimatedSprite3D  # Le sprite 2D billboard
@@ -43,17 +54,15 @@ func _ready():
 	# Initialisation
 	current_health = max_health
 	
-	# Mettre l'ennemi sur la layer 2 pour le raycast
-	collision_layer = 2
+	# Configuration des collisions
+	collision_layer = 2  # Ennemi sur la layer 2 (détectable par raycast)
+	collision_mask = 3   # Détecte la layer 0 (environnement) + layer 1 (joueur)
 	
-	# Configuration de la navigation
-	_setup_navigation()
+	# Ajouter au groupe des ennemis pour la détection du slam
+	add_to_group("enemies")
 	
 	# Recherche du joueur dans la scène
 	_find_player()
-	
-	# Commencer à naviguer vers le joueur
-	_start_navigation()
 
 func _find_player():
 	# Cherche le joueur dans la scène (adaptez selon votre structure)
@@ -67,27 +76,43 @@ func _find_player():
 	
 	if not player_reference:
 		# Recherche directe par nom de nœud
-		player_reference = get_node("/root/World/Player")
+		player_reference = get_node_or_null("/root/World/Player")
 	
 	# Vérifier si le joueur est trouvé
 	if not player_reference:
-		push_error("ERREUR : Joueur non trouvé pour la navigation !")
+		push_warning("Ennemi : Joueur non trouvé - la rotation ne fonctionnera pas")
+		# Ne pas utiliser push_error() car ce n'est pas critique
 
-func _physics_process(_delta):
-	if not is_alive or is_frozen:
+func _physics_process(delta):
+	if not is_alive:
 		return
 	
-	# Navigation vers le joueur
-	_update_navigation()
+	# Gérer le freeze
+	_handle_freeze(delta)
 	
+	# Gérer le cooldown du slam
+	if slam_cooldown > 0:
+		slam_cooldown -= delta
+	
+	if is_frozen:
+		return
+
+	# Gravité + déplacement
+	if not is_on_floor():
+		velocity.y -= gravity * delta
+	else:
+		# Arrêter le mouvement vertical quand on touche le sol
+		if velocity.y < 0.0:
+			velocity.y = 0.0
+		# Arrêter aussi le mouvement horizontal pour éviter le glissement
+		if abs(velocity.x) < 0.1 and abs(velocity.z) < 0.1:
+			velocity.x = 0.0
+			velocity.z = 0.0
+
+	move_and_slide()
+
 	# ROTATION DU SPRITE VERS LE JOUEUR
 	_update_sprite_rotation()
-	
-	# MOUVEMENT VIA NAVIGATIONAGENT3D
-	if is_navigating and player_reference:
-		# Le NavigationAgent3D calcule automatiquement le chemin
-		# et appelle _on_velocity_computed() avec la vitesse optimale
-		pass  # Le mouvement est géré par _on_velocity_computed()
 
 # === SYSTÈME DE DÉGÂTS ===
 func take_damage(damage: int, hit_effect_params: Dictionary = {}):
@@ -103,9 +128,52 @@ func take_damage(damage: int, hit_effect_params: Dictionary = {}):
 	if hit_effect_params:
 		_create_hit_shake(hit_effect_params)
 	
+	# Freeze pendant l'animation de tremblement
+	_start_damage_freeze()
+	
 	# Vérification de la mort
 	if current_health <= 0:
 		_die()
+
+# === SYSTÈME DE REPOUSSEMENT DU SLAM ===
+func _apply_slam_repulsion(direction: Vector3, _push_distance: float, push_height: float, freeze_duration: float):
+	if not is_alive:
+		return
+	
+	# Vérifier le cooldown (éviter les slams trop rapides)
+	if slam_cooldown > 0:
+		return
+	
+	# Sortir du freeze si on était gelé
+	is_frozen = false
+	freeze_timer = 0.0
+	
+	# Calculer la vélocité de repoussement (force constante, peu importe la distance)
+	var push_velocity = Vector3(
+		direction.x * slam_push_force,  # Force horizontale configurable
+		push_height * slam_push_force,  # Force verticale configurable
+		direction.z * slam_push_force
+	)
+	
+	# Appliquer la vélocité IMMÉDIATEMENT
+	velocity = push_velocity
+	
+	# Mettre un cooldown court pour éviter les slams multiples
+	slam_cooldown = slam_cooldown_time
+	
+	# Programmer l'arrêt du mouvement après le bond
+	_stop_after_bond()
+	
+	# Freeze après le bond
+	await get_tree().create_timer(slam_freeze_delay).timeout
+	is_frozen = true
+	freeze_timer = freeze_duration
+
+func _stop_after_bond():
+	# Arrêter le mouvement horizontal après le bond
+	await get_tree().create_timer(slam_bond_duration).timeout
+	velocity.x = 0.0
+	velocity.z = 0.0
 
 func _die():
 	if not is_alive:
@@ -152,7 +220,7 @@ func get_impact_colors() -> Array[Color]:
 # === EFFET DE ROUGISSEMENT ===
 func _create_red_flash():
 	# Vérification que l'ennemi est vivant et a un sprite
-	if not is_alive or not sprite:
+	if not is_alive or not sprite or not is_inside_tree():
 		return
 	
 	# Sauvegarde de la couleur originale
@@ -182,7 +250,7 @@ func _create_red_flash():
 # === EFFET DE VIBRATION ===
 func _create_hit_shake(effect_params: Dictionary):
 	# Vérification que l'ennemi est vivant et a un sprite
-	if not is_alive or not sprite:
+	if not is_alive or not sprite or not is_inside_tree():
 		return
 	
 	# Sauvegarde de la position et rotation originales
@@ -191,7 +259,7 @@ func _create_hit_shake(effect_params: Dictionary):
 	
 	# Création du tween pour l'effet de vibration
 	var shake_tween = create_tween()
-	shake_tween.set_loops()  # Le tween se répète
+	# Pas de set_loops() - on contrôle manuellement la durée
 	
 	# Récupération des paramètres avec valeurs par défaut
 	var duration = effect_params.get("duration", 0.25)
@@ -230,61 +298,22 @@ func _create_hit_shake(effect_params: Dictionary):
 	shake_tween.tween_property(sprite, "rotation", original_rotation, 0.1)
 	
 	# Arrêt du tween après la durée totale
-	await get_tree().create_timer(duration).timeout
-	shake_tween.kill()
+	get_tree().create_timer(duration).timeout.connect(func(): 
+		if shake_tween and shake_tween.is_valid():
+			shake_tween.kill()
+	)
 	
 	# Forcer le retour à la position originale (sécurité)
 	sprite.position = original_position
 	sprite.rotation = original_rotation
 
 # === SYSTÈME DE NAVIGATION ===
-func _setup_navigation():
-	# Configuration du NavigationAgent
-	nav_agent.velocity_computed.connect(_on_velocity_computed)
-	nav_agent.target_reached.connect(_on_target_reached)
-	
-	# Paramètres du NavigationAgent
-	nav_agent.radius = 0.5
-	nav_agent.height = 2.0
-	nav_agent.max_speed = move_speed
-	nav_agent.path_max_distance = 10.0
-	
-	# Navigation setup terminé
-
-func _start_navigation():
-	if not player_reference:
-		print("ERREUR : Pas de joueur pour la navigation !")
-		return
-	
-	#target_position = player_reference.global_position
-	#nav_agent.target_position = target_position
-	is_navigating = true
-	
-	# Navigation démarrée
-
-func _update_navigation():
-	if not player_reference or not is_navigating:
-		return
-	
-	# Mettre à jour la destination si le joueur bouge significativement
-	var new_target = player_reference.global_position
-	if new_target.distance_to(target_position) > 1.0:
-		target_position = new_target
-		nav_agent.target_position = target_position
-
-func _on_velocity_computed(safe_velocity: Vector3):
-	# Le NavigationAgent3D a calculé une vitesse sûre pour éviter les obstacles
-	velocity = safe_velocity
-	move_and_slide()
-
-func _on_target_reached():
-	# L'ennemi a atteint sa destination
-	is_navigating = false
+# (Système de pathfinding supprimé - sera réimplémenté plus tard)
 
 # === ROTATION DU SPRITE VERS LE JOUEUR ===
 func _update_sprite_rotation():
 	# Vérifier que l'ennemi est vivant, a un sprite et un joueur de référence
-	if not is_alive or not sprite or not player_reference:
+	if not is_alive or not sprite or not player_reference or not is_inside_tree() or not is_instance_valid(player_reference):
 		return
 	
 	# Calculer la direction vers le joueur (SEULEMENT sur l'axe X/Z)
@@ -297,3 +326,40 @@ func _update_sprite_rotation():
 	
 	# Faire tourner le sprite pour regarder vers le joueur (rotation uniquement sur Y)
 	sprite.look_at(look_target, Vector3.UP)
+
+# === SYSTÈME DE FREEZE ===
+func _handle_freeze(delta: float) -> void:
+	if not is_frozen:
+		return
+	
+	freeze_timer -= delta
+	if freeze_timer <= 0:
+		is_frozen = false
+		freeze_timer = 0.0
+
+func _start_damage_freeze() -> void:
+	# Freeze pendant la durée de l'animation de tremblement
+	var shake_duration = 0.25  # Durée par défaut du tremblement
+	is_frozen = true
+	freeze_timer = shake_duration
+
+# Fonctions supprimées - logique simplifiée
+
+func _trigger_landing_shake() -> void:
+	# Déclencher l'animation de tremblement à l'atterrissage
+	if not is_alive or not sprite or not is_inside_tree():
+		return
+	
+	# Créer les paramètres d'effet pour le tremblement
+	var shake_params = {
+		"duration": 0.25,
+		"intensity": 0.1,
+		"frequency": 20.0,
+		"axes": Vector3(1.0, 1.0, 0.0)
+	}
+	
+	# Déclencher l'animation de tremblement
+	_create_hit_shake(shake_params)
+	
+	# Freeze pendant l'animation
+	_start_damage_freeze()

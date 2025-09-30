@@ -27,6 +27,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	
+	# Configuration des collisions
+	collision_layer = 1  # Joueur sur la layer 1
+	collision_mask = 3   # Détecte la layer 0 (environnement) + layer 2 (ennemis)
+	
 	# Initialiser les composants
 	movement_component.setup_player(self)
 	input_component.setup_player(self, movement_component, combat_component)

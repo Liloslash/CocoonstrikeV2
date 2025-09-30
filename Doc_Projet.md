@@ -6,40 +6,30 @@
 
 **=== INFORMATIONS GÉNÉRALES ===**
 - Ligne 45 : Informations du projet
-- Ligne 55 : Concept du jeu
 
 **=== ARCHITECTURE ===**
-- Ligne 69 : Structure des scènes
-- Ligne 82 : Scene Player (Architecture Modulaire)
-- Ligne 99 : Architecture Modulaire du Joueur
-- Ligne 208 : Scene Enemy
-- Ligne 219 : Navigation et Pathfinding
+- Ligne 46 : Structure des scènes
+- Ligne 59 : Scene Player (Architecture Modulaire)
+- Ligne 76 : Architecture Modulaire du Joueur
+- Ligne 92 : Scene Enemy
+- Ligne 104 : Collision Layers et Masks
 
 **=== SYSTÈMES ===**
-- Ligne 230 : Système Joueur
-- Ligne 253 : Système de Saut Simplifié
-- Ligne 294 : Système Revolver
-- Ligne 344 : Système de Caméra Avancé
-- Ligne 378 : Système de Compensation du Raycast
-- Ligne 427 : Système Ennemis (Pathfinding)
-- Ligne 478 : Effets d'Impact
+- Ligne 119 : Système Joueur
+- Ligne 143 : Système de Saut Simplifié
+- Ligne 185 : Système Revolver
+- Ligne 235 : Système de Caméra Avancé
+- Ligne 268 : Système de Compensation du Raycast
+- Ligne 317 : Système Ennemis (Gravité + Repoussement)
+- Ligne 377 : Effets d'Impact
 
 **=== RESSOURCES ===**
-- Ligne 495 : Assets Audio
-- Ligne 514 : Assets Visuels
-- Ligne 532 : Configuration
-
-**=== ÉTAT DU PROJET ===**
-- Ligne 554 : Fonctionnel
-- Ligne 572 : En cours
-- Ligne 576 : À implémenter
-- Ligne 581 : Récent
+- Ligne 394 : Assets Audio
+- Ligne 413 : Assets Visuels
+- Ligne 431 : Configuration
 
 **=== RÉFÉRENCES ===**
-- Ligne 632 : Référence Rapide
-
-**=== ROADMAP ===**
-- Voir Doc_Roadmap.md (fichier séparé)
+- Voir Doc_Roadmap.md pour l'état du projet et la roadmap
 
 ---
 
@@ -50,20 +40,6 @@
 **Type :** FPS Survival Shooter 3D  
 **Style :** Pixel Art et 3D / Retro  
 **Plateforme :** PC (Windows, Linux)
-
----
-
-## 🎯 CONCEPT DU JEU
-
-**Cocoonstrike - Rebuild** = Survival shooter FPS basé sur un prototype Godot Wild Jam
-
-**Map :** 3D unique avec 2 zones (Arena + Obstacles)
-
-**Gameplay :**
-- Joueur au centre de la map
-- Déclencheur pour lancer les vagues d'ennemis
-- **Objectif :** survivre le plus longtemps possible
-- Entre vagues : collecte, pièges, blocage d'accès
 
 ---
 
@@ -101,110 +77,17 @@ Player (CharacterBody3D) - ORCHESTRATEUR
 
 **Principe :** Séparation des responsabilités en composants spécialisés
 
-#### PlayerCamera.gd (254 lignes)
-- **Type :** `extends Camera3D` (hérite directement de Camera3D)
-- **Responsabilités :** Shake, head bob, recul de tir, jump look down
-- **Paramètres :** Intensité, durée, fréquence des effets
-- **Fonctions clés :** `start_camera_shake()`, `trigger_recoil()`, `start_jump_look_down()`
-- **Avantage :** Accès direct aux propriétés de la caméra (position, rotation)
-- **Optimisations :** Cache de référence movement_component pour performance
-
-#### PlayerMovement.gd (158 lignes)
-- **Responsabilités :** Mouvement, saut, slam, gestion de la vitesse
-- **Paramètres :** Vitesse, accélération, gravité, hauteur de saut
-- **Fonctions clés :** `start_jump()`, `start_slam()`, `get_current_speed()`, `is_moving()`
-- **Optimisations :** Calcul de vélocité de saut simplifié avec `max()`
-
-#### PlayerCombat.gd (102 lignes)
-- **Responsabilités :** Tir, raycast, dégâts, effets d'impact
-- **Paramètres :** Dégâts du revolver
-- **Fonctions clés :** `trigger_shot()`, `trigger_reload()`, `trigger_recoil()`
-- **Communication :** Connexion directe avec PlayerCamera pour le recul
-- **Optimisations :** Gestion robuste des références avec vérifications
-
-#### PlayerInput.gd (45 lignes)
-- **Responsabilités :** Gestion des inputs (souris, clavier)
-- **Paramètres :** Sensibilité de la souris
-- **Fonctions clés :** Délégation des actions aux composants
-- **Optimisations :** Code concis et efficace
-
-#### player.gd (69 lignes) - ORCHESTRATEUR
-- **Responsabilités :** Coordination des composants et gestion des signaux
-- **Fonctions clés :** `_ready()`, `_process()`, `_physics_process()`, `_update_revolver_movement_state()`
-- **Signaux :** Connexion `slam_landed` → camera shake, `shot_fired` → recul
-- **Optimisations :** Gestion optimisée du revolver avec early returns
-
-### Diagramme d'Architecture Modulaire
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    PLAYER (CharacterBody3D)                │
-│                        ORCHESTRATEUR                       │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────┐ │
-│  │PlayerCamera │  │PlayerMovement│ │PlayerCombat │  │Input│ │
-│  │(Camera3D)   │  │    (Node)   │  │    (Node)   │  │(Node│ │
-│  │             │  │             │  │             │  │     │ │
-│  │ • Shake     │  │ • Mouvement │  │ • Tir       │  │ •   │ │
-│  │ • Head Bob  │  │ • Saut      │  │ • Raycast   │  │     │ │
-│  │ • Recul     │  │ • Slam      │  │ • Dégâts    │  │     │ │
-│  │ • 254 lignes│  │ • 158 lignes│  │ • 102 lignes│  │ 45  │ │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────┘ │
-├─────────────────────────────────────────────────────────────┤
-│                    COMPOSANTS PHYSIQUES                    │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  Camera3D   │  │CollisionShape│  │AudioStream3D│         │
-│  │  └─RayCast3D│  │  (Capsule)  │  │             │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-├─────────────────────────────────────────────────────────────┤
-│                        HUD LAYER                           │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │              Revolver (AnimatedSprite2D)               │ │
-│  │              └─ AnimationPlayer (Sway_Idle)            │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-
-AVANT : player.gd (424 lignes) - TOUT MÉLANGÉ
-APRÈS : 4 composants + orchestrateur (69 lignes) - SÉPARÉ ET OPTIMISÉ
-
-### Communication entre Composants
-
-#### Signaux Utilisés
-- **`slam_landed`** : PlayerMovement → player.gd → PlayerCamera (camera shake)
-- **`shot_fired`** : Revolver → PlayerCombat → PlayerCamera (recul)
-
-#### Références Directes
-- **PlayerCombat** → **PlayerCamera** : Communication directe pour le recul
-- **player.gd** → **Tous les composants** : Orchestration et délégation
-- **player.gd** → **Revolver** : Transmission de la vitesse pour le sway dynamique
-
-#### Communication Temps Réel
-- **Vitesse du joueur** : `movement_component.get_current_speed()` → `revolver.set_movement_state()`
-- **Cache de référence** : `movement_component` mis en cache dans PlayerCamera pour performance
-- **Gestion optimisée** : Early returns et vérifications robustes pour éviter les erreurs
-```
+- **PlayerCamera** : Shake, head bob, recul de tir, jump look down
+- **PlayerMovement** : Mouvement, saut, slam, gestion de la vitesse
+- **PlayerCombat** : Tir, raycast, dégâts, effets d'impact
+- **PlayerInput** : Gestion des inputs (souris, clavier)
+- **player.gd** : Orchestrateur qui coordonne tous les composants
 
 ### Avantages de l'Architecture Modulaire
-
-#### ✅ **Maintenabilité**
-- **Code plus lisible** : Chaque composant a une responsabilité claire
-- **Modifications isolées** : Changer un système sans affecter les autres
-- **Debugging facilité** : Problèmes localisés dans le bon composant
-
-#### ✅ **Évolutivité**
-- **Ajout de fonctionnalités** : Nouveaux composants facilement intégrables
-- **Réutilisabilité** : Composants réutilisables dans d'autres projets
-- **Tests unitaires** : Chaque composant testable indépendamment
-
-#### ✅ **Performance**
-- **Chargement optimisé** : Seuls les composants nécessaires sont actifs
-- **Mémoire** : Gestion plus efficace des ressources
-- **Debug** : Isolation des problèmes de performance
-
-#### ✅ **Collaboration**
-- **Travail en équipe** : Chaque développeur peut travailler sur un composant
-- **Code review** : Changements plus faciles à examiner
-- **Documentation** : Chaque composant auto-documenté
+- **Maintenabilité** : Code plus lisible, modifications isolées
+- **Évolutivité** : Ajout de fonctionnalités facile
+- **Performance** : Chargement optimisé, gestion mémoire efficace
+- **Collaboration** : Travail en équipe facilité
 
 ### Scene Enemy
 
@@ -212,19 +95,24 @@ APRÈS : 4 composants + orchestrateur (69 lignes) - SÉPARÉ ET OPTIMISÉ
 Enemy (CharacterBody3D)
 ├── AnimatedSprite3D (billboard désactivé - rotation manuelle)
 ├── CollisionShape3D (collisions environnement)
-├── NavigationAgent3D (pathfinding)
 └── Area3D (détection/dégâts)
 	└── CollisionShape3D
 ```
 
-### Navigation et Pathfinding
+**Note :** Le système de pathfinding (NavigationAgent3D) a été temporairement supprimé pour repartir sur des bases propres. Il sera réimplémenté plus tard avec un nouveau système d'IA.
+
+### Collision Layers et Masks
 
 ```
-World (Node principal)
-├── Navigation (NavigationRegion3D) - Zone navigable
-├── Arena (Node3D) - Sol navigable
-└── Obstacles (Node3D) - Obstacles à éviter
+Layer 0 : Environnement (sol, murs, obstacles)
+Layer 1 : Joueur (collision_layer = 1, collision_mask = 3)
+Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
 ```
+
+**Configuration :**
+- **Joueur** : Détecte l'environnement (layer 0) et les ennemis (layer 2)
+- **Ennemis** : Détecte l'environnement (layer 0) et le joueur (layer 1)
+- **Environnement** : Détecté par tous (layers 1 et 2)
 
 ---
 
@@ -232,7 +120,7 @@ World (Node principal)
 
 ### Mouvement FPS
 - **Contrôles :** WASD + Souris
-- **Slam :** Q (slam_velocity = -33.0)
+- **Slam :** A (slam_velocity = -33.0)
 - **Accélération :** 0.4s
 - **Freeze après slam :** 0.3s
 
@@ -262,10 +150,11 @@ World (Node principal)
 - **Feeling :** Saut simple et réactif, contrôle immédiat
 
 ### Slam Aérien
-- **Déclenchement :** Q (en l'air)
+- **Déclenchement :** A (en l'air)
 - **Vitesse :** -33.0 (plonge rapide)
 - **Temps minimum :** 0.4s après le saut
 - **Gel après impact :** 0.3s
+- **Effet sur ennemis :** Repoussement dans un rayon de 2m
 
 ### Effet de Caméra "Jump Look Down"
 - **Déclenchement :** Automatique au saut
@@ -428,23 +317,32 @@ World (Node principal)
 ## ⚙️ SYSTÈME D'ENNEMIS
 
 ### Statistiques
-- **Vie :** 500 points (configurable)
-- **Collision Layer :** 3 (détectable par raycast)
-- **Vitesse :** 3.0 (mouvement vers joueur)
-- **Portée :** 15.0 (non utilisée)
+- **Vie :** 100 points (configurable via max_health)
+- **Collision Layer :** 2 (détectable par raycast)
+- **Collision Mask :** 3 (détecte environnement + joueur)
+- **Gravité :** Sensible à la gravité (gravity_scale = 1.0)
 
 ### Comportement
-- **États :** Vivant/mort, gelé/actif
+- **États :** Vivant/mort, gelé/actif, en repoussement
 - **Mort :** Freeze 1s puis disparition
 - **Collisions :** Désactivées à la mort
 - **Rotation :** Regarde toujours vers le joueur (axe X/Z uniquement)
+- **Gravité :** Tombe et interagit avec l'environnement
 
-### Pathfinding et Navigation
-- **NavigationAgent3D :** Calcul de chemin vers joueur
-- **Raycast d'évitement :** Détection d'obstacles à 2.0 unités
-- **Contournement :** Tourne à droite quand obstacle détecté
-- **Recherche joueur :** Automatique au démarrage
-- **Fonctions :** _setup_navigation(), _update_navigation(), _start_navigation()
+### Système de Gravité
+- **Gravité appliquée :** En chute libre quand pas au sol
+- **Arrêt vertical :** Vélocité Y = 0 quand touche le sol
+- **Arrêt horizontal :** Vélocité X/Z = 0 quand vitesse faible au sol
+- **Configuration :** gravity_scale exportable dans l'éditeur
+
+### Système de Repoussement Slam
+- **Déclenchement :** Quand le joueur fait un slam à proximité (rayon 2m)
+- **Force :** slam_push_force (4.0 par défaut, configurable)
+- **Durée du bond :** slam_bond_duration (0.6s par défaut)
+- **Délai avant freeze :** slam_freeze_delay (0.8s par défaut)
+- **Cooldown :** slam_cooldown_time (0.2s par défaut)
+- **Effet :** Bond en arrière + freeze temporaire
+- **Variables exportées :** Toutes les valeurs sont configurables dans l'éditeur
 
 ### Système de Rotation
 - **Billboard :** Désactivé pour contrôle manuel
@@ -452,6 +350,7 @@ World (Node principal)
 - **Axe de rotation :** X/Z uniquement (pas de rotation verticale)
 - **Fonction :** _update_sprite_rotation() dans _physics_process()
 - **Méthode :** look_at() avec direction normalisée (Y = 0)
+- **Vérifications :** is_instance_valid() pour éviter les erreurs
 
 ### Couleurs d'Impact
 - **4 couleurs exportables** dans l'inspecteur
@@ -535,7 +434,7 @@ World (Node principal)
 - **ESC :** Libérer la souris
 - **WASD :** Mouvement
 - **Espace :** Saut
-- **Q :** Slam
+- **A :** Slam
 - **Clic gauche :** Tir
 - **R :** Rechargement
 
@@ -551,189 +450,3 @@ World (Node principal)
 
 ---
 
-## 📊 ÉTAT ACTUEL
-
-### ✅ FONCTIONNEL
-- **Architecture modulaire** : Player refactorisé en 4 composants spécialisés + orchestrateur
-- **Player complet** : Mouvement, tir, effets (orchestré par composants)
-- **Communication robuste** : Signaux et références directes entre composants
-- **Système de saut simplifié** : Saut simple avec effet de caméra "Jump Look Down"
-- **Head Bob réaliste** : Mouvement de tête simulant la marche naturelle avec transitions fluides
-- **Camera Shake combiné** : Système de tremblements multiples avec décélération cubic
-- **Revolver complet** : Animations, sons, munitions, recul de caméra, tremblement clic vide, effet vibration ennemi
-- **Système de Sway dynamique** : Mouvement réaliste idle/movement avec transitions fluides
-- **🚀 NOUVEAU : Système de compensation du raycast** : Synchronisation automatique caméra-raycast lors du saut
-- **Enemy complet** : Vie, dégâts, mort, pathfinding, effet de vibration à l'impact
-- **Système de collisions** : Configuré et optimisé
-- **Effets d'impact** : Pixel explosion avec couleurs dynamiques
-- **Pathfinding ennemis** : Raycast d'évitement d'obstacles
-- **Code optimisé** : Refactorisation complète, gestion d'erreurs robuste, performance améliorée, variables inutiles supprimées
-- **Corrections de bugs** : Conflits de classe résolus, vérifications null ajoutées, architecture simplifiée, connexions redondantes éliminées
-
-### 🔄 EN COURS
-- Amélioration du système d'évitement d'obstacles
-- Système de vagues
-
-### ❌ À IMPLÉMENTER
-- Collectibles et pièges
-- Audio ambiant
-- Polissage final
-
-### 🆕 RÉCENT (Décembre 2024)
-
-#### **Décembre 2024 - Phase 1 : Refactorisation Majeure**
-- **Refactorisation majeure** : Architecture modulaire du joueur
-- **Réduction de complexité** : player.gd passé de 424 à 69 lignes
-- **Séparation des responsabilités** : 4 composants spécialisés + orchestrateur
-- **Amélioration de la maintenabilité** : Code plus propre et évolutif
-- **Corrections d'architecture** : PlayerCamera hérite de Camera3D, communication robuste
-- **Résolution des bugs** : Double son de tir, communication recul, références @onready
-- **Système de saut simplifié** : Suppression du système complexe de jump boost
-- **Effet de caméra "Jump Look Down"** : Inclinaison de 25° pendant le saut pour immersion
-- **Head Bob réaliste** : Mouvement de tête simulant la marche naturelle avec transitions fluides
-- **Camera Shake combiné** : Système de tremblements multiples avec décélération cubic
-- **Optimisations de performance** : Cache des références, gestion d'erreurs robuste
-
-#### **Décembre 2024 - Phase 2 : Améliorations du Système de Tir**
-- **Amélioration du feeling de tir** : Tremblement de l'arme lors du clic vide (plus de munitions)
-- **Optimisations de code** : Suppression de variables inutilisées, consolidation des vérifications
-- **Refactoring de fonctions** : `_create_reload_shake()` → `_create_weapon_shake()` (nom plus générique)
-- **Système d'effet de vibration ennemi** : Vibration du sprite ennemi lors de l'impact avec paramètres personnalisables
-- **Architecture modulaire pour effets** : Dictionnaire de paramètres pour communication entre armes et ennemis
-- **Intégration PlayerCombat** : Communication robuste entre revolver et ennemi pour les effets d'impact
-- **Paramètres optimisés** : Durée 0.15s, intensité 0.06, fréquence 75 Hz pour un effet réaliste
-
-#### **Décembre 2024 - Phase 3 : Correction Problème Raycast-Caméra**
-- **🚀 NOUVEAU : Système de compensation du raycast** : Résolution du problème de désynchronisation entre la caméra et le raycast lors du saut
-- **Solution implémentée** : Raycast avec offset dynamique basé sur l'angle d'inclinaison de la caméra
-- **Paramètres configurables** : 
-  - `enable_jump_compensation` : Activation/désactivation du système
-  - `compensation_strength` : Force de la compensation (1.0 = parfaite, 0.5 = réduite)
-  - `max_compensation_angle` : Angle maximum de compensation (45° par défaut)
-- **Fonctions ajoutées** : `_calculate_raycast_compensation()`, `_update_raycast_direction()`, `set_jump_compensation()`
-- **Intégration** : Le raycast est maintenant mis à jour avec la compensation avant chaque tir
-- **Avantages** : Tir précis même avec l'inclinaison de la caméra, feeling de jeu amélioré
-
-#### **Décembre 2024 - Phase 4 : Optimisations et Nettoyage du Code**
-- **Suppression de la connexion redondante** : Double connexion du signal `shot_fired` éliminée
-- **Optimisation des variables** : Suppression de `player_node` et `_current_kickback` dans PlayerCamera
-- **Amélioration de l'architecture** : Utilisation de `movement_component.player` au lieu de référence directe
-- **Optimisation des fonctions** : Utilisation de `bind()` pour les paramètres au lieu de variables globales
-- **Code plus propre** : Réduction des variables globales inutiles, architecture plus cohérente
-- **Corrections de bugs** : Résolution des conflits de classe, optimisation des performances
-- **Code robuste** : Vérifications null, gestion d'erreurs améliorée, architecture simplifiée
-
----
-
-## 🎯 RÉFÉRENCE RAPIDE
-
-### Architecture Modulaire (Player)
-
-#### PlayerCamera.gd
-- **Type :** `extends Camera3D` (hérite de Camera3D)
-- **shake_intensity :** 0.8 (intensité du shake)
-- **shake_duration :** 0.8s (durée du shake)
-- **shake_rotation :** 5.0 (rotation du shake)
-- **headbob_amplitude :** 0.06 (amplitude du head bob)
-- **headbob_frequency :** 6.0 (fréquence du head bob)
-- **headbob_transition_speed :** 5.0 (vitesse de transition)
-- **headbob_x_phase_offset :** 0.5 (décalage de phase X)
-- **recoil_intensity :** 0.09 (intensité du recul)
-- **recoil_duration :** 0.15s (durée du recul)
-- **recoil_rotation :** 1.5 (rotation du recul)
-- **recoil_kickback :** 0.5 (recul vers l'arrière)
-- **recoil_variation :** 0.5 (variation aléatoire)
-- **jump_look_angle :** 25.0 (angle d'inclinaison saut)
-- **jump_look_smoothness :** 4.0 (vitesse de transition saut)
-- **Fonctions :** `start_camera_shake()`, `trigger_recoil()`, `start_jump_look_down()`
-
-#### PlayerMovement.gd
-- **max_speed :** 9.5 (vitesse maximale)
-- **acceleration_duration :** 0.4s (durée d'accélération)
-- **slam_velocity :** -33.0 (vitesse de slam)
-- **freeze_duration_after_slam :** 0.3s (durée de gel après slam)
-- **min_time_before_slam :** 0.4s (temps minimum avant slam)
-- **jump_height :** 3.3m (hauteur de saut désirée)
-- **jump_velocity :** 4.5 (force du saut, calculée automatiquement)
-- **fall_gravity_multiplier :** 1.0 (multiplicateur de gravité pour la chute)
-- **Fonctions :** `start_jump()`, `start_slam()`, `get_current_speed()`, `is_moving()`, `is_jumping()`
-
-#### PlayerCombat.gd
-- **revolver_damage :** 25 (dégâts par tir)
-- **enable_jump_compensation :** true (activation de la compensation du raycast)
-- **compensation_strength :** 1.0 (force de la compensation)
-- **max_compensation_angle :** 45.0° (angle maximum de compensation)
-- **Fonctions :** `trigger_shot()`, `trigger_reload()`, `trigger_recoil()`, `_calculate_raycast_compensation()`, `_update_raycast_direction()`
-- **Communication :** Connexion directe avec PlayerCamera
-
-#### PlayerInput.gd
-- **mouse_sensitivity :** 0.002 (sensibilité souris)
-- **Fonctions :** Délégation des inputs aux composants
-
-### Paramètres Saut Simplifié (PlayerMovement)
-- **jump_height :** 3.3m (hauteur de saut désirée)
-- **jump_velocity :** 4.5 (force du saut, calculée automatiquement)
-- **fall_gravity_multiplier :** 1.0 (multiplicateur de gravité pour la chute)
-- **Fonctions :** `_calculate_jump_velocity()`, `start_jump()`, `is_jumping()`
-
-
-### Paramètres Sway (Revolver)
-- **idle_sway_amplitude :** Vector3(2.0, 0.5, 0.5) (amplitude idle X, Y, Z)
-- **idle_sway_frequency :** 1.0 Hz (fréquence idle)
-- **movement_sway_amplitude :** Vector3(9.0, 1.0, 2.0) (amplitude movement X, Y, Z)
-- **movement_sway_frequency :** 5.0 Hz (fréquence movement)
-- **sway_transition_speed :** 3.0 (vitesse de transition entre idle/movement)
-
-### Paramètres Tremblement (Revolver)
-- **shake_intensity :** 3.0 pixels
-- **shake_duration :** 0.15s par balle
-- **shake_frequency :** 20.0 oscillations/s
-- **Fonction :** _create_weapon_shake() et _create_weapon_shake_at_position()
-- **Utilisation :** Rechargement ET clic vide
-- **Position adaptative :** position actuelle (clic vide) ou reload_position (rechargement)
-
-### Paramètres Effet de Vibration (Revolver)
-- **hit_shake_duration :** 0.15s (durée de vibration sur ennemi)
-- **hit_shake_intensity :** 0.06 (intensité de vibration sur ennemi)
-- **hit_shake_frequency :** 75.0 Hz (fréquence d'oscillations sur ennemi)
-- **hit_shake_axes :** Vector3(1.0, 1.0, 0.0) (axes de vibration X, Y)
-- **Fonction :** get_hit_effect_params() (récupération des paramètres pour l'ennemi)
-
-### Paramètres Rougissement (Enemy)
-- **red_flash_duration :** 0.2s
-- **red_flash_intensity :** 1.5
-- **red_flash_color :** Rouge pur
-- **Fonction :** _create_red_flash() (ligne 115-143)
-
-### Paramètres Effet de Vibration (Enemy + Revolver)
-- **Dictionnaire de paramètres :** Structure de données pour paramètres d'effet
-- **hit_shake_duration :** 0.15s (durée de vibration)
-- **hit_shake_intensity :** 0.06 (intensité de vibration)
-- **hit_shake_frequency :** 75.0 Hz (fréquence d'oscillations)
-- **hit_shake_axes :** Vector3(1.0, 1.0, 0.0) (axes X, Y activés)
-- **Fonction Enemy :** _create_hit_shake() (effet de vibration du sprite)
-- **Fonction Revolver :** get_hit_effect_params() (récupération des paramètres)
-- **Intégration :** PlayerCombat transmet les paramètres du revolver à l'ennemi
-
-### Paramètres Système de Compensation du Raycast (PlayerCombat)
-- **enable_jump_compensation :** true (activation de la compensation du raycast lors du saut)
-- **compensation_strength :** 1.0 (force de la compensation - 1.0 = parfaite, 0.5 = réduite, 1.5 = surexposée)
-- **max_compensation_angle :** 45.0° (angle maximum de compensation en degrés)
-- **base_raycast_direction :** Vector3(0, 0, -1000) (direction de base du raycast)
-- **Fonctions principales :** _calculate_raycast_compensation(), _update_raycast_direction()
-- **Fonctions de contrôle :** set_jump_compensation(), set_compensation_strength(), set_max_compensation_angle()
-- **Intégration :** Mise à jour automatique avant chaque tir via _handle_shot()
-- **Algorithme :** Calcul trigonométrique de l'offset vertical basé sur l'angle d'inclinaison de la caméra
-
-### Paramètres Pathfinding (Enemy)
-- **move_speed :** 3.0 (vitesse de déplacement)
-- **raycast_distance :** 2.0 (distance de détection d'obstacles)
-- **avoid_direction :** Vector3(-direction.z, 0, direction.x) (contournement à droite)
-- **Fonctions :** _physics_process() (ligne 78-112), _setup_navigation(), _update_navigation()
-
-### Paramètres Rotation (Enemy)
-- **billboard :** false (désactivé dans enemy.tscn)
-- **direction_calculation :** (player_position - enemy_position).normalized()
-- **y_component :** 0 (ignoré pour rotation horizontale uniquement)
-- **Fonction :** _update_sprite_rotation() (ligne 220-234)
-- **look_at_target :** global_position + direction_to_player

@@ -241,7 +241,7 @@ func update_jump_height(current_height: float) -> void:
 		jump_max_height = current_height
 
 func _handle_jump_look_down(delta: float) -> void:
-	if not movement_component or jump_max_height <= jump_start_height:
+	if not movement_component or not movement_component.player or jump_max_height <= jump_start_height:
 		return
 		
 	# Calculer le progrès du saut (0 = début, 0.5 = milieu, 1.0 = sommet)

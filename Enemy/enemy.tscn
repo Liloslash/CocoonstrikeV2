@@ -218,19 +218,16 @@ impact_color_1 = Color(0.996126, 0, 0.238011, 1)
 impact_color_4 = Color(0.176419, 0.176419, 0.176419, 1)
 red_flash_duration = 0.35
 red_flash_intensity = 5.0
-
-[node name="NavigationAgent" type="NavigationAgent3D" parent="."]
-path_max_distance = 10.01
-height = 2.0
-max_speed = 3.0
+gravity_scale = 1.2
+slam_push_force = 3.5
+slam_bond_duration = 0.5
 
 [node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
 texture_filter = 2
 sprite_frames = SubResource("SpriteFrames_q40vv")
-animation = &"WalkAnim"
+animation = &"Idle"
 autoplay = "Idle"
-frame = 9
 frame_progress = 0.715645
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

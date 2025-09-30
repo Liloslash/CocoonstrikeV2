@@ -326,7 +326,7 @@ func _create_weapon_shake():
 func _create_weapon_shake_at_position(target_position: Vector2):
 	# Création d'un tween pour le tremblement
 	var shake_tween = create_tween()
-	shake_tween.set_loops()  # Le tween se répète
+	# Pas de set_loops() - on contrôle manuellement la durée
 	
 	# Calcul du nombre d'oscillations basé sur la durée et la fréquence
 	var oscillations = int(shake_duration * shake_frequency)

@@ -45,7 +45,7 @@ func _ready() -> void:
 func _setup_raycast() -> void:
 	if not raycast:
 		# Créer si manquant (sécurité)
-		var camera = player.get_node_or_null("Camera3D")
+		var camera = player.get_node_or_null("PlayerCamera")
 		if camera:
 			raycast = RayCast3D.new()
 			camera.add_child(raycast)
@@ -159,12 +159,12 @@ func is_revolver_connected() -> bool:
 	return revolver_connected
 
 func trigger_shot() -> void:
-	if not revolver_connected:
+	if not revolver_connected or not revolver_sprite:
 		return
 	revolver_sprite.play_shot_animation()
 
 func trigger_reload() -> void:
-	if not revolver_connected:
+	if not revolver_connected or not revolver_sprite:
 		return
 	revolver_sprite.start_reload()
 

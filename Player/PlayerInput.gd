@@ -22,6 +22,10 @@ func setup_player(player_node: CharacterBody3D, movement_comp: Node, combat_comp
 
 # === GESTION DES INPUTS ===
 func _input(event: InputEvent) -> void:
+	# Vérification de sécurité
+	if not player:
+		return
+		
 	# Gestion de la souris
 	if event is InputEventMouseMotion:
 		player.rotate_y(-event.relative.x * mouse_sensitivity)

@@ -14,6 +14,12 @@ class_name PlayerMovement
 @export var jump_velocity: float = 4.5  # Force du saut (calculée automatiquement)
 @export var fall_gravity_multiplier: float = 1.0  # Multiplicateur de gravité pour la chute
 
+@export_group("Slam")
+@export var slam_radius: float = 2.0  # Rayon de la sphère d'effet du slam
+@export var slam_push_distance: float = 1.5  # Distance horizontale du repoussement
+@export var slam_push_height: float = 0.7  # Hauteur du bond de repoussement
+@export var slam_freeze_duration: float = 1.0  # Durée minimum du freeze après slam
+
 # === RÉFÉRENCES ===
 var player: CharacterBody3D
 var camera_component: PlayerCamera
@@ -101,6 +107,9 @@ func _handle_slam_landing() -> void:
 	is_frozen = true
 	freeze_timer = freeze_duration_after_slam
 	
+	# Gérer l'impact du slam sur les ennemis
+	_handle_slam_impact()
+	
 	# Émettre le signal pour déclencher le camera shake
 	slam_landed.emit()
 
@@ -158,6 +167,29 @@ func is_slamming_state() -> bool:
 	return is_slamming
 
 # === FONCTIONS UTILITAIRES PRIVÉES ===
+
+# --- Gestion de l'impact du slam ---
+func _handle_slam_impact() -> void:
+	if not player:
+		return
+	
+	# Méthode simple : chercher tous les ennemis dans la scène
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	
+	for enemy in enemies:
+		if not enemy or not is_instance_valid(enemy):
+			continue
+			
+		# Calculer la distance au joueur
+		var distance = player.global_position.distance_to(enemy.global_position)
+		
+		# Si l'ennemi est dans la zone de slam
+		if distance <= slam_radius:
+			# Calculer la direction de repoussement (opposée au joueur)
+			var direction_away = (enemy.global_position - player.global_position).normalized()
+			
+			# Appliquer le repoussement immédiatement
+			enemy._apply_slam_repulsion(direction_away, slam_push_distance, slam_push_height, slam_freeze_duration)
 
 # --- Arrêt du mouvement ---
 func _stop_movement() -> void:
