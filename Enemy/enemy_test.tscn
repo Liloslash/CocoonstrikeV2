@@ -1,7 +1,7 @@
 [gd_scene load_steps=33 format=3 uid="uid://smwg3iv40p4o"]
 
 [ext_resource type="Texture2D" uid="uid://bejtd403q1ucu" path="res://Assets/Sprites/Critters/BigMonsterV1.png" id="1_2pb1h"]
-[ext_resource type="Script" uid="uid://4sr47wsfjxbc" path="res://Enemy/enemy.gd" id="1_px1sc"]
+[ext_resource type="Script" uid="uid://bhluyf4dxelar" path="res://Enemy/enemy_test.gd" id="1_px1sc"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2pb1h"]
 atlas = ExtResource("1_2pb1h")
@@ -212,7 +212,7 @@ height = 1.5
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_2j8qn"]
 height = 1.58141
 
-[node name="Enemy" type="CharacterBody3D"]
+[node name="EnemyTest" type="CharacterBody3D"]
 script = ExtResource("1_px1sc")
 impact_color_1 = Color(0.996126, 0, 0.238011, 1)
 impact_color_4 = Color(0.176419, 0.176419, 0.176419, 1)

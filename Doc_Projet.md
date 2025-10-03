@@ -5,28 +5,28 @@
 ## 📑 NAVIGATION RAPIDE
 
 **=== INFORMATIONS GÉNÉRALES ===**
-- Ligne 45 : Informations du projet
+- Ligne 36 : Informations du projet
 
 **=== ARCHITECTURE ===**
 - Ligne 46 : Structure des scènes
 - Ligne 59 : Scene Player (Architecture Modulaire)
-- Ligne 76 : Architecture Modulaire du Joueur
-- Ligne 92 : Scene Enemy
-- Ligne 104 : Collision Layers et Masks
+- Ligne 74 : Architecture Modulaire du Joueur
+- Ligne 90 : Scene Enemy (Architecture d'héritage)
+- Ligne 107 : Collision Layers et Masks
 
 **=== SYSTÈMES ===**
-- Ligne 119 : Système Joueur
-- Ligne 143 : Système de Saut Simplifié
-- Ligne 185 : Système Revolver
-- Ligne 235 : Système de Caméra Avancé
-- Ligne 268 : Système de Compensation du Raycast
-- Ligne 317 : Système Ennemis (Gravité + Repoussement)
-- Ligne 377 : Effets d'Impact
+- Ligne 126 : Système Joueur
+- Ligne 150 : Système de Saut Simplifié
+- Ligne 192 : Système Revolver
+- Ligne 242 : Système de Caméra Avancé
+- Ligne 275 : Système de Compensation du Raycast
+- Ligne 324 : Système Ennemis (Architecture Modulaire)
+- Ligne 384 : Effets d'Impact
 
 **=== RESSOURCES ===**
-- Ligne 394 : Assets Audio
-- Ligne 413 : Assets Visuels
-- Ligne 431 : Configuration
+- Ligne 401 : Assets Audio
+- Ligne 420 : Assets Visuels
+- Ligne 438 : Configuration
 
 **=== RÉFÉRENCES ===**
 - Voir Doc_Roadmap.md pour l'état du projet et la roadmap
@@ -53,7 +53,7 @@ World (Node principal)
 ├── Obstacles (Node3D) - Zone d'obstacles  
 ├── WorldEnvironment3D - Éclairage et ciel
 ├── Player (CharacterBody3D) - Joueur principal
-└── Enemy (CharacterBody3D) - Ennemi (instancié manuellement)
+└── EnemyTest (CharacterBody3D) - Ennemi de test (instancié manuellement)
 ```
 
 ### Scene Player (Architecture Modulaire)
@@ -64,8 +64,6 @@ Player (CharacterBody3D) - ORCHESTRATEUR
 ├── PlayerMovement (Node) - Mouvement et saut
 ├── PlayerCombat (Node) - Tir et raycast
 ├── PlayerInput (Node) - Gestion des inputs
-├── Camera3D (référence pour compatibilité)
-│   └── RayCast3D (collision_mask = 2)
 ├── CollisionShape3D (CapsuleShape3D)
 ├── AudioStreamPlayer3D (bruits de pas)
 └── HUD_Layer (CanvasLayer)
@@ -92,12 +90,17 @@ Player (CharacterBody3D) - ORCHESTRATEUR
 ### Scene Enemy
 
 ```
-Enemy (CharacterBody3D)
+EnemyTest (CharacterBody3D) - ENNEMI DE DÉVELOPPEMENT
 ├── AnimatedSprite3D (billboard désactivé - rotation manuelle)
 ├── CollisionShape3D (collisions environnement)
 └── Area3D (détection/dégâts)
 	└── CollisionShape3D
 ```
+
+**Architecture d'héritage :**
+- **EnemyBase** : Classe abstraite avec logique commune (vie, effets, slam, rotation)
+- **EnemyTest** : Ennemi de développement qui hérite d'EnemyBase
+- **Futurs ennemis** : 6 ennemis spécifiques (PapillonV1/V2, MonsterV1/V2, BigMonsterV1/V2)
 
 **Note :** Le système de pathfinding (NavigationAgent3D) a été temporairement supprimé pour repartir sur des bases propres. Il sera réimplémenté plus tard avec un nouveau système d'IA.
 
@@ -113,6 +116,10 @@ Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
 - **Joueur** : Détecte l'environnement (layer 0) et les ennemis (layer 2)
 - **Ennemis** : Détecte l'environnement (layer 0) et le joueur (layer 1)
 - **Environnement** : Détecté par tous (layers 1 et 2)
+
+**Structure RayCast :**
+- **PlayerCamera/RayCast3D** : collision_mask = 2 (détecte seulement les ennemis)
+- **Position** : RayCast3D est maintenant directement dans PlayerCamera (plus dans une caméra générique)
 
 ---
 
@@ -316,61 +323,61 @@ Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
 
 ## ⚙️ SYSTÈME D'ENNEMIS
 
-### Statistiques
-- **Vie :** 100 points (configurable via max_health)
-- **Collision Layer :** 2 (détectable par raycast)
-- **Collision Mask :** 3 (détecte environnement + joueur)
-- **Gravité :** Sensible à la gravité (gravity_scale = 1.0)
+### Architecture Modulaire
+- **EnemyBase** : Classe abstraite avec toute la logique commune
+- **EnemyTest** : Ennemi de développement/test (instancié dans world.tscn)
+- **Système d'héritage** : Prêt pour 6 ennemis spécifiques (PapillonV1/V2, MonsterV1/V2, BigMonsterV1/V2)
 
-### Comportement
-- **États :** Vivant/mort, gelé/actif, en repoussement
-- **Mort :** Freeze 1s puis disparition
-- **Collisions :** Désactivées à la mort
-- **Rotation :** Regarde toujours vers le joueur (axe X/Z uniquement)
-- **Gravité :** Tombe et interagit avec l'environnement
+### Fonctionnalités Communes (EnemyBase)
+- **Système de vie/dégâts** : take_damage(), _die(), gestion de la santé
+- **Effets visuels** : Rougissement rouge + tremblement (communs à tous)
+- **Système de slam** : Repoussement automatique (réaction commune)
+- **Rotation intelligente** : Tous les ennemis regardent vers le joueur
+- **Gestion des groupes** : Tous dans le groupe "enemies" (pour les vagues)
+- **Freeze pendant animations** : Pendant dégâts/slam
 
-### Système de Gravité
-- **Gravité appliquée :** En chute libre quand pas au sol
-- **Arrêt vertical :** Vélocité Y = 0 quand touche le sol
-- **Arrêt horizontal :** Vélocité X/Z = 0 quand vitesse faible au sol
-- **Configuration :** gravity_scale exportable dans l'éditeur
+### Fonctionnalités Spécifiques (par ennemi)
+- **Physique** : Chaque ennemi gère sa propre physique (gravité, collisions, mouvement)
+- **4 couleurs d'impact** : Spécifiques à chaque ennemi (méthode get_impact_colors())
+- **Comportements** : Chaque ennemi peut surcharger les méthodes virtuelles
+
+### EnemyTest (Ennemi de Développement)
+- **Statistiques** : 500 points de vie, gravité 1.2x
+- **Collision Layer** : 2 (détectable par raycast)
+- **Collision Mask** : 3 (détecte environnement + joueur)
+- **Fonctionnalités de test** : Mode debug, statistiques, contrôles clavier
+- **4 couleurs d'impact** : Rouge, Vert, Violet, Noir
 
 ### Système de Repoussement Slam
-- **Déclenchement :** Quand le joueur fait un slam à proximité (rayon 2m)
-- **Force :** slam_push_force (4.0 par défaut, configurable)
-- **Durée du bond :** slam_bond_duration (0.6s par défaut)
-- **Délai avant freeze :** slam_freeze_delay (0.8s par défaut)
-- **Cooldown :** slam_cooldown_time (0.2s par défaut)
-- **Effet :** Bond en arrière + freeze temporaire
-- **Variables exportées :** Toutes les valeurs sont configurables dans l'éditeur
+- **Déclenchement** : Quand le joueur fait un slam à proximité (rayon 2m)
+- **Force** : slam_push_force (4.0 par défaut, configurable)
+- **Durée du bond** : slam_bond_duration (0.6s par défaut)
+- **Délai avant freeze** : slam_freeze_delay (0.8s par défaut)
+- **Cooldown** : slam_cooldown_time (0.2s par défaut)
+- **Effet** : Bond en arrière + freeze temporaire
+- **Bug corrigé** : Tir pendant repoussement n'interrompt plus le mouvement
 
 ### Système de Rotation
-- **Billboard :** Désactivé pour contrôle manuel
-- **Rotation automatique :** Vers le joueur en temps réel
-- **Axe de rotation :** X/Z uniquement (pas de rotation verticale)
-- **Fonction :** _update_sprite_rotation() dans _physics_process()
-- **Méthode :** look_at() avec direction normalisée (Y = 0)
-- **Vérifications :** is_instance_valid() pour éviter les erreurs
-
-### Couleurs d'Impact
-- **4 couleurs exportables** dans l'inspecteur
-- **Défaut :** Rouge clair, Vert, Violet, Noir
-- **Méthode :** get_impact_colors()
+- **Billboard** : Désactivé pour contrôle manuel
+- **Rotation automatique** : Vers le joueur en temps réel
+- **Axe de rotation** : X/Z uniquement (pas de rotation verticale)
+- **Méthode** : look_at() avec direction normalisée (Y = 0)
+- **Vérifications** : is_instance_valid() pour éviter les erreurs
 
 ### Effet de Rougissement
-- **Feedback :** Rouge quand dégâts
-- **Durée :** 0.2s
-- **Intensité :** 1.5
-- **Transition :** EASE_OUT
-- **Déclenchement :** À l'impact
+- **Feedback** : Rouge quand dégâts
+- **Durée** : 0.2s
+- **Intensité** : 1.5
+- **Transition** : EASE_OUT
+- **Déclenchement** : À l'impact
 
 ### Système d'Effet de Vibration
-- **Fonctionnalité :** Vibration du sprite ennemi lors de l'impact
-- **Paramètres personnalisables :** Durée, intensité, fréquence, axes
-- **Architecture :** Système modulaire avec dictionnaire de paramètres
-- **Intégration :** Communication entre revolver et ennemi via PlayerCombat
-- **Valeurs par défaut :** 0.15s, 0.06 intensité, 75 Hz, axes X/Y
-- **Avantages :** Extensible pour d'autres armes, paramètres ajustables par arme
+- **Fonctionnalité** : Vibration du sprite ennemi lors de l'impact
+- **Paramètres personnalisables** : Durée, intensité, fréquence, axes
+- **Architecture** : Système modulaire avec dictionnaire de paramètres
+- **Intégration** : Communication entre revolver et ennemi via PlayerCombat
+- **Valeurs par défaut** : 0.15s, 0.06 intensité, 75 Hz, axes X/Y
+- **Avantages** : Extensible pour d'autres armes, paramètres ajustables par arme
 
 ---
 
@@ -438,6 +445,14 @@ Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
 - **Clic gauche :** Tir
 - **R :** Rechargement
 
+### Corrections et Optimisations
+- **Collision layers** : Correction des layers incorrects dans world.tscn
+- **RayCast caméra** : RayCast3D déplacé vers PlayerCamera (correspondance parfaite)
+- **Double caméra** : Suppression de la caméra en double
+- **Connexions de signal** : Ajout de CONNECT_ONE_SHOT pour éviter les fuites mémoire
+- **Await avec gestion d'erreur** : Vérification is_alive après chaque await
+- **UID des fichiers** : Correction des références UID après renommage
+
 ### Collision Layers
 - **Layer 0 :** Environnement
 - **Layer 1 :** Joueur
@@ -449,4 +464,3 @@ Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
 - **Ciel :** ProceduralSkyMaterial
 
 ---
-

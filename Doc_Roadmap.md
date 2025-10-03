@@ -1,7 +1,7 @@
 # 🚀 ROADMAP - COCOONSTRIKE REBUILD
 
 ## 🔥 SUR LE FEU (En cours)
-- Nouveau système d'IA pour les ennemis (remplacement du pathfinding)
+- Création des 6 ennemis spécifiques (PapillonV1/V2, MonsterV1/V2, BigMonsterV1/V2)
 - Système de vagues d'ennemis
 - Implémentation des bruits de pas du player
 - Sons de dégâts des ennemis
@@ -47,6 +47,12 @@
 - Corrections critiques de bugs et erreurs
 - Code robuste avec 0 erreur de linter
 - Contrôles mis à jour (Slam changé de Q vers A)
+- Architecture d'héritage des ennemis (EnemyBase + EnemyTest)
+- Refactorisation complète du système d'ennemis
+- Bug corrigé : Tir pendant repoussement slam
+- Corrections techniques (collision layers, RayCast caméra, double caméra)
+- Optimisations mémoire (connexions de signal, await avec gestion d'erreur)
+- Correction des références UID après renommage
 
 ## 🔗 DÉPÔT GITHUB
 [https://github.com/Liloslash/CocoonstrikeV2](https://github.com/Liloslash/CocoonstrikeV2) - Consultez l'historique des commits pour les dates exactes de mise à jour

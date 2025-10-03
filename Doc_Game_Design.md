@@ -1,7 +1,9 @@
 # 🎮 GAME DESIGN - COCOONSTRIKE
 
 ## 🎯 CONCEPT CORE
-**Cocoonstrike - Rebuild** est un survival shooter FPS où le joueur incarne un soldat dans une armure assistée futuriste, condamné à survivre face à des vagues d'ennemis dans un environnement urbain en ruine.
+**Cocoonstrike - Rebuild** est un survival shooter FPS où le joueur incarne 
+un soldat dans une armure assistée futuriste, condamné à survivre face à des
+vagues d'ennemis dans un environnement urbain en ruine.
 
 **Objectif :** Survivre le plus longtemps possible  
 **Fin :** Mort inévitable  
@@ -26,8 +28,8 @@
 
 ### Armure Futuriste
 - **Style** : Armure assistée futuriste 
-- **HUD diégétique** : Contour de visière de casque affichant vie et munitions et état des
-capacités
+- **HUD diégétique** : Contour de visière de casque affichant vie et munitions
+et état des capacités
 - **Justification gameplay** : L'armure explique les capacités spéciales (slam, power shot)
 
 ### Environnement

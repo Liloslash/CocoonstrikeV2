@@ -168,7 +168,7 @@ fire_rate = 0.3
 shake_intensity = 4.0
 shake_duration = 0.2
 movement_sway_amplitude = Vector3(10, 0.8, 1.5)
-movement_sway_frequency = 6.5
+movement_sway_frequency = 8.5
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="HUD_Layer/Revolver"]
 libraries = {
@@ -178,12 +178,10 @@ libraries = {
 [node name="PlayerCamera" type="Camera3D" parent="."]
 script = ExtResource("4_vtle1")
 shake_intensity = 0.3
-shake_duration = 2.2
+shake_duration = 1.9
 recoil_rotation = 1.0
 
-[node name="Camera3D" type="Camera3D" parent="."]
-
-[node name="RayCast3D" type="RayCast3D" parent="Camera3D"]
+[node name="RayCast3D" type="RayCast3D" parent="PlayerCamera"]
 collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

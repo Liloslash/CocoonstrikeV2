@@ -1,32 +1,18 @@
 extends CharacterBody3D
+class_name EnemyBase
 
-# === SYSTÈME D'ENNEMI ===
-# Gestion de la vie, dégâts, effets visuels et rotation vers le joueur
+# === CLASSE DE BASE POUR TOUS LES ENNEMIS ===
+# Cette classe abstraite contient toute la logique commune des ennemis
+# Les ennemis spécifiques héritent de cette classe et peuvent surcharger les méthodes
 
-# === PARAMÈTRES EXPORTÉS ===
+# === PARAMÈTRES EXPORTÉS COMMUNS ===
 @export_group("Statistiques")
 @export var max_health: int = 100
-
-@export_group("Comportement")
-# (Variables de comportement supprimées - seront réimplémentées avec le nouveau système d'IA)
-
-@export_group("Animation de Mort")
-@export var death_freeze_duration: float = 1.0  # Durée du freeze avant disparition
-
-@export_group("Effets d'Impact")
-@export var impact_color_1: Color = Color(1.0, 0.5, 0.5, 1.0)  # Rouge clair
-@export var impact_color_2: Color = Color.GREEN    # Couleur 2 (veines vertes)
-@export var impact_color_3: Color = Color.PURPLE   # Couleur 3 (corps violet)
-@export var impact_color_4: Color = Color.BLACK    # Couleur 4 (détails noirs)
 
 @export_group("Effet de Rougissement")
 @export var red_flash_duration: float = 0.2  # Durée du rougissement (0.2 secondes)
 @export var red_flash_intensity: float = 1.5  # Intensité du rouge (1.5 pour un effet bien visible)
 @export var red_flash_color: Color = Color.RED  # Couleur du rougissement
-
-@export_group("Gravité")
-@export var gravity_scale: float = 1.0
-@onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity") * gravity_scale
 
 @export_group("Slam Repoussement")
 @export var slam_push_force: float = 4.0  # Force du repoussement
@@ -40,29 +26,47 @@ var is_alive: bool = true
 var is_frozen: bool = false
 var player_reference: Node3D = null
 var freeze_timer: float = 0.0
-var is_being_repelled: bool = false
-var pending_freeze_duration: float = 0.0
 var slam_cooldown: float = 0.0
-
-# === NAVIGATION ===
-# (Système de pathfinding supprimé - sera réimplémenté plus tard)
+var is_being_slam_repelled: bool = false  # Pour distinguer le repoussement slam des autres freezes
 
 # === COMPOSANTS ===
 @onready var sprite: AnimatedSprite3D = $AnimatedSprite3D  # Le sprite 2D billboard
 
+# === MÉTHODES VIRTUELLES À SURCHARGER ===
+# Ces méthodes peuvent être surchargées par les ennemis spécifiques
+
+func _on_enemy_ready():
+	# Surcharger cette méthode pour l'initialisation spécifique à chaque ennemi
+	pass
+
+func _on_physics_process(_delta: float):
+	# Surcharger cette méthode pour le comportement spécifique de chaque ennemi
+	pass
+
+func _on_damage_taken(_damage: int):
+	# Surcharger cette méthode pour des réactions spécifiques aux dégâts
+	pass
+
+func _on_death():
+	# Surcharger cette méthode pour des effets de mort spécifiques
+	pass
+
+# === INITIALISATION DE BASE ===
 func _ready():
-	# Initialisation
+	# Initialisation commune à tous les ennemis
 	current_health = max_health
 	
-	# Configuration des collisions
-	collision_layer = 2  # Ennemi sur la layer 2 (détectable par raycast)
-	collision_mask = 3   # Détecte la layer 0 (environnement) + layer 1 (joueur)
+	# Configuration des collisions (spécifique à chaque type d'ennemi)
+	# Les papillons auront collision_layer/mask différents des monstres terrestres
 	
 	# Ajouter au groupe des ennemis pour la détection du slam
 	add_to_group("enemies")
 	
 	# Recherche du joueur dans la scène
 	_find_player()
+	
+	# Appeler la méthode virtuelle pour l'initialisation spécifique
+	_on_enemy_ready()
 
 func _find_player():
 	# Cherche le joueur dans la scène (adaptez selon votre structure)
@@ -81,61 +85,57 @@ func _find_player():
 	# Vérifier si le joueur est trouvé
 	if not player_reference:
 		push_warning("Ennemi : Joueur non trouvé - la rotation ne fonctionnera pas")
-		# Ne pas utiliser push_error() car ce n'est pas critique
 
+# === PHYSICS PROCESS DE BASE ===
 func _physics_process(delta):
 	if not is_alive:
 		return
 	
-	# Gérer le freeze
+	# Gérer le freeze (pendant les animations)
 	_handle_freeze(delta)
 	
 	# Gérer le cooldown du slam
 	if slam_cooldown > 0:
 		slam_cooldown -= delta
 	
-	if is_frozen:
+	# Si on est gelé ET qu'on n'est pas en train d'être repoussé par un slam
+	if is_frozen and not is_being_slam_repelled:
 		return
 
-	# Gravité + déplacement
-	if not is_on_floor():
-		velocity.y -= gravity * delta
-	else:
-		# Arrêter le mouvement vertical quand on touche le sol
-		if velocity.y < 0.0:
-			velocity.y = 0.0
-		# Arrêter aussi le mouvement horizontal pour éviter le glissement
-		if abs(velocity.x) < 0.1 and abs(velocity.z) < 0.1:
-			velocity.x = 0.0
-			velocity.z = 0.0
+	# Les ennemis spécifiques gèrent leur propre physique
+	# (gravité, mouvement, collisions) dans _on_physics_process()
 
-	move_and_slide()
-
-	# ROTATION DU SPRITE VERS LE JOUEUR
+	# ROTATION DU SPRITE VERS LE JOUEUR (commune à tous)
 	_update_sprite_rotation()
+	
+	# Appeler la méthode virtuelle pour le comportement spécifique
+	_on_physics_process(delta)
 
-# === SYSTÈME DE DÉGÂTS ===
+# === SYSTÈME DE DÉGÂTS (COMMUN À TOUS) ===
 func take_damage(damage: int, hit_effect_params: Dictionary = {}):
 	if not is_alive:
 		return
 	
 	current_health -= damage
 	
-	# Effet de rougissement au moment de l'impact
+	# Effet de rougissement au moment de l'impact (commun)
 	_create_red_flash()
 	
-	# Effet de vibration si des paramètres sont fournis
+	# Effet de vibration si des paramètres sont fournis (commun)
 	if hit_effect_params:
 		_create_hit_shake(hit_effect_params)
 	
-	# Freeze pendant l'animation de tremblement
+	# Freeze pendant l'animation de tremblement (commun)
 	_start_damage_freeze()
+	
+	# Appeler la méthode virtuelle pour les réactions spécifiques
+	_on_damage_taken(damage)
 	
 	# Vérification de la mort
 	if current_health <= 0:
 		_die()
 
-# === SYSTÈME DE REPOUSSEMENT DU SLAM ===
+# === SYSTÈME DE REPOUSSEMENT DU SLAM (COMMUN À TOUS) ===
 func _apply_slam_repulsion(direction: Vector3, _push_distance: float, push_height: float, freeze_duration: float):
 	if not is_alive:
 		return
@@ -143,6 +143,9 @@ func _apply_slam_repulsion(direction: Vector3, _push_distance: float, push_heigh
 	# Vérifier le cooldown (éviter les slams trop rapides)
 	if slam_cooldown > 0:
 		return
+	
+	# Marquer qu'on est en train d'être repoussé par un slam
+	is_being_slam_repelled = true
 	
 	# Sortir du freeze si on était gelé
 	is_frozen = false
@@ -166,12 +169,19 @@ func _apply_slam_repulsion(direction: Vector3, _push_distance: float, push_heigh
 	
 	# Freeze après le bond
 	await get_tree().create_timer(slam_freeze_delay).timeout
+	# Vérifier que l'ennemi est toujours vivant avant de continuer
+	if not is_alive:
+		return
 	is_frozen = true
 	freeze_timer = freeze_duration
+	is_being_slam_repelled = false  # Fin du repoussement slam
 
 func _stop_after_bond():
 	# Arrêter le mouvement horizontal après le bond
 	await get_tree().create_timer(slam_bond_duration).timeout
+	# Vérifier que l'ennemi est toujours vivant avant de continuer
+	if not is_alive:
+		return
 	velocity.x = 0.0
 	velocity.z = 0.0
 
@@ -183,8 +193,10 @@ func _die():
 	is_frozen = true
 	_disable_collisions()
 	
-	# Freeze pendant 1 seconde puis disparition
-	await get_tree().create_timer(death_freeze_duration).timeout
+	# Appeler la méthode virtuelle pour les effets de mort spécifiques
+	_on_death()
+	
+	# SUPPRESSION DU FREEZE DE MORT - à recréer plus tard selon les besoins
 	queue_free()
 
 func _disable_collisions():
@@ -213,11 +225,7 @@ func get_health_percentage() -> float:
 func is_dead() -> bool:
 	return not is_alive
 
-# === GETTERS POUR LES COULEURS D'IMPACT ===
-func get_impact_colors() -> Array[Color]:
-	return [impact_color_1, impact_color_2, impact_color_3, impact_color_4]
-
-# === EFFET DE ROUGISSEMENT ===
+# === EFFET DE ROUGISSEMENT (COMMUN À TOUS) ===
 func _create_red_flash():
 	# Vérification que l'ennemi est vivant et a un sprite
 	if not is_alive or not sprite or not is_inside_tree():
@@ -247,7 +255,7 @@ func _create_red_flash():
 	flash_tween.set_trans(Tween.TRANS_QUAD)
 	flash_tween.set_ease(Tween.EASE_OUT)
 
-# === EFFET DE VIBRATION ===
+# === EFFET DE VIBRATION (COMMUN À TOUS) ===
 func _create_hit_shake(effect_params: Dictionary):
 	# Vérification que l'ennemi est vivant et a un sprite
 	if not is_alive or not sprite or not is_inside_tree():
@@ -259,7 +267,6 @@ func _create_hit_shake(effect_params: Dictionary):
 	
 	# Création du tween pour l'effet de vibration
 	var shake_tween = create_tween()
-	# Pas de set_loops() - on contrôle manuellement la durée
 	
 	# Récupération des paramètres avec valeurs par défaut
 	var duration = effect_params.get("duration", 0.25)
@@ -298,19 +305,17 @@ func _create_hit_shake(effect_params: Dictionary):
 	shake_tween.tween_property(sprite, "rotation", original_rotation, 0.1)
 	
 	# Arrêt du tween après la durée totale
-	get_tree().create_timer(duration).timeout.connect(func(): 
+	var timer = get_tree().create_timer(duration)
+	timer.timeout.connect(func(): 
 		if shake_tween and shake_tween.is_valid():
 			shake_tween.kill()
-	)
+	, CONNECT_ONE_SHOT)  # Connexion automatique supprimée après utilisation
 	
 	# Forcer le retour à la position originale (sécurité)
 	sprite.position = original_position
 	sprite.rotation = original_rotation
 
-# === SYSTÈME DE NAVIGATION ===
-# (Système de pathfinding supprimé - sera réimplémenté plus tard)
-
-# === ROTATION DU SPRITE VERS LE JOUEUR ===
+# === ROTATION DU SPRITE VERS LE JOUEUR (COMMUNE À TOUS) ===
 func _update_sprite_rotation():
 	# Vérifier que l'ennemi est vivant, a un sprite et un joueur de référence
 	if not is_alive or not sprite or not player_reference or not is_inside_tree() or not is_instance_valid(player_reference):
@@ -327,7 +332,7 @@ func _update_sprite_rotation():
 	# Faire tourner le sprite pour regarder vers le joueur (rotation uniquement sur Y)
 	sprite.look_at(look_target, Vector3.UP)
 
-# === SYSTÈME DE FREEZE ===
+# === SYSTÈME DE FREEZE (PENDANT LES ANIMATIONS) ===
 func _handle_freeze(delta: float) -> void:
 	if not is_frozen:
 		return
@@ -339,27 +344,8 @@ func _handle_freeze(delta: float) -> void:
 
 func _start_damage_freeze() -> void:
 	# Freeze pendant la durée de l'animation de tremblement
-	var shake_duration = 0.25  # Durée par défaut du tremblement
-	is_frozen = true
-	freeze_timer = shake_duration
-
-# Fonctions supprimées - logique simplifiée
-
-func _trigger_landing_shake() -> void:
-	# Déclencher l'animation de tremblement à l'atterrissage
-	if not is_alive or not sprite or not is_inside_tree():
-		return
-	
-	# Créer les paramètres d'effet pour le tremblement
-	var shake_params = {
-		"duration": 0.25,
-		"intensity": 0.1,
-		"frequency": 20.0,
-		"axes": Vector3(1.0, 1.0, 0.0)
-	}
-	
-	# Déclencher l'animation de tremblement
-	_create_hit_shake(shake_params)
-	
-	# Freeze pendant l'animation
-	_start_damage_freeze()
+	# MAIS seulement si on n'est pas en train d'être repoussé par un slam
+	if not is_being_slam_repelled:
+		var shake_duration = 0.25  # Durée par défaut du tremblement
+		is_frozen = true
+		freeze_timer = shake_duration
