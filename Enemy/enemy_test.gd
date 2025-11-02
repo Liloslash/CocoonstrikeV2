@@ -5,9 +5,6 @@ extends EnemyBase
 # Hérite d'EnemyBase et peut surcharger les méthodes pour des tests spécifiques
 
 # === PARAMÈTRES EXPORTÉS SPÉCIFIQUES AU TEST ===
-@export_group("Test - Statistiques")
-@export var test_damage_multiplier: float = 1.0  # Multiplicateur de dégâts pour les tests
-
 @export_group("Test - Comportement")
 @export var test_debug_mode: bool = false  # Mode debug pour afficher des informations
 
@@ -24,6 +21,7 @@ extends EnemyBase
 var test_damage_count: int = 0  # Compteur de dégâts reçus pour les tests
 var test_rotation_angle: float = 0.0  # Angle de rotation pour les tests visuels
 var gravity: float  # Gravité pour ce test
+var initial_position: Vector3  # Position initiale définie dans la scène
 
 # === MÉTHODES VIRTUELLES SURCHARGÉES ===
 
@@ -35,49 +33,51 @@ func _on_enemy_ready():
 	collision_layer = 2  # Ennemi sur la layer 2 (détectable par raycast)
 	collision_mask = 3   # Détecte la layer 0 (environnement) + layer 1 (joueur)
 	
-	if test_debug_mode:
-		print("EnemyTest initialisé - Mode debug activé")
-		print("Santé max: ", max_health)
-		print("Force de repoussement slam: ", slam_push_force)
-		print("Gravité: ", gravity)
+	# Sauvegarder la position initiale définie dans la scène
+	initial_position = global_position
+	# Juste corriger Y pour être au sol
+	global_position.y = 0.75
+	initial_position.y = 0.75
+	
+	
 
 func _on_physics_process(delta: float):
-	# Physique spécifique au test (gravité + mouvement)
+	# Si on est en cours de repoussement slam, appliquer le mouvement puis forcer au sol
+	if is_being_slam_repelled:
+		# Appliquer le mouvement complet
+		move_and_slide()
+		# APRÈS le mouvement, forcer la position Y au sol (pas de saut pour EnemyTest)
+		global_position.y = 0.75
+		
+		# Si l'ennemi va trop loin, le ramener à sa position initiale
+		if global_position.distance_to(initial_position) > 10.0:
+			global_position = initial_position
+		return
 	
-	# Gravité + déplacement
-	if not is_on_floor():
-		velocity.y -= gravity * delta
-	else:
-		# Arrêter le mouvement vertical quand on touche le sol
-		if velocity.y < 0.0:
-			velocity.y = 0.0
-		# Arrêter aussi le mouvement horizontal pour éviter le glissement
-		if abs(velocity.x) < 0.1 and abs(velocity.z) < 0.1:
-			velocity.x = 0.0
-			velocity.z = 0.0
-
-	move_and_slide()
+	# Position fixe au sol pour éviter l'enfoncement
+	global_position.y = 0.75
+	velocity = Vector3.ZERO
+	
+	# Remettre le sprite à sa position d'origine (sauf rotation Y vers le joueur)
+	if sprite:
+		sprite.position = Vector3.ZERO
+		sprite.rotation.x = 0.0
+		sprite.rotation.z = 0.0
 	
 	# Comportement de test (rotation visuelle si debug activé)
 	if test_debug_mode:
-		test_rotation_angle += delta * 10.0  # Rotation lente pour test visuel
+		test_rotation_angle += delta * 10.0
 		if sprite:
 			sprite.rotation.z = sin(test_rotation_angle) * 0.1
 
 func _on_damage_taken(_damage: int):
 	# Réaction spécifique aux dégâts pour l'ennemi de test
 	test_damage_count += 1
-	
-	if test_debug_mode:
-		print("EnemyTest - Dégâts reçus: ", _damage)
-		print("EnemyTest - Total dégâts reçus: ", test_damage_count)
-		print("EnemyTest - Santé restante: ", current_health)
 
 func _on_death():
 	# Effets de mort spécifiques à l'ennemi de test
-	if test_debug_mode:
-		print("EnemyTest - Mort détectée!")
-		print("EnemyTest - Total dégâts reçus avant mort: ", test_damage_count)
+	pass
+
 
 # === MÉTHODES SPÉCIFIQUES AU TEST ===
 
@@ -102,21 +102,7 @@ func get_impact_colors() -> Array[Color]:
 
 # === MÉTHODES DE TEST POUR LE DÉVELOPPEMENT ===
 
-func _input(event):
+func _input(_event):
 	# Méthodes de test accessibles via input (pour debug uniquement)
 	if not test_debug_mode:
 		return
-	
-	if event.is_action_pressed("ui_accept"):  # Touche Entrée
-		print("=== STATS ENEMY TEST ===")
-		var stats = get_test_stats()
-		for key in stats:
-			print(key, ": ", stats[key])
-	
-	elif event.is_action_pressed("ui_select"):  # Touche Espace
-		print("Reset des stats de test")
-		reset_test_stats()
-	
-	elif event.is_action_pressed("ui_cancel"):  # Touche Échap
-		print("Test de dégâts (10 points)")
-		take_damage(10)

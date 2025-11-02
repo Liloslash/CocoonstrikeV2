@@ -21,6 +21,7 @@
 - Ligne 242 : Système de Caméra Avancé
 - Ligne 275 : Système de Compensation du Raycast
 - Ligne 324 : Système Ennemis (Architecture Modulaire)
+- Ligne 352 : PapillonV1 (Ennemi Volant)
 - Ligne 384 : Effets d'Impact
 
 **=== RESSOURCES ===**
@@ -52,8 +53,10 @@ World (Node principal)
 ├── Arena (Node3D) - Zone d'arène
 ├── Obstacles (Node3D) - Zone d'obstacles  
 ├── WorldEnvironment3D - Éclairage et ciel
+├── Navigation (NavigationRegion3D) - Présent mais non utilisé actuellement
 ├── Player (CharacterBody3D) - Joueur principal
-└── EnemyTest (CharacterBody3D) - Ennemi de test (instancié manuellement)
+├── EnemyTest (CharacterBody3D) - Ennemi de test (instancié manuellement)
+└── PapillonV1 (CharacterBody3D) - Ennemi volant (instancié dans world.tscn)
 ```
 
 ### Scene Player (Architecture Modulaire)
@@ -100,7 +103,8 @@ EnemyTest (CharacterBody3D) - ENNEMI DE DÉVELOPPEMENT
 **Architecture d'héritage :**
 - **EnemyBase** : Classe abstraite avec logique commune (vie, effets, slam, rotation)
 - **EnemyTest** : Ennemi de développement qui hérite d'EnemyBase
-- **Futurs ennemis** : 6 ennemis spécifiques (PapillonV1/V2, MonsterV1/V2, BigMonsterV1/V2)
+- **PapillonV1** : Ennemi volant implémenté (hérite d'EnemyBase)
+- **Futurs ennemis** : 5 ennemis spécifiques restants (PapillonV2, MonsterV1/V2, BigMonsterV1/V2)
 
 **Note :** Le système de pathfinding (NavigationAgent3D) a été temporairement supprimé pour repartir sur des bases propres. Il sera réimplémenté plus tard avec un nouveau système d'IA.
 
@@ -128,8 +132,8 @@ Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
 ### Mouvement FPS
 - **Contrôles :** WASD + Souris
 - **Slam :** A (slam_velocity = -33.0)
-- **Accélération :** 0.4s
-- **Freeze après slam :** 0.3s
+- **Accélération :** 0.4s (acceleration_duration)
+- **Freeze après slam :** 1.1s (freeze_duration_after_slam)
 
 ### Effets Visuels
 - **Camera Shake :** Système de tremblements multiples combinés avec décélération cubic
@@ -151,17 +155,18 @@ Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
 
 ### Mécanique de Saut
 - **Déclenchement :** Espace (quand au sol)
-- **Hauteur de saut :** 3.3m (hauteur désirée)
+- **Hauteur de saut :** 3.5m (hauteur désirée)
 - **Force du saut :** 4.5 (vitesse verticale calculée automatiquement)
-- **Gravité de chute :** 1.0x (gravité normale)
+- **Gravité de chute :** 0.8x (fall_gravity_multiplier dans player.tscn)
 - **Feeling :** Saut simple et réactif, contrôle immédiat
 
 ### Slam Aérien
 - **Déclenchement :** A (en l'air)
 - **Vitesse :** -33.0 (plonge rapide)
-- **Temps minimum :** 0.4s après le saut
-- **Gel après impact :** 0.3s
-- **Effet sur ennemis :** Repoussement dans un rayon de 2m
+- **Temps minimum :** 0.4s après le saut (min_time_before_slam)
+- **Gel après impact :** 1.1s (freeze_duration_after_slam)
+- **Effet sur ennemis :** Repoussement dans un rayon de 2m (slam_radius)
+- **Paramètres supplémentaires :** slam_push_distance (1.5m), slam_push_height (0.2m), slam_freeze_duration (1.0s)
 
 ### Effet de Caméra "Jump Look Down"
 - **Déclenchement :** Automatique au saut
@@ -173,9 +178,13 @@ Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
 
 ### Variables Exportées (Éditeur)
 **PlayerMovement :**
-- `jump_height` : Hauteur de saut désirée (3.3m)
+- `jump_height` : Hauteur de saut désirée (3.5m)
 - `jump_velocity` : Force du saut (4.5, calculée automatiquement)
-- `fall_gravity_multiplier` : Multiplicateur de gravité pour la chute (1.0)
+- `fall_gravity_multiplier` : Multiplicateur de gravité pour la chute (0.8 dans player.tscn)
+- `slam_radius` : Rayon de la sphère d'effet du slam (2.0m)
+- `slam_push_distance` : Distance horizontale du repoussement (1.5m)
+- `slam_push_height` : Hauteur du bond de repoussement (0.2m)
+- `slam_freeze_duration` : Durée minimum du freeze après slam (1.0s)
 
 **PlayerCamera :**
 - `jump_look_angle` : Angle d'inclinaison vers le bas (25°)
@@ -341,21 +350,45 @@ Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
 - **4 couleurs d'impact** : Spécifiques à chaque ennemi (méthode get_impact_colors())
 - **Comportements** : Chaque ennemi peut surcharger les méthodes virtuelles
 
+### PapillonV1 (Ennemi Volant)
+- **Statistiques** : 75 points de vie (papillon_max_health)
+- **Collision Layer** : 2 (détectable par raycast)
+- **Collision Mask** : 3 (détecte environnement + joueur)
+- **Système de vol** : Gravité réduite à 0.1x pour permettre le vol
+- **Hauteur de vol** : flight_height (0.2m au-dessus du sol par défaut)
+- **Flottement sinusoïdal** : Mouvement vertical automatique
+  - Amplitude : float_amplitude (0.2m par défaut)
+  - Vitesse : float_speed (1.5 par défaut)
+- **Physique spécifique** : 
+  - Applique gravité réduite uniquement si pas au sol
+  - Force position Y après collisions pour maintenir le flottement
+  - Utilise `move_and_slide()` pour collisions avec environnement
+- **Animation** : "PapillonIdleAnim" démarrée automatiquement au ready
+- **4 couleurs d'impact** : Bleu, Cyan, Rose, Jaune
+- **Fichiers** : `papillon_v1.gd`, `papillon_v1.tscn` (instancié dans world.tscn)
+
 ### EnemyTest (Ennemi de Développement)
-- **Statistiques** : 500 points de vie, gravité 1.2x
+- **Statistiques** : Points de vie hérités d'EnemyBase (100 par défaut), gravité 1.2x (test_gravity_scale)
 - **Collision Layer** : 2 (détectable par raycast)
 - **Collision Mask** : 3 (détecte environnement + joueur)
 - **Fonctionnalités de test** : Mode debug, statistiques, contrôles clavier
 - **4 couleurs d'impact** : Rouge, Vert, Violet, Noir
+- **Comportement spécifique** : Position Y forcée à 0.75m (reste au sol), vélocité annulée sauf pendant repoussement slam
+- **Sécurité anti-fuite** : Retour automatique à position initiale si distance > 10m pendant repoussement
 
 ### Système de Repoussement Slam
 - **Déclenchement** : Quand le joueur fait un slam à proximité (rayon 2m)
-- **Force** : slam_push_force (4.0 par défaut, configurable)
-- **Durée du bond** : slam_bond_duration (0.6s par défaut)
+- **Force** : slam_push_force (4.0 par défaut dans EnemyBase, configurable par ennemi)
+  - EnemyTest utilise 4.0 (ajusté récemment pour repoussement réaliste ~50-60cm)
+- **Durée du bond** : slam_bond_duration (0.6s par défaut dans EnemyBase, 0.4s pour EnemyTest)
 - **Délai avant freeze** : slam_freeze_delay (0.8s par défaut)
 - **Cooldown** : slam_cooldown_time (0.2s par défaut)
 - **Effet** : Bond en arrière + freeze temporaire
 - **Bug corrigé** : Tir pendant repoussement n'interrompt plus le mouvement
+- **Détails techniques EnemyTest** : 
+  - Applique `move_and_slide()` pendant le repoussement pour mouvement visible
+  - Force `global_position.y = 0.75` après chaque frame pour rester au sol
+  - Système de sécurité : retour à position initiale si distance > 10m
 
 ### Système de Rotation
 - **Billboard** : Désactivé pour contrôle manuel

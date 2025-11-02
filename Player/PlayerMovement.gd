@@ -17,7 +17,7 @@ class_name PlayerMovement
 @export_group("Slam")
 @export var slam_radius: float = 2.0  # Rayon de la sphère d'effet du slam
 @export var slam_push_distance: float = 1.5  # Distance horizontale du repoussement
-@export var slam_push_height: float = 0.7  # Hauteur du bond de repoussement
+@export var slam_push_height: float = 0.2  # Hauteur du bond de repoussement (plus subtil)
 @export var slam_freeze_duration: float = 1.0  # Durée minimum du freeze après slam
 
 # === RÉFÉRENCES ===

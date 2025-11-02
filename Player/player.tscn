@@ -176,6 +176,7 @@ libraries = {
 }
 
 [node name="PlayerCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
 script = ExtResource("4_vtle1")
 shake_intensity = 0.3
 shake_duration = 1.9

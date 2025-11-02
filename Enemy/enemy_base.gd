@@ -14,11 +14,15 @@ class_name EnemyBase
 @export var red_flash_intensity: float = 1.5  # Intensité du rouge (1.5 pour un effet bien visible)
 @export var red_flash_color: Color = Color.RED  # Couleur du rougissement
 
+@export_group("Freeze après Dégâts")
+@export var damage_freeze_duration: float = 0.25  # Durée du freeze après avoir pris des dégâts
+
 @export_group("Slam Repoussement")
 @export var slam_push_force: float = 4.0  # Force du repoussement
 @export var slam_bond_duration: float = 0.6  # Durée du bond avant arrêt horizontal
 @export var slam_freeze_delay: float = 0.8  # Délai avant le freeze
 @export var slam_cooldown_time: float = 0.2  # Cooldown entre les slams
+
 
 # === VARIABLES INTERNES ===
 var current_health: int
@@ -50,6 +54,7 @@ func _on_damage_taken(_damage: int):
 func _on_death():
 	# Surcharger cette méthode pour des effets de mort spécifiques
 	pass
+
 
 # === INITIALISATION DE BASE ===
 func _ready():
@@ -98,8 +103,8 @@ func _physics_process(delta):
 	if slam_cooldown > 0:
 		slam_cooldown -= delta
 	
-	# Si on est gelé ET qu'on n'est pas en train d'être repoussé par un slam
-	if is_frozen and not is_being_slam_repelled:
+	# Si l'ennemi ne peut pas bouger, ne pas exécuter le comportement physique
+	if not _can_move():
 		return
 
 	# Les ennemis spécifiques gèrent leur propre physique
@@ -342,10 +347,16 @@ func _handle_freeze(delta: float) -> void:
 		is_frozen = false
 		freeze_timer = 0.0
 
+# === MÉTHODE UTILITAIRE POUR VÉRIFIER SI L'ENNEMI PEUT BOUGER ===
+func _can_move() -> bool:
+	# L'ennemi peut bouger s'il est vivant ET :
+	# - Soit il n'est pas gelé
+	# - Soit il est gelé MAIS en train d'être repoussé par un slam
+	return is_alive and (not is_frozen or is_being_slam_repelled)
+
 func _start_damage_freeze() -> void:
 	# Freeze pendant la durée de l'animation de tremblement
 	# MAIS seulement si on n'est pas en train d'être repoussé par un slam
 	if not is_being_slam_repelled:
-		var shake_duration = 0.25  # Durée par défaut du tremblement
 		is_frozen = true
-		freeze_timer = shake_duration
+		freeze_timer = damage_freeze_duration
