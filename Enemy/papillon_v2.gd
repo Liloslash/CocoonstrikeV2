@@ -1,32 +1,32 @@
 extends EnemyBase
 
-# === PAPILLON V1 ===
-# Ennemi volant qui hérite de toute la logique commune d'EnemyBase
-# Configuration simple : 75 PV, vol permanent, survol des obstacles
+# === PAPILLON V2 ===
+# Ennemi volant plus agressif que le V1
+# Même PV mais flottement plus rapide, déplacement 1.5× plus rapide, dégâts 2× plus importants
 
-# === PARAMÈTRES EXPORTÉS SPÉCIFIQUES AU PAPILLON ===
-@export_group("Papillon V1 - Statistiques")
-@export var papillon_max_health: int = 75  # 3 tirs pour le tuer
+# === PARAMÈTRES EXPORTÉS SPÉCIFIQUES AU PAPILLON V2 ===
+@export_group("Papillon V2 - Statistiques")
+@export var papillon_max_health: int = 75  # Même PV que le V1
 
-@export_group("Papillon V1 - Mouvement")
-@export var papillon_v1_movement_speed: float = 1.0  # Vitesse de déplacement normale
+@export_group("Papillon V2 - Mouvement")
+@export var papillon_v2_movement_speed: float = 1.5  # 1.5× plus rapide que le V1
 
-@export_group("Papillon V1 - Attaque")
-@export var papillon_v1_damage_dealt: int = 10  # Dégâts de base au joueur
+@export_group("Papillon V2 - Attaque")
+@export var papillon_v2_damage_dealt: int = 20  # 2× les dégâts du V1 (10 → 20)
 
-@export_group("Papillon - Vol")
+@export_group("Papillon V2 - Vol")
 @export var flight_height: float = 0.2  # Hauteur de vol (en mètres au-dessus du sol)
 @export var float_amplitude: float = 0.15  # Amplitude du flottement (haut/bas)
-@export var float_speed: float = 1.5  # Vitesse du flottement
+@export var float_speed: float = 3.0  # Flottement 2× plus rapide que V1 (1.5 → 3.0)
 
-@export_group("Papillon - Couleurs d'Impact")
-@export var impact_color_1: Color = Color(0.2, 0.6, 1.0, 1)    # Bleu
-@export var impact_color_2: Color = Color(0.0, 0.8, 1.0, 1)    # Cyan
-@export var impact_color_3: Color = Color(1.0, 0.4, 0.8, 1)    # Rose
-@export var impact_color_4: Color = Color(1.0, 0.9, 0.2, 1)    # Jaune
+@export_group("Papillon V2 - Couleurs d'Impact")
+@export var impact_color_1: Color = Color(1.0, 0.4, 0.2, 1)    # Orange
+@export var impact_color_2: Color = Color(1.0, 0.0, 0.2, 1)    # Rouge
+@export var impact_color_3: Color = Color(1.0, 0.7, 0.0, 1)    # Jaune-orange
+@export var impact_color_4: Color = Color(1.0, 0.5, 0.0, 1)    # Orange foncé
 
 
-# === VARIABLES SPÉCIFIQUES AU PAPILLON ===
+# === VARIABLES SPÉCIFIQUES AU PAPILLON V2 ===
 var gravity: float  # Gravité pour ce papillon (très réduite pour voler)
 var float_timer: float = 0.0  # Timer pour le flottement
 var original_y: float  # Position Y originale pour le flottement
@@ -34,18 +34,18 @@ var original_y: float  # Position Y originale pour le flottement
 # === MÉTHODES VIRTUELLES SURCHARGÉES ===
 
 func _on_enemy_ready():
-	# Initialisation spécifique au papillon
+	# Initialisation spécifique au papillon V2
 	gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * 0.1  # Gravité très réduite pour voler
 	
 	# Configuration des collisions spécifique au papillon volant
 	collision_layer = 2  # Ennemi sur la layer 2 (détectable par raycast)
 	collision_mask = 3   # Détecte la layer 0 (environnement) + layer 1 (joueur)
 	
-	# Override des valeurs d'EnemyBase avec celles du papillon V1
+	# Override des valeurs d'EnemyBase avec celles du papillon V2
 	max_health = papillon_max_health
 	current_health = max_health
-	base_damage_dealt = papillon_v1_damage_dealt
-	movement_speed_multiplier = papillon_v1_movement_speed
+	base_damage_dealt = papillon_v2_damage_dealt
+	movement_speed_multiplier = papillon_v2_movement_speed
 	
 	# Configurer la hauteur de vol
 	original_y = global_position.y
@@ -53,13 +53,13 @@ func _on_enemy_ready():
 	
 	
 	# Démarrer l'animation de vol en permanence
-	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("PapillonV1IdleAnim"):
-		sprite.play("PapillonV1IdleAnim")
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("PapillonV2IdleAnim"):
+		sprite.play("PapillonV2IdleAnim")
 
 func _on_physics_process(delta: float):
-	# Physique spécifique au papillon (vol + flottement + collisions)
+	# Physique spécifique au papillon V2 (vol + flottement rapide + collisions)
 	
-	# Timer pour le flottement
+	# Timer pour le flottement (plus rapide que V1)
 	float_timer += delta * float_speed
 	
 	# Calculer la position de flottement (mouvement sinusoïdal)
@@ -85,11 +85,11 @@ func _on_damage_taken(_damage: int):
 	pass
 
 func _on_death():
-	# Effets de mort spécifiques au papillon (pour plus tard)
+	# Effets de mort spécifiques au papillon V2 (pour plus tard)
 	pass
 
-# === MÉTHODE SPÉCIFIQUE AU PAPILLON ===
+# === MÉTHODE SPÉCIFIQUE AU PAPILLON V2 ===
 # Cette méthode sera utilisée par PlayerCombat pour récupérer les couleurs d'impact
 func get_impact_colors() -> Array[Color]:
-	# Retourne les 4 couleurs d'impact du papillon
+	# Retourne les 4 couleurs d'impact du papillon V2 (tons orange/rouge)
 	return [impact_color_1, impact_color_2, impact_color_3, impact_color_4]

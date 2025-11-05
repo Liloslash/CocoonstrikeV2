@@ -1,0 +1,88 @@
+[gd_scene load_steps=13 format=3 uid="uid://c4lqud6bnoswo"]
+
+[ext_resource type="Texture2D" uid="uid://b7hno3hrwfce7" path="res://Assets/Sprites/Critters/PapillonV2.png" id="1_papillon_v2"]
+[ext_resource type="Script" uid="uid://b2m6r74g0uu0n" path="res://Enemy/papillon_v2.gd" id="2_script_v2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f7h6n_v2"]
+atlas = ExtResource("1_papillon_v2")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vbjr8_v2"]
+atlas = ExtResource("1_papillon_v2")
+region = Rect2(128, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1c7nv_v2"]
+atlas = ExtResource("1_papillon_v2")
+region = Rect2(256, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lr4d2_v2"]
+atlas = ExtResource("1_papillon_v2")
+region = Rect2(0, 128, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5vtit_v2"]
+atlas = ExtResource("1_papillon_v2")
+region = Rect2(128, 128, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ktc4b_v2"]
+atlas = ExtResource("1_papillon_v2")
+region = Rect2(256, 128, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_papillon_v2"]
+atlas = ExtResource("1_papillon_v2")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_papillon_v2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f7h6n_v2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vbjr8_v2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1c7nv_v2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lr4d2_v2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5vtit_v2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ktc4b_v2")
+}],
+"loop": true,
+"name": &"PapillonV2IdleAnim",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_papillon_v2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 1.0
+}]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_f7h6n_v2"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_vbjr8_v2"]
+
+[node name="PapillonV2" type="CharacterBody3D"]
+script = ExtResource("2_script_v2")
+
+[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]
+texture_filter = 0
+sprite_frames = SubResource("SpriteFrames_papillon_v2")
+animation = &"PapillonV2IdleAnim"
+autoplay = "PapillonV2IdleAnim"
+frame_progress = 0.125033
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_f7h6n_v2")
+
+[node name="Area3D" type="Area3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D"]
+shape = SubResource("SphereShape3D_vbjr8_v2")

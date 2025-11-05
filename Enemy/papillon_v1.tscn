@@ -53,7 +53,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_ktc4b")
 }],
 "loop": true,
-"name": &"PapillonIdleAnim",
+"name": &"PapillonV1IdleAnim",
 "speed": 12.0
 }, {
 "frames": [{
@@ -75,8 +75,8 @@ script = ExtResource("2_script")
 [node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]
 texture_filter = 0
 sprite_frames = SubResource("SpriteFrames_papillon")
-animation = &"PapillonIdleAnim"
-autoplay = "PapillonIdleAnim"
+animation = &"PapillonV1IdleAnim"
+autoplay = "PapillonV1IdleAnim"
 frame_progress = 0.125033
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

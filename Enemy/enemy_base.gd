@@ -9,6 +9,12 @@ class_name EnemyBase
 @export_group("Statistiques")
 @export var max_health: int = 100
 
+@export_group("Mouvement")
+@export var movement_speed_multiplier: float = 1.0  # Multiplicateur de vitesse de déplacement
+
+@export_group("Attaque")
+@export var base_damage_dealt: int = 10  # Dégâts de base infligés au joueur
+
 @export_group("Effet de Rougissement")
 @export var red_flash_duration: float = 0.2  # Durée du rougissement (0.2 secondes)
 @export var red_flash_intensity: float = 1.5  # Intensité du rouge (1.5 pour un effet bien visible)
@@ -35,6 +41,8 @@ var is_being_slam_repelled: bool = false  # Pour distinguer le repoussement slam
 
 # === COMPOSANTS ===
 @onready var sprite: AnimatedSprite3D = $AnimatedSprite3D  # Le sprite 2D billboard
+
+
 
 # === MÉTHODES VIRTUELLES À SURCHARGER ===
 # Ces méthodes peuvent être surchargées par les ennemis spécifiques
@@ -229,6 +237,13 @@ func get_health_percentage() -> float:
 
 func is_dead() -> bool:
 	return not is_alive
+
+# === GETTERS POUR MOUVEMENT ET ATTAQUE ===
+func get_damage_dealt() -> int:
+	return base_damage_dealt
+
+func get_movement_speed() -> float:
+	return movement_speed_multiplier
 
 # === EFFET DE ROUGISSEMENT (COMMUN À TOUS) ===
 func _create_red_flash():
