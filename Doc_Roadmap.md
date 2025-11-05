@@ -1,7 +1,6 @@
 # 🚀 ROADMAP - COCOONSTRIKE REBUILD
 
 ## 🔥 SUR LE FEU (En cours)
-- Création des 6 ennemis spécifiques (PapillonV1/V2, MonsterV1/V2, BigMonsterV1/V2)
 - Création de "l'ombre" pour les enemies 
 - Système de vagues d'ennemis
 - Implémentation des bruits de pas du player
@@ -32,6 +31,7 @@
 - Première version avec une boucle de jeu complète
 
 ## ✅ ACCOMPLIS
+- Création des 6 ennemis spécifiques (PapillonV1/V2, MonsterV1/V2, BigMonsterV1/V2)
 - Architecture modulaire du joueur (PlayerCamera, PlayerMovement, PlayerCombat, PlayerInput)
 - Système de sway dynamique du revolver et effets de vibration ennemi
 - Système de compensation du raycast (synchronisation caméra-raycast)

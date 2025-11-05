@@ -1,499 +1,174 @@
-# 📋 DOC_PROJET
+# 📋 DOC_PROJET - Cocoonstrike Rebuild
 
 ---
 
-## 📑 NAVIGATION RAPIDE
+## 📑 SOMMAIRE
 
-**=== INFORMATIONS GÉNÉRALES ===**
-- Ligne 36 : Informations du projet
+**GÉNÉRAL**
+- Informations Générales
 
-**=== ARCHITECTURE ===**
-- Ligne 46 : Structure des scènes
-- Ligne 59 : Scene Player (Architecture Modulaire)
-- Ligne 74 : Architecture Modulaire du Joueur
-- Ligne 90 : Scene Enemy (Architecture d'héritage)
-- Ligne 107 : Collision Layers et Masks
+**ARCHITECTURE**
+- Architecture Joueur & Ennemis
+- Système de Collision
 
-**=== SYSTÈMES ===**
-- Ligne 126 : Système Joueur
-- Ligne 150 : Système de Saut Simplifié
-- Ligne 192 : Système Revolver
-- Ligne 242 : Système de Caméra Avancé
-- Ligne 275 : Système de Compensation du Raycast
-- Ligne 324 : Système Ennemis (Architecture Modulaire)
-- Ligne 352 : PapillonV1 (Ennemi Volant)
-- Ligne 384 : Effets d'Impact
+**SYSTÈMES**
+- Systèmes Clés (Mouvement, Combat, Caméra, Vol)
+- Ennemis - Détails (4 types)
 
-**=== RESSOURCES ===**
-- Ligne 401 : Assets Audio
-- Ligne 420 : Assets Visuels
-- Ligne 438 : Configuration
-
-**=== RÉFÉRENCES ===**
-- Voir Doc_Roadmap.md pour l'état du projet et la roadmap
+**RESSOURCES**
+- Assets Audio & Visuels
+- Configuration
+- Structure Fichiers
 
 ---
 
 ## 📋 INFORMATIONS GÉNÉRALES
 
-**Nom :** Cocoonstrike - Rebuild  
 **Moteur :** Godot Engine v4.4.1  
 **Type :** FPS Survival Shooter 3D  
-**Style :** Pixel Art et 3D / Retro  
+**Style :** Pixel Art / Retro  
 **Plateforme :** PC (Windows, Linux)
 
 ---
 
-## 🏗️ ARCHITECTURE TECHNIQUE
+## 🏗️ ARCHITECTURE
 
-### Structure des Scènes
+### Joueur (Architecture Modulaire)
+- **PlayerCamera** : Effets visuels, shake, recul
+- **PlayerMovement** : Déplacement, saut, slam
+- **PlayerCombat** : Tir, dégâts, raycast
+- **PlayerInput** : Inputs clavier/souris
+- **Revolver** : Arme (6 balles, rechargement)
 
-```
-World (Node principal)
-├── Arena (Node3D) - Zone d'arène
-├── Obstacles (Node3D) - Zone d'obstacles  
-├── WorldEnvironment3D - Éclairage et ciel
-├── Navigation (NavigationRegion3D) - Présent mais non utilisé actuellement
-├── Player (CharacterBody3D) - Joueur principal
-├── EnemyTest (CharacterBody3D) - Ennemi de test (instancié manuellement)
-└── PapillonV1 (CharacterBody3D) - Ennemi volant (instancié dans world.tscn)
-```
+### Ennemis (Héritage depuis EnemyBase)
+**4 types implémentés :**
 
-### Scene Player (Architecture Modulaire)
+| Ennemi | Type | PV | Dégâts | Vitesse |
+|--------|------|-----|--------|---------|
+| **PapillonV1** | Volant | 75 | 10 | 1.0x |
+| **PapillonV2** | Volant | 75 | 20 | 1.5x |
+| **BigMonsterV1** | Terrestre | 125 | 20 | 1.0x |
+| **BigMonsterV2** | Terrestre | 155 | 30 | 0.75x |
 
-```
-Player (CharacterBody3D) - ORCHESTRATEUR
-├── PlayerCamera (Camera3D) - Gestion caméra (hérite de Camera3D)
-├── PlayerMovement (Node) - Mouvement et saut
-├── PlayerCombat (Node) - Tir et raycast
-├── PlayerInput (Node) - Gestion des inputs
-├── CollisionShape3D (CapsuleShape3D)
-├── AudioStreamPlayer3D (bruits de pas)
-└── HUD_Layer (CanvasLayer)
-	└── Revolver (AnimatedSprite2D)
-		└── AnimationPlayer (Sway_Idle)
-```
+**EnemyBase inclut :**
+- Système vie/dégâts/mort
+- Effets visuels (rougissement, vibration)
+- Repoussement slam
+- Rotation auto vers joueur
 
-### Architecture Modulaire du Joueur
-
-**Principe :** Séparation des responsabilités en composants spécialisés
-
-- **PlayerCamera** : Shake, head bob, recul de tir, jump look down
-- **PlayerMovement** : Mouvement, saut, slam, gestion de la vitesse
-- **PlayerCombat** : Tir, raycast, dégâts, effets d'impact
-- **PlayerInput** : Gestion des inputs (souris, clavier)
-- **player.gd** : Orchestrateur qui coordonne tous les composants
-
-### Avantages de l'Architecture Modulaire
-- **Maintenabilité** : Code plus lisible, modifications isolées
-- **Évolutivité** : Ajout de fonctionnalités facile
-- **Performance** : Chargement optimisé, gestion mémoire efficace
-- **Collaboration** : Travail en équipe facilité
-
-### Scene Enemy
-
-```
-EnemyTest (CharacterBody3D) - ENNEMI DE DÉVELOPPEMENT
-├── AnimatedSprite3D (billboard désactivé - rotation manuelle)
-├── CollisionShape3D (collisions environnement)
-└── Area3D (détection/dégâts)
-	└── CollisionShape3D
-```
-
-**Architecture d'héritage :**
-- **EnemyBase** : Classe abstraite avec logique commune (vie, effets, slam, rotation)
-- **EnemyTest** : Ennemi de développement qui hérite d'EnemyBase
-- **PapillonV1** : Ennemi volant implémenté (hérite d'EnemyBase)
-- **Futurs ennemis** : 5 ennemis spécifiques restants (PapillonV2, MonsterV1/V2, BigMonsterV1/V2)
-
-**Note :** Le système de pathfinding (NavigationAgent3D) a été temporairement supprimé pour repartir sur des bases propres. Il sera réimplémenté plus tard avec un nouveau système d'IA.
-
-### Collision Layers et Masks
-
-```
-Layer 0 : Environnement (sol, murs, obstacles)
-Layer 1 : Joueur (collision_layer = 1, collision_mask = 3)
-Layer 2 : Ennemis (collision_layer = 2, collision_mask = 3)
-```
-
-**Configuration :**
-- **Joueur** : Détecte l'environnement (layer 0) et les ennemis (layer 2)
-- **Ennemis** : Détecte l'environnement (layer 0) et le joueur (layer 1)
-- **Environnement** : Détecté par tous (layers 1 et 2)
-
-**Structure RayCast :**
-- **PlayerCamera/RayCast3D** : collision_mask = 2 (détecte seulement les ennemis)
-- **Position** : RayCast3D est maintenant directement dans PlayerCamera (plus dans une caméra générique)
+### Collision
+- **Layer 0** : Environnement
+- **Layer 1** : Joueur
+- **Layer 2** : Ennemis
 
 ---
 
-## ⚙️ SYSTÈME DE JOUEUR
+## ⚙️ SYSTÈMES CLÉS
 
-### Mouvement FPS
-- **Contrôles :** WASD + Souris
-- **Slam :** A (slam_velocity = -33.0)
-- **Accélération :** 0.4s (acceleration_duration)
-- **Freeze après slam :** 1.1s (freeze_duration_after_slam)
-
-### Effets Visuels
-- **Camera Shake :** Système de tremblements multiples combinés avec décélération cubic
-- **Head Bob Réaliste :** Mouvement de tête simulant la marche naturelle avec transitions fluides
-- **Recoil :** Recul lors du tir avec variation aléatoire
-- **Kickback :** Recul caméra arrière
-- **Jump Look Down :** Inclinaison automatique de 25° pendant le saut
+### Mouvement Joueur
+- **Hauteur Y** : 1.2m (visibilité sur murets)
+- **Saut** : 3.5m de hauteur
+- **Slam** : Repoussement 2m de rayon
+- **Vitesse** : Accélération progressive
 
 ### Combat
-- **RayCast3D :** collision_mask = 2
-- **Dégâts :** 25 points par tir
-- **Signal :** shot_fired du revolver
-- **Impact :** Particules colorées
-- **🚀 NOUVEAU : Système de compensation du raycast** : Synchronisation automatique entre la caméra et le raycast lors du saut
+- **Arme** : Revolver 6 balles
+- **Dégâts** : 25 points/tir
+- **Raycast** : Compensation automatique saut
+- **Effets** : Particules colorées par ennemi
+
+### Caméra
+- **Head Bob** : Mouvement de marche réaliste
+- **Shake** : Combinaison tir + slam
+- **Recoil** : Recul avec variation aléatoire
+- **Jump Look Down** : 25° pendant saut
+
+### Vol des Papillons
+**Formule :** `Y = base + flight_height + sin(timer * speed) * amplitude`
+
+**Paramètres :**
+- **flight_height** : 0.2m (hauteur de base)
+- **float_amplitude** : 0.15m (oscillation)
+- **float_speed** : 1.5 (V1) / 3.0 (V2)
 
 ---
 
-## ⚙️ SYSTÈME DE SAUT SIMPLIFIÉ
+## 🎮 ENNEMIS - DÉTAILS
 
-### Mécanique de Saut
-- **Déclenchement :** Espace (quand au sol)
-- **Hauteur de saut :** 3.5m (hauteur désirée)
-- **Force du saut :** 4.5 (vitesse verticale calculée automatiquement)
-- **Gravité de chute :** 0.8x (fall_gravity_multiplier dans player.tscn)
-- **Feeling :** Saut simple et réactif, contrôle immédiat
+### PapillonV1 (Volant Léger)
+- **75 PV** | **10 dégâts** | **Vitesse 1.0x**
+- Flottement paisible (speed 1.5)
+- Couleurs : Bleu, Cyan, Rose, Jaune
 
-### Slam Aérien
-- **Déclenchement :** A (en l'air)
-- **Vitesse :** -33.0 (plonge rapide)
-- **Temps minimum :** 0.4s après le saut (min_time_before_slam)
-- **Gel après impact :** 1.1s (freeze_duration_after_slam)
-- **Effet sur ennemis :** Repoussement dans un rayon de 2m (slam_radius)
-- **Paramètres supplémentaires :** slam_push_distance (1.5m), slam_push_height (0.2m), slam_freeze_duration (1.0s)
+### PapillonV2 (Volant Agressif)
+- **75 PV** | **20 dégâts** | **Vitesse 1.5x**
+- Flottement rapide (speed 3.0)
+- Couleurs : Orange, Rouge, Jaune-orange
 
-### Effet de Caméra "Jump Look Down"
-- **Déclenchement :** Automatique au saut
-- **Angle d'inclinaison :** 25° vers le bas (configurable)
-- **Démarrage :** À partir de la moitié du saut
-- **Progression :** Inclinaison progressive jusqu'au sommet
-- **Maintien :** Angle conservé pendant la chute
-- **Retour :** Transition douce vers la position normale à l'atterrissage
+### BigMonsterV1 (Terrestre Équilibré)
+- **125 PV** | **20 dégâts** | **Vitesse 1.0x**
+- Reste au sol (Y=0.75)
+- Animation : 1 frame statique
+- Couleurs : Rouge foncé, Orange, Brun
 
-### Variables Exportées (Éditeur)
-**PlayerMovement :**
-- `jump_height` : Hauteur de saut désirée (3.5m)
-- `jump_velocity` : Force du saut (4.5, calculée automatiquement)
-- `fall_gravity_multiplier` : Multiplicateur de gravité pour la chute (0.8 dans player.tscn)
-- `slam_radius` : Rayon de la sphère d'effet du slam (2.0m)
-- `slam_push_distance` : Distance horizontale du repoussement (1.5m)
-- `slam_push_height` : Hauteur du bond de repoussement (0.2m)
-- `slam_freeze_duration` : Durée minimum du freeze après slam (1.0s)
-
-**PlayerCamera :**
-- `jump_look_angle` : Angle d'inclinaison vers le bas (25°)
-- `jump_look_smoothness` : Vitesse de transition (4.0)
-
-### Fonctions Clés
-- `start_jump()` : Applique la vélocité de saut et démarre l'effet caméra
-- `_handle_gravity_and_jump()` : Gère la gravité et la communication avec la caméra
-- `start_jump_look_down()` : Initialise l'effet de regard vers le bas
-- `_handle_jump_look_down()` : Calcule et applique l'inclinaison progressive
+### BigMonsterV2 (Tank Lourd)
+- **155 PV** | **30 dégâts** | **Vitesse 0.75x**
+- Reste au sol (Y=0.75)
+- Animation : 26 frames de marche
+- Couleurs : Violet foncé, Gris
 
 ---
 
-## ⚙️ SYSTÈME DE REVOLVER
-
-### Munitions
-- **Capacité :** 6 balles max
-- **Rechargement :** Animation fluide + sons
-- **Cadence :** 0.5s entre tirs
-- **États :** IDLE, RELOAD_STARTING, RELOAD_ADDING_BULLETS, RELOAD_INTERRUPTED
+## 🎨 ASSETS
 
 ### Audio
-- **Sons :** Tir, rechargement, clic vide
-- **Superposition :** Plusieurs sons simultanés
-- **Fichiers :** GunShot-2.mp3, OpenRevolverBarrel.mp3, AddRevolverBullet.mp3, CloseRevolverBarrel.mp3, AOARevolver.mp3
+- **Guns** : 8 sons revolver
+- **Enemies** : Pas lourds, rugissements, ailes
+- **Player** : Pas, cœur, cris
+- **UI** : Bonus, countdown, succès
+- **Musique** : Metalcore.mp3
 
-### Animations
-- **Tween :** Mouvements fluides
-- **SpriteFrames :** 11 frames de tir
-
-
-### Effets de Tremblement
-- **Fonction :** `_create_weapon_shake()` et `_create_weapon_shake_at_position()`
-- **Utilisation :** Rechargement ET clic vide (plus de munitions)
-- **Intensité :** 3.0 pixels
-- **Durée :** 0.15s par balle
-- **Fréquence :** 20 oscillations/s
-- **Direction :** Aléatoire
-- **Position adaptative :** Position actuelle (clic vide) ou `reload_position` (rechargement)
-
-### Système de Sway Dynamique
-- **Sway Idle :** Mouvement circulaire subtil (X=2.0, Y=0.5, Z=0.5 à 1.0 Hz)
-- **Sway Movement :** Pattern de course réaliste (X=9.0, Y=1.0, Z=2.0 à 5.0 Hz)
-- **Transitions fluides :** Interpolation entre les deux patterns avec facteur de transition
-- **Intégration :** Arrêt pendant tir/rechargement, reprise automatique
-- **Communication :** État de mouvement transmis en temps réel depuis PlayerMovement
-
-### Amélioration du Feeling
-- **Clic vide :** Tremblement de l'arme + son (pas de recul de caméra)
-- **Feedback visuel :** Simulation du mouvement du poignet
-- **Cohérence :** Même effet que lors du rechargement
-- **Système de sons optimisé :** Fonction commune `_play_sound_with_superposition()`
-
-### Système d'Effet de Vibration Ennemi
-- **Fonctionnalité :** Vibration du sprite ennemi lors de l'impact de tir
-- **Architecture modulaire :** Dictionnaire pour paramètres personnalisables
-- **Communication :** PlayerCombat transmet les paramètres du revolver à l'ennemi
-- **Paramètres par défaut :** Durée 0.15s, intensité 0.06, fréquence 75 Hz
-- **Axes configurables :** Vector3(1.0, 1.0, 0.0) pour vibration X et Y
-- **Extensibilité :** Facilement adaptable pour d'autres armes ou types de tir
+### Visuels
+- **Sprites** : 128x128 pixels
+  - BigMonsterV1/V2 (1 et 26 frames)
+  - PapillonV1/V2 (6 frames chacun)
+- **Armes** : Revolver, TurboGun
+- **Maps** : Arena.glb, Obstacles.glb
 
 ---
 
-## ⚙️ SYSTÈME DE CAMÉRA AVANCÉ
-
-### Head Bob Réaliste
-- **Pattern de marche :** Simulation du mouvement naturel de la tête (tête vers le bas au contact du pied)
-- **Transitions fluides :** Activation/désactivation progressive (vitesse: 5.0)
-- **Mouvement latéral :** Décalage de phase pour le mouvement X (0.5)
-- **Amplitude :** 0.06 unités
-- **Fréquence :** 6.0Hz
-- **Protection :** Désactivé pendant les camera shakes
-
-### Camera Shake Combiné
-- **Système multiple :** Plusieurs tremblements simultanés (slam + tir)
-- **Décélération :** EaseOutCubic au lieu d'EaseOutElastic
-- **Intensité :** 0.8 par défaut
-- **Durée :** 0.8s par défaut
-- **Rotation :** 5° par défaut
-- **Gestion :** Array `active_shakes` pour les tremblements multiples
-
-### Recoil Avancé
-- **Variation aléatoire :** 50% de variation dans l'intensité
-- **Intensité :** 0.09
-- **Durée :** 0.15s
-- **Rotation :** 1.5°
-- **Kickback :** 0.5 (recul vers l'arrière)
-
-### Jump Look Down
-- **Angle :** 25° vers le bas pendant le saut
-- **Smoothness :** 4.0 (vitesse de transition)
-- **Timing :** Démarre à la moitié du saut
-- **Maintien :** Pendant toute la durée du saut
-
----
-
-## ⚙️ SYSTÈME DE COMPENSATION DU RAYCAST
-
-### Problème Résolu
-- **Problème initial** : Désynchronisation entre l'inclinaison de la caméra et la direction du raycast lors du saut
-- **Symptôme** : Le joueur vise un ennemi mais le tir rate à cause de l'inclinaison de la caméra
-- **Impact** : Frustration du joueur, feeling de jeu dégradé
-
-### Solution Implémentée
-- **Approche** : Raycast avec offset dynamique basé sur l'angle d'inclinaison de la caméra
-- **Méthode** : Calcul trigonométrique de l'offset vertical pour compenser l'inclinaison
-- **Intégration** : Mise à jour automatique de la direction du raycast avant chaque tir
-
-### Paramètres Configurables (PlayerCombat.gd)
-- **`enable_jump_compensation`** : `bool = true` - Activation/désactivation du système
-- **`compensation_strength`** : `float = 1.0` - Force de la compensation
-  - `1.0` = compensation parfaite (recommandé)
-  - `0.5` = compensation réduite (plus réaliste)
-  - `1.5` = surexposition (pour effets spéciaux)
-- **`max_compensation_angle`** : `float = 45.0` - Angle maximum de compensation en degrés
-
-### Fonctions Clés
-- **`_calculate_raycast_compensation()`** : Calcule l'offset basé sur l'angle de la caméra
-- **`_update_raycast_direction()`** : Applique la direction compensée au raycast
-- **`set_jump_compensation(bool)`** : Active/désactive la compensation depuis l'extérieur
-- **`set_compensation_strength(float)`** : Ajuste la force de la compensation
-- **`set_max_compensation_angle(float)`** : Définit l'angle maximum de compensation
-
-### Algorithme de Compensation
-1. **Détection** : Récupération de l'angle d'inclinaison actuel de la caméra (`rotation_degrees.x`)
-2. **Limitation** : Clamp de l'angle entre `-max_compensation_angle` et `+max_compensation_angle`
-3. **Calcul trigonométrique** : `y_offset = sin(angle_radians) * raycast_length * compensation_strength`
-4. **Application** : `compensated_direction = base_raycast_direction + Vector3(0, y_offset, 0)`
-5. **Mise à jour** : Application de la direction compensée au raycast avant le tir
-
-### Avantages
-- **Précision** : Le tir va exactement où le joueur vise, même avec l'inclinaison de la caméra
-- **Configurabilité** : Paramètres ajustables pour différents styles de jeu
-- **Performance** : Calculs légers, pas d'impact sur les performances
-- **Robustesse** : Limitation des angles pour éviter les corrections excessives
-- **Intégration** : Fonctionne automatiquement avec tous les mouvements de caméra
-
-### Utilisation
-- **Automatique** : Le système s'active automatiquement lors du saut
-- **Transparent** : Aucune intervention du joueur nécessaire
-- **Ajustable** : Paramètres modifiables dans l'inspecteur Godot
-- **Extensible** : Peut être étendu pour d'autres mouvements de caméra
-
----
-
-## ⚙️ SYSTÈME D'ENNEMIS
-
-### Architecture Modulaire
-- **EnemyBase** : Classe abstraite avec toute la logique commune
-- **EnemyTest** : Ennemi de développement/test (instancié dans world.tscn)
-- **Système d'héritage** : Prêt pour 6 ennemis spécifiques (PapillonV1/V2, MonsterV1/V2, BigMonsterV1/V2)
-
-### Fonctionnalités Communes (EnemyBase)
-- **Système de vie/dégâts** : take_damage(), _die(), gestion de la santé
-- **Effets visuels** : Rougissement rouge + tremblement (communs à tous)
-- **Système de slam** : Repoussement automatique (réaction commune)
-- **Rotation intelligente** : Tous les ennemis regardent vers le joueur
-- **Gestion des groupes** : Tous dans le groupe "enemies" (pour les vagues)
-- **Freeze pendant animations** : Pendant dégâts/slam
-
-### Fonctionnalités Spécifiques (par ennemi)
-- **Physique** : Chaque ennemi gère sa propre physique (gravité, collisions, mouvement)
-- **4 couleurs d'impact** : Spécifiques à chaque ennemi (méthode get_impact_colors())
-- **Comportements** : Chaque ennemi peut surcharger les méthodes virtuelles
-
-### PapillonV1 (Ennemi Volant)
-- **Statistiques** : 75 points de vie (papillon_max_health)
-- **Collision Layer** : 2 (détectable par raycast)
-- **Collision Mask** : 3 (détecte environnement + joueur)
-- **Système de vol** : Gravité réduite à 0.1x pour permettre le vol
-- **Hauteur de vol** : flight_height (0.2m au-dessus du sol par défaut)
-- **Flottement sinusoïdal** : Mouvement vertical automatique
-  - Amplitude : float_amplitude (0.2m par défaut)
-  - Vitesse : float_speed (1.5 par défaut)
-- **Physique spécifique** : 
-  - Applique gravité réduite uniquement si pas au sol
-  - Force position Y après collisions pour maintenir le flottement
-  - Utilise `move_and_slide()` pour collisions avec environnement
-- **Animation** : "PapillonIdleAnim" démarrée automatiquement au ready
-- **4 couleurs d'impact** : Bleu, Cyan, Rose, Jaune
-- **Fichiers** : `papillon_v1.gd`, `papillon_v1.tscn` (instancié dans world.tscn)
-
-### EnemyTest (Ennemi de Développement)
-- **Statistiques** : Points de vie hérités d'EnemyBase (100 par défaut), gravité 1.2x (test_gravity_scale)
-- **Collision Layer** : 2 (détectable par raycast)
-- **Collision Mask** : 3 (détecte environnement + joueur)
-- **Fonctionnalités de test** : Mode debug, statistiques, contrôles clavier
-- **4 couleurs d'impact** : Rouge, Vert, Violet, Noir
-- **Comportement spécifique** : Position Y forcée à 0.75m (reste au sol), vélocité annulée sauf pendant repoussement slam
-- **Sécurité anti-fuite** : Retour automatique à position initiale si distance > 10m pendant repoussement
-
-### Système de Repoussement Slam
-- **Déclenchement** : Quand le joueur fait un slam à proximité (rayon 2m)
-- **Force** : slam_push_force (4.0 par défaut dans EnemyBase, configurable par ennemi)
-  - EnemyTest utilise 4.0 (ajusté récemment pour repoussement réaliste ~50-60cm)
-- **Durée du bond** : slam_bond_duration (0.6s par défaut dans EnemyBase, 0.4s pour EnemyTest)
-- **Délai avant freeze** : slam_freeze_delay (0.8s par défaut)
-- **Cooldown** : slam_cooldown_time (0.2s par défaut)
-- **Effet** : Bond en arrière + freeze temporaire
-- **Bug corrigé** : Tir pendant repoussement n'interrompt plus le mouvement
-- **Détails techniques EnemyTest** : 
-  - Applique `move_and_slide()` pendant le repoussement pour mouvement visible
-  - Force `global_position.y = 0.75` après chaque frame pour rester au sol
-  - Système de sécurité : retour à position initiale si distance > 10m
-
-### Système de Rotation
-- **Billboard** : Désactivé pour contrôle manuel
-- **Rotation automatique** : Vers le joueur en temps réel
-- **Axe de rotation** : X/Z uniquement (pas de rotation verticale)
-- **Méthode** : look_at() avec direction normalisée (Y = 0)
-- **Vérifications** : is_instance_valid() pour éviter les erreurs
-
-### Effet de Rougissement
-- **Feedback** : Rouge quand dégâts
-- **Durée** : 0.2s
-- **Intensité** : 1.5
-- **Transition** : EASE_OUT
-- **Déclenchement** : À l'impact
-
-### Système d'Effet de Vibration
-- **Fonctionnalité** : Vibration du sprite ennemi lors de l'impact
-- **Paramètres personnalisables** : Durée, intensité, fréquence, axes
-- **Architecture** : Système modulaire avec dictionnaire de paramètres
-- **Intégration** : Communication entre revolver et ennemi via PlayerCombat
-- **Valeurs par défaut** : 0.15s, 0.06 intensité, 75 Hz, axes X/Y
-- **Avantages** : Extensible pour d'autres armes, paramètres ajustables par arme
-
----
-
-## ⚙️ EFFETS D'IMPACT
-
-### ImpactEffect
-- **GPUParticles3D :** Cubes 3D
-- **4 couleurs simultanées** par impact
-- **Durée :** 0.4s
-- **Particules :** 32 cubes répartis sur 4 systèmes
-- **Taille :** 0.056 (réduite d'un quart)
-- **Force :** 3.0-6.0 (localisée)
-
-### Configuration
-- **Physique :** Pas de gravité
-- **Explosion :** Toutes directions
-- **Couleurs :** Depuis l'ennemi touché
-
----
-
-## 🎨 ASSETS AUDIO
-
-### Guns
-- 8 sons de revolver (tir, rechargement, clic vide)
-
-### Enemies
-- Sons de pas lourds, rugissements, battements d'ailes
-
-### Player
-- Bruits de pas, battements de cœur, cris
-
-### UI
-- Sons de bonus, compte à rebours, succès
-
-### Musique
-- Metalcore.mp3
-
----
-
-## 🎨 ASSETS VISUELS
-
-### Sprites Ennemis
-- BigMonsterV1/V2, PapillonV1/V2 (128x128)
-
-### Armes
-- Revolver.png, TurboGun.png
-
-### UI
-- Heart.png (icône de vie)
-
-### Environnements
-- Arena.glb + textures floor/wall
-- Obstacles.glb + textures floor/wall
-- ProceduralSkyMaterial (couleurs sombres)
-
----
-
-## 🔧 CONFIGURATION TECHNIQUE
+## 🔧 CONFIGURATION
 
 ### Input Map
-- **ESC :** Libérer la souris
-- **WASD :** Mouvement
-- **Espace :** Saut
-- **A :** Slam
-- **Clic gauche :** Tir
-- **R :** Rechargement
-
-### Corrections et Optimisations
-- **Collision layers** : Correction des layers incorrects dans world.tscn
-- **RayCast caméra** : RayCast3D déplacé vers PlayerCamera (correspondance parfaite)
-- **Double caméra** : Suppression de la caméra en double
-- **Connexions de signal** : Ajout de CONNECT_ONE_SHOT pour éviter les fuites mémoire
-- **Await avec gestion d'erreur** : Vérification is_alive après chaque await
-- **UID des fichiers** : Correction des références UID après renommage
-
-### Collision Layers
-- **Layer 0 :** Environnement
-- **Layer 1 :** Joueur
-- **Layer 2 :** Ennemis (détectable par raycast)
+- **WASD** : Déplacement
+- **Espace** : Saut
+- **A** : Slam
+- **Clic gauche** : Tir
+- **R** : Rechargement
+- **ESC** : Libérer souris
 
 ### Rendering
-- **Mode :** GL Compatibility
-- **Filtrage :** Nearest (pixel art)
-- **Ciel :** ProceduralSkyMaterial
+- **Mode** : GL Compatibility
+- **Filtrage** : Nearest (pixel art)
+
+---
+
+## 📁 STRUCTURE FICHIERS
+
+```
+/Player/          - Composants joueur (4 scripts modulaires)
+/Enemy/           - EnemyBase + 4 ennemis + EnemyTest
+/Revolver/        - Script arme
+/Effects/         - ImpactEffect (particules)
+/Maps/            - Arena + Obstacles (glb)
+/Assets/          - Audio, Sprites, Fonts
+world.tscn        - Scène principale
+```
+
+---
+
+**Voir aussi :**
+- `Doc_Game_Design.md` - Concept et gameplay
+- `Doc_Roadmap.md` - Roadmap et état du projet
 
 ---
