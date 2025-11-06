@@ -1,4 +1,4 @@
-extends EnemyBase
+extends "res://Enemy/enemy_base.gd"
 
 # === PAPILLON V2 ===
 # Ennemi volant plus agressif que le V1
@@ -25,6 +25,9 @@ extends EnemyBase
 @export var impact_color_3: Color = Color(1.0, 0.7, 0.0, 1)    # Jaune-orange
 @export var impact_color_4: Color = Color(1.0, 0.5, 0.0, 1)    # Orange foncé
 
+@export_group("Papillon V2 - Ombre Portée")
+@export var papillon_v2_shadow_size: float = 0.75  # Taille de l'ombre (multiplicateur)
+@export var papillon_v2_shadow_opacity: float = 0.384  # Opacité de l'ombre (0.0 à 1.0)
 
 # === VARIABLES SPÉCIFIQUES AU PAPILLON V2 ===
 var gravity: float  # Gravité pour ce papillon (très réduite pour voler)
@@ -46,6 +49,10 @@ func _on_enemy_ready():
 	current_health = max_health
 	base_damage_dealt = papillon_v2_damage_dealt
 	movement_speed_multiplier = papillon_v2_movement_speed
+	shadow_size = papillon_v2_shadow_size
+	shadow_opacity = papillon_v2_shadow_opacity
+	# Réappliquer la configuration de l'ombre avec la nouvelle taille
+	_setup_shadow()
 	
 	# Configurer la hauteur de vol
 	original_y = global_position.y

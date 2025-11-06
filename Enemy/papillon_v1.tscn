@@ -1,7 +1,8 @@
-[gd_scene load_steps=13 format=3 uid="uid://ku4i8q6cljds"]
+[gd_scene load_steps=14 format=3 uid="uid://ku4i8q6cljds"]
 
 [ext_resource type="Texture2D" uid="uid://buskqdtxqt84a" path="res://Assets/Sprites/Critters/PapillonV1.png" id="1_papillon"]
 [ext_resource type="Script" uid="uid://0q5nkc3vn3yk" path="res://Enemy/papillon_v1.gd" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://drv1p6gaavwb2" path="res://Assets/Sprites/shadow_simple.svg" id="3_shadow"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_f7h6n"]
 atlas = ExtResource("1_papillon")
@@ -86,3 +87,9 @@ shape = SubResource("SphereShape3D_f7h6n")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D"]
 shape = SubResource("SphereShape3D_vbjr8")
+
+[node name="ShadowSprite" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0)
+modulate = Color(1, 1, 1, 0.384)
+axis = 1
+texture = ExtResource("3_shadow")

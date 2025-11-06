@@ -5,8 +5,8 @@
 [ext_resource type="PackedScene" uid="uid://blpn5lfg8ub4b" path="res://Player/player.tscn" id="3_tlwt5"]
 [ext_resource type="PackedScene" uid="uid://ku4i8q6cljds" path="res://Enemy/papillon_v1.tscn" id="5_036b0"]
 [ext_resource type="PackedScene" uid="uid://c4lqud6bnoswo" path="res://Enemy/papillon_v2.tscn" id="6_dwbse"]
-[ext_resource type="PackedScene" path="res://Enemy/big_monster_v1.tscn" id="6_pkg7o"]
-[ext_resource type="PackedScene" path="res://Enemy/big_monster_v2.tscn" id="7_gbfbk"]
+[ext_resource type="PackedScene" uid="uid://d0g5y8d0slojv" path="res://Enemy/big_monster_v1.tscn" id="6_pkg7o"]
+[ext_resource type="PackedScene" uid="uid://bm2v2scene456" path="res://Enemy/big_monster_v2.tscn" id="7_gbfbk"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_aqk2v"]
 geometry_parsed_geometry_type = 1

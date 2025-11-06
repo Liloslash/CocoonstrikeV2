@@ -1,4 +1,4 @@
-extends EnemyBase
+extends "res://Enemy/enemy_base.gd"
 
 # === SYSTÈME D'ENNEMI TEST ===
 # Classe de test pour développer le gameplay des ennemis

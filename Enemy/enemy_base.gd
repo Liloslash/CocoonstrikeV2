@@ -29,6 +29,11 @@ class_name EnemyBase
 @export var slam_freeze_delay: float = 0.8  # Délai avant le freeze
 @export var slam_cooldown_time: float = 0.2  # Cooldown entre les slams
 
+@export_group("Ombre Portée")
+@export var shadow_enabled: bool = true  # Activer/désactiver l'ombre
+@export var shadow_size: float = 1.0  # Taille de l'ombre (multiplicateur)
+@export var shadow_opacity: float = 0.6  # Opacité de l'ombre (0.0 à 1.0)
+@export var shadow_height_offset: float = 0.01  # Hauteur de l'ombre au-dessus du sol
 
 # === VARIABLES INTERNES ===
 var current_health: int
@@ -41,8 +46,7 @@ var is_being_slam_repelled: bool = false  # Pour distinguer le repoussement slam
 
 # === COMPOSANTS ===
 @onready var sprite: AnimatedSprite3D = $AnimatedSprite3D  # Le sprite 2D billboard
-
-
+@onready var shadow_sprite: Sprite3D = null  # L'ombre portée (optionnel)
 
 # === MÉTHODES VIRTUELLES À SURCHARGER ===
 # Ces méthodes peuvent être surchargées par les ennemis spécifiques
@@ -63,7 +67,6 @@ func _on_death():
 	# Surcharger cette méthode pour des effets de mort spécifiques
 	pass
 
-
 # === INITIALISATION DE BASE ===
 func _ready():
 	# Initialisation commune à tous les ennemis
@@ -78,8 +81,14 @@ func _ready():
 	# Recherche du joueur dans la scène
 	_find_player()
 	
+	# Configurer l'ombre portée si elle existe
+	_setup_shadow()
+	
 	# Appeler la méthode virtuelle pour l'initialisation spécifique
 	_on_enemy_ready()
+	
+	# Ne pas appeler _update_shadow_position() ici - elle sera appelée dans _physics_process()
+	# Cela évite d'interférer avec l'initialisation de l'ennemi
 
 func _find_player():
 	# Cherche le joueur dans la scène (adaptez selon votre structure)
@@ -117,12 +126,17 @@ func _physics_process(delta):
 
 	# Les ennemis spécifiques gèrent leur propre physique
 	# (gravité, mouvement, collisions) dans _on_physics_process()
+	
+	# Appeler la méthode virtuelle pour le comportement spécifique EN PREMIER
+	# (pour que les ennemis puissent corriger leur position avant le calcul de l'ombre)
+	_on_physics_process(delta)
 
 	# ROTATION DU SPRITE VERS LE JOUEUR (commune à tous)
 	_update_sprite_rotation()
 	
-	# Appeler la méthode virtuelle pour le comportement spécifique
-	_on_physics_process(delta)
+	# Mettre à jour la position de l'ombre au niveau du sol
+	# (après que l'ennemi ait corrigé sa position)
+	_update_shadow_position()
 
 # === SYSTÈME DE DÉGÂTS (COMMUN À TOUS) ===
 func take_damage(damage: int, hit_effect_params: Dictionary = {}):
@@ -324,13 +338,6 @@ func _create_hit_shake(effect_params: Dictionary):
 	shake_tween.tween_property(sprite, "position", original_position, 0.1)
 	shake_tween.tween_property(sprite, "rotation", original_rotation, 0.1)
 	
-	# Arrêt du tween après la durée totale
-	var timer = get_tree().create_timer(duration)
-	timer.timeout.connect(func(): 
-		if shake_tween and shake_tween.is_valid():
-			shake_tween.kill()
-	, CONNECT_ONE_SHOT)  # Connexion automatique supprimée après utilisation
-	
 	# Forcer le retour à la position originale (sécurité)
 	sprite.position = original_position
 	sprite.rotation = original_rotation
@@ -375,3 +382,62 @@ func _start_damage_freeze() -> void:
 	if not is_being_slam_repelled:
 		is_frozen = true
 		freeze_timer = damage_freeze_duration
+
+# === SYSTÈME D'OMBRE PORTÉE ===
+func _setup_shadow():
+	# Chercher le nœud Sprite3D pour l'ombre (optionnel)
+	shadow_sprite = get_node_or_null("ShadowSprite")
+	
+	if not shadow_enabled or not shadow_sprite:
+		# Si l'ombre est désactivée ou le Sprite3D n'existe pas, on cache le sprite
+		if shadow_sprite:
+			shadow_sprite.visible = false
+		return
+	
+	# Configuration du Sprite3D pour l'ombre
+	shadow_sprite.visible = true
+	
+	# Taille de l'ombre (scale sur X et Z)
+	shadow_sprite.scale = Vector3(shadow_size, 1.0, shadow_size)
+	
+	# Opacité de l'ombre
+	shadow_sprite.modulate = Color(1, 1, 1, shadow_opacity)
+	
+	# Rotation de 90 degrés sur Y pour orienter l'ombre correctement
+	# (billboard et axis sont déjà définis dans les scènes .tscn)
+	shadow_sprite.rotation_degrees = Vector3(0, 90, 0)  # Rotation sur l'axe Y
+	
+	# Position initiale sera mise à jour par _update_shadow_position()
+
+func _update_shadow_position():
+	# Mettre à jour la position de l'ombre au niveau du sol
+	if not shadow_enabled or not shadow_sprite or not shadow_sprite.visible:
+		return
+	
+	# S'assurer que la rotation est toujours correcte (rotation sur Y)
+	shadow_sprite.rotation_degrees = Vector3(0, 90, 0)  # 90° sur Y
+	
+	# Utiliser un raycast pour trouver le sol SOUS l'ennemi
+	# Partir légèrement au-dessus de l'ennemi pour éviter de toucher l'ennemi lui-même
+	var raycast_start = global_position + Vector3(0, 0.5, 0)
+	var raycast_end = global_position + Vector3(0, -100, 0)
+	
+	var space_state = get_world_3d().direct_space_state
+	var query = PhysicsRayQueryParameters3D.create(raycast_start, raycast_end)
+	# Chercher sur la layer 0 (environnement par défaut)
+	query.collision_mask = 1  # Layer 0 = environnement
+	
+	var result = space_state.intersect_ray(query)
+	
+	if result:
+		# Vérifier que le sol trouvé est bien EN DESSOUS de l'ennemi
+		var ground_height = result.position.y
+		if ground_height < global_position.y:
+			# Position relative à l'ennemi : soustraire la position globale de l'ennemi
+			shadow_sprite.position.y = ground_height - global_position.y + shadow_height_offset
+		else:
+			# Si le raycast a trouvé quelque chose au-dessus, utiliser y=0 comme fallback
+			shadow_sprite.position.y = -global_position.y + shadow_height_offset
+	else:
+		# Si pas de sol trouvé, positionner l'ombre à y=0 (niveau du sol par défaut)
+		shadow_sprite.position.y = -global_position.y + shadow_height_offset

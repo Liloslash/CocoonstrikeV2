@@ -55,6 +55,7 @@
 - Effets visuels (rougissement, vibration)
 - Repoussement slam
 - Rotation auto vers joueur
+- **Système d'ombre portée** (raycast au sol, configurable par ennemi)
 
 ### Collision
 - **Layer 0** : Environnement
@@ -116,6 +117,23 @@
 - Reste au sol (Y=0.75)
 - Animation : 26 frames de marche
 - Couleurs : Violet foncé, Gris
+
+### Système d'Ombres Portées
+**Tous les ennemis** ont une ombre portée configurable qui suit le sol via raycast.
+
+**Configuration par défaut :**
+- **BigMonster V1/V2** : Taille 0.42x, Opacité 0.384
+- **Papillon V1/V2** : Taille 0.75x, Opacité 0.384
+
+**Paramètres exportés** (modifiables dans l'éditeur) :
+- `shadow_size` : Multiplicateur de taille (0.0 à 2.0)
+- `shadow_opacity` : Opacité de l'ombre (0.0 à 1.0)
+
+**Fonctionnement :**
+- Raycast vertical pour détecter le sol sous l'ennemi
+- Ombre positionnée automatiquement au niveau du sol
+- Rotation 90° sur Y pour orientation correcte
+- Texture : `shadow_simple.svg`
 
 ---
 

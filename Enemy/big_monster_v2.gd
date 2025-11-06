@@ -1,4 +1,4 @@
-extends EnemyBase
+extends "res://Enemy/enemy_base.gd"
 
 # === BIG MONSTER V2 ===
 # Ennemi terrestre tank - plus résistant et dangereux que le V1
@@ -23,6 +23,9 @@ extends EnemyBase
 @export var impact_color_3: Color = Color(0.4, 0.0, 0.6, 1)    # Violet très foncé
 @export var impact_color_4: Color = Color(0.3, 0.3, 0.3, 1)    # Gris foncé
 
+@export_group("BigMonster V2 - Ombre Portée")
+@export var big_monster_v2_shadow_size: float = 0.42  # Taille de l'ombre (multiplicateur)
+@export var big_monster_v2_shadow_opacity: float = 0.384  # Opacité de l'ombre (0.0 à 1.0)
 
 # === VARIABLES SPÉCIFIQUES AU BIG MONSTER V2 ===
 var gravity: float  # Gravité pour ce monstre
@@ -43,34 +46,38 @@ func _on_enemy_ready():
 	current_health = max_health
 	base_damage_dealt = big_monster_v2_damage_dealt
 	movement_speed_multiplier = big_monster_v2_movement_speed
+	shadow_size = big_monster_v2_shadow_size
+	shadow_opacity = big_monster_v2_shadow_opacity
+	# Réappliquer la configuration de l'ombre avec la nouvelle taille
+	_setup_shadow()
 	
 	# Sauvegarder la position initiale définie dans la scène
 	initial_position = global_position
-	# Corriger Y pour être au sol
-	global_position.y = 0.75
-	initial_position.y = 0.75
+	
+	# NE PAS modifier la position Y - garder celle de la scène
+	# (le code forçait Y=0.75 ce qui surélevait l'ennemi)
 	
 	# Démarrer l'animation de marche en permanence (utilise l'animation complexe de BigMonsterV2)
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("BigMonsterV2WalkAnim"):
 		sprite.play("BigMonsterV2WalkAnim")
 
-func _on_physics_process(delta: float):
+func _on_physics_process(_delta: float):
 	# Physique spécifique au BigMonster V2 (terrestre, reste au sol, plus lent)
 	
 	# Si on est en cours de repoussement slam, appliquer le mouvement puis forcer au sol
 	if is_being_slam_repelled:
 		# Appliquer le mouvement complet
 		move_and_slide()
-		# APRÈS le mouvement, forcer la position Y au sol (pas de saut pour BigMonster)
-		global_position.y = 0.75
+		# APRÈS le mouvement, restaurer la position Y initiale (pas de saut pour BigMonster)
+		global_position.y = initial_position.y
 		
 		# Si l'ennemi va trop loin, le ramener à sa position initiale
 		if global_position.distance_to(initial_position) > 10.0:
 			global_position = initial_position
 		return
 	
-	# Position fixe au sol pour éviter l'enfoncement
-	global_position.y = 0.75
+	# Maintenir la position Y initiale pour éviter l'enfoncement
+	global_position.y = initial_position.y
 	velocity = Vector3.ZERO
 	
 	# Remettre le sprite à sa position d'origine (sauf rotation Y vers le joueur)
