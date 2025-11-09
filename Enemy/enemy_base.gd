@@ -43,6 +43,7 @@ var player_reference: Node3D = null
 var freeze_timer: float = 0.0
 var slam_cooldown: float = 0.0
 var is_being_slam_repelled: bool = false  # Pour distinguer le repoussement slam des autres freezes
+var _shadow_initialized: bool = false
 
 # === COMPOSANTS ===
 @onready var sprite: AnimatedSprite3D = $AnimatedSprite3D  # Le sprite 2D billboard
@@ -86,6 +87,10 @@ func _ready():
 	
 	# Appeler la méthode virtuelle pour l'initialisation spécifique
 	_on_enemy_ready()
+	
+	# Reconfigurer l'ombre une fois le nœud dans l'arbre
+	call_deferred("_refresh_shadow")
+	set_physics_process(true)
 	
 	# Ne pas appeler _update_shadow_position() ici - elle sera appelée dans _physics_process()
 	# Cela évite d'interférer avec l'initialisation de l'ennemi
@@ -385,6 +390,7 @@ func _start_damage_freeze() -> void:
 
 # === SYSTÈME D'OMBRE PORTÉE ===
 func _setup_shadow():
+	_shadow_initialized = false
 	# Chercher le nœud Sprite3D pour l'ombre (optionnel)
 	shadow_sprite = get_node_or_null("ShadowSprite")
 	
@@ -408,36 +414,53 @@ func _setup_shadow():
 	shadow_sprite.rotation_degrees = Vector3(0, 90, 0)  # Rotation sur l'axe Y
 	
 	# Position initiale sera mise à jour par _update_shadow_position()
+	_shadow_initialized = true
 
 func _update_shadow_position():
 	# Mettre à jour la position de l'ombre au niveau du sol
-	if not shadow_enabled or not shadow_sprite or not shadow_sprite.visible:
+	if not shadow_enabled or not shadow_sprite or not shadow_sprite.visible or not _shadow_initialized:
 		return
 	
-	# S'assurer que la rotation est toujours correcte (rotation sur Y)
-	shadow_sprite.rotation_degrees = Vector3(0, 90, 0)  # 90° sur Y
+	var new_position: Vector3 = shadow_sprite.global_position
+	new_position.x = global_position.x
+	new_position.z = global_position.z
+	new_position.y = global_position.y - abs(shadow_height_offset)
 	
-	# Utiliser un raycast pour trouver le sol SOUS l'ennemi
-	# Partir légèrement au-dessus de l'ennemi pour éviter de toucher l'ennemi lui-même
-	var raycast_start = global_position + Vector3(0, 0.5, 0)
-	var raycast_end = global_position + Vector3(0, -100, 0)
+	var raycast_start: Vector3 = global_position + Vector3(0, 0.5, 0)
+	var raycast_end: Vector3 = global_position + Vector3(0, -100, 0)
 	
-	var space_state = get_world_3d().direct_space_state
-	var query = PhysicsRayQueryParameters3D.create(raycast_start, raycast_end)
-	# Chercher sur la layer 0 (environnement par défaut)
-	query.collision_mask = 1  # Layer 0 = environnement
+	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	if space_state:
+		var query := PhysicsRayQueryParameters3D.create(raycast_start, raycast_end)
+		query.collision_mask = 1  # Layer 0 = environnement
+		var result := space_state.intersect_ray(query)
+		if result:
+			var hit_position: Vector3 = result.position
+			new_position.y = float(hit_position.y) + shadow_height_offset
 	
-	var result = space_state.intersect_ray(query)
+	shadow_sprite.global_position = new_position
 	
-	if result:
-		# Vérifier que le sol trouvé est bien EN DESSOUS de l'ennemi
-		var ground_height = result.position.y
-		if ground_height < global_position.y:
-			# Position relative à l'ennemi : soustraire la position globale de l'ennemi
-			shadow_sprite.position.y = ground_height - global_position.y + shadow_height_offset
-		else:
-			# Si le raycast a trouvé quelque chose au-dessus, utiliser y=0 comme fallback
-			shadow_sprite.position.y = -global_position.y + shadow_height_offset
-	else:
-		# Si pas de sol trouvé, positionner l'ombre à y=0 (niveau du sol par défaut)
-		shadow_sprite.position.y = -global_position.y + shadow_height_offset
+	# Stabiliser l'orientation pour rester parallèle au sol
+	shadow_sprite.global_rotation = Vector3.ZERO
+	shadow_sprite.rotation_degrees = Vector3(0, 90, 0)
+
+func _refresh_shadow():
+	if not shadow_enabled:
+		_shadow_initialized = false
+		return
+	
+	_setup_shadow()
+	
+	if not shadow_sprite:
+		_shadow_initialized = false
+		return
+	
+	shadow_sprite.visible = true
+	if shadow_sprite.texture == null:
+		shadow_sprite.texture = load("res://Assets/Sprites/shadow_simple.svg")
+	shadow_sprite.scale = Vector3(shadow_size, 1.0, shadow_size)
+	shadow_sprite.modulate = Color(1, 1, 1, shadow_opacity)
+	shadow_sprite.rotation_degrees = Vector3(0, 90, 0)
+	shadow_sprite.position = Vector3.ZERO
+	_shadow_initialized = true
+	_update_shadow_position()

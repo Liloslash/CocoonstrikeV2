@@ -1,16 +1,16 @@
 # 🚀 ROADMAP - COCOONSTRIKE REBUILD
 
 ## 🔥 SUR LE FEU (En cours)
-- Création de "l'ombre" pour les enemies 
 - Système de vagues d'ennemis
-- Implémentation des bruits de pas du player
 - Sons de dégâts des ennemis
-- Bruits de pas des ennemis
 
 ## ⚡ COURT TERME (1-2 semaines)
 - Création d'une animation de mort pour l'ennemi
 - Création de la mécanique de super shot pour le revolver
 - Amélioration du système de repoussement slam
+- Création du système de canal pour gérer l'audio
+- Implémentation des bruits de pas du player
+- Bruits de pas des ennemis
 - Polish des effets visuels et sonores
 
 ## 📅 MOYEN TERME (1-2 mois)
@@ -23,14 +23,16 @@
 ## 🎯 LONG TERME (3+ mois)
 - Création d'un écran titre
 - Création d'un menu de pause
+- Création du HUD Player
 - Créations de ressources pour l'habillage de la map
-- Création du système de canal pour gérer l'audio
 - Création d'un tableau des scores
 
 ## 🌟 TRÈS LONG TERME
 - Première version avec une boucle de jeu complète
 
 ## ✅ ACCOMPLIS
+- Création des 4 points d'apparitions sur la map
+- Création de "l'ombre" pour les enemies 
 - Création des 6 ennemis spécifiques (PapillonV1/V2, MonsterV1/V2, BigMonsterV1/V2)
 - Architecture modulaire du joueur (PlayerCamera, PlayerMovement, PlayerCombat, PlayerInput)
 - Système de sway dynamique du revolver et effets de vibration ennemi

@@ -64,21 +64,22 @@ func _on_enemy_ready():
 func _on_physics_process(_delta: float):
 	# Physique spécifique au BigMonster V1 (terrestre, reste au sol)
 	
-	# Si on est en cours de repoussement slam, appliquer le mouvement puis forcer au sol
+	# Appliquer la gravité
+	velocity.y -= gravity * _delta
+
+	# Si on est en cours de repoussement slam, laisser la physique gérer puis sortir
 	if is_being_slam_repelled:
-		# Appliquer le mouvement complet
 		move_and_slide()
-		# APRÈS le mouvement, restaurer la position Y initiale (pas de saut pour BigMonster)
-		global_position.y = initial_position.y
-		
-		# Si l'ennemi va trop loin, le ramener à sa position initiale
-		if global_position.distance_to(initial_position) > 10.0:
-			global_position = initial_position
 		return
 	
-	# Maintenir la position Y initiale pour éviter l'enfoncement
-	global_position.y = initial_position.y
-	velocity = Vector3.ZERO
+	# Le BigMonster V1 reste statique à l'horizontale pour le moment
+	velocity.x = 0.0
+	velocity.z = 0.0
+	move_and_slide()
+
+	# Éviter les rebonds lorsqu'il touche le sol
+	if is_on_floor():
+		velocity.y = 0.0
 	
 	# Remettre le sprite à sa position d'origine (sauf rotation Y vers le joueur)
 	if sprite:

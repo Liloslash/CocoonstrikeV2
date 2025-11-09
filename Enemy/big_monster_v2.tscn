@@ -210,6 +210,7 @@ height = 1.17387
 height = 1.58141
 
 [node name="BigMonsterV2" type="CharacterBody3D"]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0, 0, 0)
 script = ExtResource("2_script_v2")
 
 [node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]

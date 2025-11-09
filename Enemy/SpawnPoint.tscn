@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Enemy/SpawnPoint.gd" id="1_kv0cv"]
+
+[sub_resource type="CylinderMesh" id="2_72jo7"]
+top_radius = 0.01
+bottom_radius = 1.0
+height = 0.2
+
+[node name="SpawnPoint" type="Node3D"]
+script = ExtResource("1_kv0cv")
+
+[node name="EditorOnly" type="Node3D" parent="."]
+editor_only = true
+
+[node name="RadiusMesh" type="MeshInstance3D" parent="EditorOnly"]
+mesh = SubResource("2_72jo7")
+

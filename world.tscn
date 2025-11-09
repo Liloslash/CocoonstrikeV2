@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://duveuss376vek"]
+[gd_scene load_steps=14 format=3 uid="uid://duveuss376vek"]
 
 [ext_resource type="PackedScene" uid="uid://on8dmdl0asvj" path="res://Maps/environments/Arena.glb" id="1_fj7yv"]
 [ext_resource type="PackedScene" uid="uid://danq5m8lo3862" path="res://Maps/obstacles/Obstacles.glb" id="2_tlwt5"]
@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" uid="uid://c4lqud6bnoswo" path="res://Enemy/papillon_v2.tscn" id="6_dwbse"]
 [ext_resource type="PackedScene" uid="uid://d0g5y8d0slojv" path="res://Enemy/big_monster_v1.tscn" id="6_pkg7o"]
 [ext_resource type="PackedScene" uid="uid://bm2v2scene456" path="res://Enemy/big_monster_v2.tscn" id="7_gbfbk"]
+[ext_resource type="PackedScene" path="res://Enemy/SpawnPoint.tscn" id="8_spawn"]
+[ext_resource type="Script" uid="uid://cl4c33wc4qc6i" path="res://Enemy/SpawnTestRunner.gd" id="9_snm2e"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_aqk2v"]
 geometry_parsed_geometry_type = 1
@@ -55,7 +57,30 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.361, 1.2, -9.979)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.839, 1.2, -9.882)
 
 [node name="BigMonsterV1" parent="." instance=ExtResource("6_pkg7o")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -7.68238)
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0, 0.716792, -7.68238)
 
 [node name="BigMonsterV2" parent="." instance=ExtResource("7_gbfbk")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.37909, 0.5, -7.00184)
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 1.37909, 0.711007, -7.00184)
+
+[node name="SpawnPointZone1" parent="." instance=ExtResource("8_spawn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.4266, 1.2, -26.071)
+
+[node name="SpawnPointZone2" parent="." instance=ExtResource("8_spawn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.664, 1.2, -15.311)
+zone_id = 2
+
+[node name="SpawnPointZone3" parent="." instance=ExtResource("8_spawn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.4266, 1.2, 26.6688)
+zone_id = 3
+
+[node name="SpawnPointZone4" parent="." instance=ExtResource("8_spawn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.0386, 1.2, 22.5508)
+zone_id = 4
+
+[node name="SpawnTestRunner" type="Node" parent="."]
+script = ExtResource("9_snm2e")
+spawn_point_path = NodePath("../SpawnPointZone1")
+spawn_interval = 2.0
+enemy_scenes = Array[PackedScene]([ExtResource("5_036b0"), ExtResource("6_pkg7o")])
+is_active = false
+enabled_zones_mask = 0

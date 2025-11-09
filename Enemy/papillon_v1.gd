@@ -15,9 +15,15 @@ extends "res://Enemy/enemy_base.gd"
 @export var papillon_v1_damage_dealt: int = 10  # Dégâts de base au joueur
 
 @export_group("Papillon - Vol")
-@export var flight_height: float = 0.2  # Hauteur de vol (en mètres au-dessus du sol)
+@export var hover_height: float = 1.2  # Hauteur cible au-dessus du sol
 @export var float_amplitude: float = 0.15  # Amplitude du flottement (haut/bas)
 @export var float_speed: float = 1.5  # Vitesse du flottement
+@export var hover_strength: float = 8.0  # Force de rappel vers la hauteur cible
+@export var hover_damping: float = 0.9  # Amortissement pour éviter les oscillations infinies
+@export var gravity_scale: float = 1.0  # Multiplicateur de gravité
+@export var max_hover_ray_distance: float = 10.0  # Distance maximum du raycast vers le sol
+@export var hover_follow_speed: float = 6.0  # Vitesse d'ajustement vers la hauteur cible (0-1 interpolée chaque frame)
+@export_flags_3d_physics var hover_collision_mask: int = 1  # Layers considérées comme sol
 
 @export_group("Papillon - Couleurs d'Impact")
 @export var impact_color_1: Color = Color(0.2, 0.6, 1.0, 1)    # Bleu
@@ -30,15 +36,16 @@ extends "res://Enemy/enemy_base.gd"
 @export var papillon_v1_shadow_opacity: float = 0.384  # Opacité de l'ombre (0.0 à 1.0)
 
 # === VARIABLES SPÉCIFIQUES AU PAPILLON ===
-var gravity: float  # Gravité pour ce papillon (très réduite pour voler)
-var float_timer: float = 0.0  # Timer pour le flottement
-var original_y: float  # Position Y originale pour le flottement
+var gravity: float
+var float_timer: float = 0.0
+var has_ground_contact: bool = false
+var desired_height: float = 0.0
 
 # === MÉTHODES VIRTUELLES SURCHARGÉES ===
 
 func _on_enemy_ready():
 	# Initialisation spécifique au papillon
-	gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * 0.1  # Gravité très réduite pour voler
+	gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * gravity_scale
 	
 	# Configuration des collisions spécifique au papillon volant
 	collision_layer = 2  # Ennemi sur la layer 2 (détectable par raycast)
@@ -54,37 +61,38 @@ func _on_enemy_ready():
 	# Réappliquer la configuration de l'ombre avec la nouvelle taille
 	_setup_shadow()
 	
-	# Configurer la hauteur de vol
-	original_y = global_position.y
-	global_position.y = original_y + flight_height
-	
-	
 	# Démarrer l'animation de vol en permanence
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("PapillonV1IdleAnim"):
 		sprite.play("PapillonV1IdleAnim")
 
 func _on_physics_process(delta: float):
-	# Physique spécifique au papillon (vol + flottement + collisions)
-	
-	# Timer pour le flottement
 	float_timer += delta * float_speed
+	var hover_offset: float = sin(float_timer) * float_amplitude
 	
-	# Calculer la position de flottement (mouvement sinusoïdal)
-	var target_y = original_y + flight_height + sin(float_timer) * float_amplitude
+	var ray_start: Vector3 = global_position + Vector3.UP * 0.5
+	var ray_end: Vector3 = global_position + Vector3.DOWN * max_hover_ray_distance
+	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	has_ground_contact = false
+	desired_height = global_position.y + hover_offset
 	
-	# Maintenir la hauteur de vol avec une gravité très faible
-	if not is_on_floor():
-		velocity.y -= gravity * delta
-	else:
-		velocity.y = 0
+	if space_state:
+		var query := PhysicsRayQueryParameters3D.create(ray_start, ray_end)
+		query.collision_mask = hover_collision_mask
+		query.exclude = [get_rid()]  # Ne pas se toucher soi-même
+		var result := space_state.intersect_ray(query)
+		if result:
+			var hit_position: Vector3 = result.position
+			desired_height = hit_position.y + hover_height + hover_offset
+			has_ground_contact = true
 	
-	# Appliquer le mouvement AVANT de forcer la position Y
+	velocity.y -= gravity * delta
+	
 	move_and_slide()
 	
-	
-	# Forcer la position Y pour le flottement APRÈS les collisions
-	# (pour éviter de passer à travers les murs)
-	global_position.y = target_y
+	if has_ground_contact:
+		var t: float = clamp(hover_follow_speed * delta, 0.0, 1.0)
+		global_position.y = lerp(global_position.y, desired_height, t)
+		velocity.y = 0.0
 
 
 func _on_damage_taken(_damage: int):
