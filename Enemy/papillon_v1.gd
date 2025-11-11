@@ -1,5 +1,7 @@
 extends "res://Enemy/enemy_base.gd"
 
+const DISSOLVE_SHADER = preload("res://Effects/Shaders/pixel_dissolve.gdshader")
+
 # === PAPILLON V1 ===
 # Ennemi volant qui hérite de toute la logique commune d'EnemyBase
 # Configuration simple : 75 PV, vol permanent, survol des obstacles
@@ -40,6 +42,9 @@ var gravity: float
 var float_timer: float = 0.0
 var has_ground_contact: bool = false
 var desired_height: float = 0.0
+@onready var dissolve_material: ShaderMaterial = null
+var _dissolve_connection_established: bool = false
+var _dissolve_tween: Tween = null
 
 # === MÉTHODES VIRTUELLES SURCHARGÉES ===
 
@@ -64,6 +69,21 @@ func _on_enemy_ready():
 	# Démarrer l'animation de vol en permanence
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("PapillonV1IdleAnim"):
 		sprite.play("PapillonV1IdleAnim")
+	
+	# Préparer le matériau de dissolution pixelisée
+	if sprite:
+		dissolve_material = ShaderMaterial.new()
+		dissolve_material.shader = DISSOLVE_SHADER
+		var average_color: Color = (impact_color_1 + impact_color_2 + impact_color_3 + impact_color_4) / 4.0
+		dissolve_material.set_shader_parameter("dissolve_amount", 0.0)
+		dissolve_material.set_shader_parameter("pixel_size", 1.0)
+		dissolve_material.set_shader_parameter("edge_glow", 1.4)
+		dissolve_material.set_shader_parameter("edge_color", Vector3(average_color.r, average_color.g, average_color.b))
+		sprite.material_override = dissolve_material
+		_update_dissolve_texture()
+		if not _dissolve_connection_established:
+			sprite.frame_changed.connect(_update_dissolve_texture)
+			_dissolve_connection_established = true
 
 func _on_physics_process(delta: float):
 	float_timer += delta * float_speed
@@ -100,8 +120,41 @@ func _on_damage_taken(_damage: int):
 	pass
 
 func _on_death():
-	# Effets de mort spécifiques au papillon (pour plus tard)
-	pass
+	if not sprite or dissolve_material == null:
+		return false
+	
+	if _dissolve_connection_established and sprite.frame_changed.is_connected(_update_dissolve_texture):
+		sprite.frame_changed.disconnect(_update_dissolve_texture)
+		_dissolve_connection_established = false
+	
+	if _dissolve_tween and _dissolve_tween.is_running():
+		_dissolve_tween.kill()
+	
+	_dissolve_tween = create_tween()
+	_dissolve_tween.set_parallel(true)
+	_dissolve_tween.tween_property(dissolve_material, "shader_parameter/dissolve_amount", 1.0, 0.45)\
+		.set_trans(Tween.TRANS_CUBIC)\
+		.set_ease(Tween.EASE_IN)
+	_dissolve_tween.tween_property(dissolve_material, "shader_parameter/pixel_size", 26.0, 0.45)\
+		.set_trans(Tween.TRANS_CUBIC)\
+		.set_ease(Tween.EASE_OUT)
+	_dissolve_tween.finished.connect(func():
+		if is_instance_valid(sprite):
+			sprite.visible = false
+		queue_free()
+	)
+	
+	return true
+
+func _update_dissolve_texture():
+	if not sprite or not sprite.sprite_frames or dissolve_material == null:
+		return
+	var frames: SpriteFrames = sprite.sprite_frames
+	var current_animation: StringName = sprite.animation
+	var current_frame: int = sprite.frame
+	var frame_texture: Texture2D = frames.get_frame_texture(current_animation, current_frame)
+	if frame_texture:
+		dissolve_material.set_shader_parameter("texture_albedo", frame_texture)
 
 # === MÉTHODE SPÉCIFIQUE AU PAPILLON ===
 # Cette méthode sera utilisée par PlayerCombat pour récupérer les couleurs d'impact

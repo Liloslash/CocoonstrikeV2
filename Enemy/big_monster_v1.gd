@@ -1,12 +1,19 @@
 extends "res://Enemy/enemy_base.gd"
 
+const DISSOLVE_SHADER = preload("res://Effects/Shaders/pixel_dissolve.gdshader")
+
 # === BIG MONSTER V1 ===
 # Ennemi terrestre commun - équilibré entre vitesse et résistance
 # 125 PV, vitesse moyenne, 20 dégâts au joueur
 
 # === PARAMÈTRES EXPORTÉS SPÉCIFIQUES AU BIG MONSTER V1 ===
 @export_group("BigMonster V1 - Statistiques")
-@export var big_monster_v1_max_health: int = 125
+@export var big_monster_v1_max_health: int = 62
+
+@export_group("BigMonster V1 - Dissolution")
+@export var death_dissolve_duration: float = 0.45
+@export var death_pixel_size: float = 156.0
+@export var death_edge_glow: float = 1.0
 
 @export_group("BigMonster V1 - Mouvement")
 @export var big_monster_v1_movement_speed: float = 1.0  # Vitesse moyenne de référence
@@ -30,6 +37,9 @@ extends "res://Enemy/enemy_base.gd"
 # === VARIABLES SPÉCIFIQUES AU BIG MONSTER V1 ===
 var gravity: float  # Gravité pour ce monstre
 var initial_position: Vector3  # Position initiale définie dans la scène
+@onready var dissolve_material: ShaderMaterial = null
+var _dissolve_connection_established: bool = false
+var _dissolve_tween: Tween = null
 
 # === MÉTHODES VIRTUELLES SURCHARGÉES ===
 
@@ -60,6 +70,21 @@ func _on_enemy_ready():
 	# Démarrer l'animation de marche en permanence
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("BigMonsterV1IdleAnim"):
 		sprite.play("BigMonsterV1IdleAnim")
+	
+	# Préparer le matériau de dissolution pixelisée
+	if sprite:
+		dissolve_material = ShaderMaterial.new()
+		dissolve_material.shader = DISSOLVE_SHADER
+		var average_color: Color = (impact_color_1 + impact_color_2 + impact_color_3 + impact_color_4) / 4.0
+		dissolve_material.set_shader_parameter("dissolve_amount", 0.0)
+		dissolve_material.set_shader_parameter("pixel_size", 1.0)
+		dissolve_material.set_shader_parameter("edge_glow", death_edge_glow)
+		dissolve_material.set_shader_parameter("edge_color", Vector3(average_color.r, average_color.g, average_color.b))
+		sprite.material_override = dissolve_material
+		_update_dissolve_texture()
+		if not _dissolve_connection_established:
+			sprite.frame_changed.connect(_update_dissolve_texture)
+			_dissolve_connection_established = true
 
 func _on_physics_process(_delta: float):
 	# Physique spécifique au BigMonster V1 (terrestre, reste au sol)
@@ -92,11 +117,45 @@ func _on_damage_taken(_damage: int):
 	pass
 
 func _on_death():
-	# Effets de mort spécifiques au BigMonster V1 (pour plus tard)
-	pass
+	if not sprite or dissolve_material == null:
+		return false
+	
+	if _dissolve_connection_established and sprite.frame_changed.is_connected(_update_dissolve_texture):
+		sprite.frame_changed.disconnect(_update_dissolve_texture)
+		_dissolve_connection_established = false
+	
+	if _dissolve_tween and _dissolve_tween.is_running():
+		_dissolve_tween.kill()
+	
+	_dissolve_tween = create_tween()
+	_dissolve_tween.set_parallel(true)
+	_dissolve_tween.tween_property(dissolve_material, "shader_parameter/dissolve_amount", 1.0, death_dissolve_duration)\
+		.set_trans(Tween.TRANS_CUBIC)\
+		.set_ease(Tween.EASE_IN)
+	_dissolve_tween.tween_property(dissolve_material, "shader_parameter/pixel_size", death_pixel_size, death_dissolve_duration)\
+		.set_trans(Tween.TRANS_CUBIC)\
+		.set_ease(Tween.EASE_OUT)
+	
+	_dissolve_tween.finished.connect(func():
+		if is_instance_valid(sprite):
+			sprite.visible = false
+		queue_free()
+	)
+	
+	return true
 
 # === MÉTHODE SPÉCIFIQUE AU BIG MONSTER V1 ===
 # Cette méthode sera utilisée par PlayerCombat pour récupérer les couleurs d'impact
 func get_impact_colors() -> Array[Color]:
 	# Retourne les 4 couleurs d'impact du BigMonster V1 (tons rouge/orange/brun)
 	return [impact_color_1, impact_color_2, impact_color_3, impact_color_4]
+
+func _update_dissolve_texture():
+	if not sprite or not sprite.sprite_frames or dissolve_material == null:
+		return
+	var frames: SpriteFrames = sprite.sprite_frames
+	var current_animation: StringName = sprite.animation
+	var current_frame: int = sprite.frame
+	var frame_texture: Texture2D = frames.get_frame_texture(current_animation, current_frame)
+	if frame_texture:
+		dissolve_material.set_shader_parameter("texture_albedo", frame_texture)

@@ -226,7 +226,9 @@ func _die():
 	_disable_collisions()
 	
 	# Appeler la méthode virtuelle pour les effets de mort spécifiques
-	_on_death()
+	var death_handled = _on_death()
+	if death_handled == true:
+		return
 	
 	# SUPPRESSION DU FREEZE DE MORT - à recréer plus tard selon les besoins
 	queue_free()

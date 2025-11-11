@@ -5,7 +5,6 @@
 - Sons de dégâts des ennemis
 
 ## ⚡ COURT TERME (1-2 semaines)
-- Création d'une animation de mort pour l'ennemi
 - Création de la mécanique de super shot pour le revolver
 - Amélioration du système de repoussement slam
 - Création du système de canal pour gérer l'audio
@@ -31,6 +30,7 @@
 - Première version avec une boucle de jeu complète
 
 ## ✅ ACCOMPLIS
+- Création d'une animation de mort pour l'ennemi
 - Création des 4 points d'apparitions sur la map
 - Création de "l'ombre" pour les enemies 
 - Création des 6 ennemis spécifiques (PapillonV1/V2, MonsterV1/V2, BigMonsterV1/V2)
