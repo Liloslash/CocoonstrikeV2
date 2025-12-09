@@ -1,6 +1,7 @@
 # 🚀 ROADMAP - COCOONSTRIKE REBUILD
 
 ## 🔥 SUR LE FEU (En cours)
+- implmémentation de l'interrupteur de vagues
 - Système de vagues d'ennemis
 - Sons de dégâts des ennemis
 

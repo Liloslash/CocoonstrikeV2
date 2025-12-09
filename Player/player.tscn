@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://blpn5lfg8ub4b"]
+[gd_scene load_steps=26 format=3 uid="uid://blpn5lfg8ub4b"]
 
 [ext_resource type="Script" uid="uid://co6b1qlsqhx6s" path="res://Player/player.gd" id="1_v0iea"]
 [ext_resource type="Texture2D" uid="uid://80v0rg0temi1" path="res://Assets/Sprites/Guns/Revolver.png" id="2_4ntmi"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://yihmwlm1gdcc" path="res://Player/PlayerMovement.gd" id="5_od3ui"]
 [ext_resource type="Script" uid="uid://bx60wab5cy035" path="res://Player/PlayerCombat.gd" id="6_00tjw"]
 [ext_resource type="Script" uid="uid://djauqrp7mylji" path="res://Player/PlayerInput.gd" id="7_x3vf3"]
+[ext_resource type="Script" uid="uid://tup0ife8d80q" path="res://Player/PlayerInteraction.gd" id="8_interaction"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gwnis"]
 atlas = ExtResource("2_4ntmi")
@@ -175,6 +176,32 @@ libraries = {
 &"": SubResource("AnimationLibrary_k53q1")
 }
 
+[node name="UI_Interactions" type="Control" parent="HUD_Layer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="InteractLabel" type="Label" parent="HUD_Layer/UI_Interactions"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -15.0
+offset_right = 200.0
+offset_bottom = 15.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Appuyez sur E pour interagir"
+horizontal_alignment = 1
+
 [node name="PlayerCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
 script = ExtResource("4_vtle1")
@@ -203,3 +230,6 @@ script = ExtResource("6_00tjw")
 
 [node name="PlayerInput" type="Node" parent="."]
 script = ExtResource("7_x3vf3")
+
+[node name="PlayerInteraction" type="Node" parent="."]
+script = ExtResource("8_interaction")

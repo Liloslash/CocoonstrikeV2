@@ -11,47 +11,42 @@ var movement_component: Node
 var combat_component: Node
 
 # === INITIALISATION ===
-func _ready() -> void:
-	# Le joueur sera assigné par le script principal
-	pass
-
 func setup_player(player_node: CharacterBody3D, movement_comp: Node, combat_comp: Node) -> void:
 	player = player_node
 	movement_component = movement_comp
 	combat_component = combat_comp
 
 # === GESTION DES INPUTS ===
-func _input(event: InputEvent) -> void:
-	# Vérification de sécurité
+func _unhandled_input(event: InputEvent) -> void:
+	# Vérifier que le joueur existe
 	if not player:
 		return
-		
-	# Gestion de la souris
+	
+	# Gestion de la rotation de la caméra avec la souris
 	if event is InputEventMouseMotion:
 		player.rotate_y(-event.relative.x * mouse_sensitivity)
+		return
 	
-	# Gestion des actions de mouvement (pressed)
+	# Gestion du saut
 	if event.is_action_pressed("jump"):
 		movement_component.start_jump()
+		return
 		
+	# Gestion du slam
 	if event.is_action_pressed("slam"):
 		movement_component.start_slam()
+		return
 	
-	# Gestion de l'échappement
-	if event.is_action_pressed("esc"):
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-
-func _unhandled_input(event: InputEvent) -> void:
-	# Gestion des actions de combat (just_pressed)
+	# Gestion du tir
 	if event.is_action("shot") and event.is_pressed():
 		combat_component.trigger_shot()
+		return
 	
+	# Gestion du rechargement
 	if event.is_action("reload") and event.is_pressed():
 		combat_component.trigger_reload()
-
-# === FONCTIONS PUBLIQUES ===
-func set_mouse_sensitivity(sensitivity: float) -> void:
-	mouse_sensitivity = sensitivity
-
-func get_mouse_sensitivity() -> float:
-	return mouse_sensitivity
+		return
+	
+	# Gestion de l'échappement (libérer la souris)
+	if event.is_action_pressed("esc"):
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE

@@ -39,16 +39,11 @@ var jump_time: float = 0.0
 var is_jumping_state: bool = false
 
 
-# === INITIALISATION ===
-func _ready() -> void:
-	# Le joueur sera assigné par le script principal
-	pass
-
 func setup_player(player_node: CharacterBody3D) -> void:
 	player = player_node
-	# Récupérer la référence à la caméra avec vérification
+	# Récupérer la référence à la caméra
 	camera_component = player.get_node_or_null("PlayerCamera") as PlayerCamera
-	# Calculer la vélocité de saut basée sur la hauteur désirée
+	# Calculer la vélocité de saut nécessaire pour atteindre la hauteur désirée
 	_calculate_jump_velocity()
 
 # === GESTION PRINCIPALE ===
@@ -80,12 +75,12 @@ func _handle_freeze_state(delta: float) -> void:
 # === GESTION DE LA GRAVITÉ ET DU SAUT ===
 func _handle_gravity_and_jump(delta: float) -> void:
 	if not player.is_on_floor():
-		# Appliquer la gravité
+		# Appliquer la gravité au joueur
 		player.velocity.y += player.get_gravity().y * fall_gravity_multiplier * delta
 		jump_time += delta
 		is_jumping_state = true
 		
-		# Mettre à jour la hauteur de saut pour la caméra
+		# Mettre à jour la hauteur maximale du saut pour la caméra
 		if camera_component:
 			camera_component.update_jump_height(player.global_position.y)
 	else:
@@ -94,7 +89,7 @@ func _handle_gravity_and_jump(delta: float) -> void:
 			is_jumping_state = false
 			jump_time = 0.0
 			can_slam = true  # Réactiver le slam pour le prochain saut
-			# Arrêter l'effet de regard vers le bas
+			# Arrêter l'effet de regard vers le bas de la caméra
 			if camera_component:
 				camera_component.stop_jump_look_down()
 
@@ -117,15 +112,15 @@ func _handle_slam_landing() -> void:
 func _handle_movement(delta: float) -> void:
 	var input_dir = Input.get_vector("left", "right", "up", "down")
 	
-	# Early return - si pas d'input ou frozen, arrêter le mouvement
+	# Arrêter le mouvement si pas d'input ou si le joueur est gelé
 	if input_dir == Vector2.ZERO or is_frozen:
 		_stop_movement()
 		return
 	
-	# Calculer la direction de mouvement
+	# Calculer la direction de mouvement relative au joueur
 	var direction = _calculate_movement_direction(input_dir)
 	
-	# Gérer l'accélération et appliquer la vitesse
+	# Mettre à jour la vitesse et appliquer le mouvement
 	_update_movement_speed(delta)
 	_apply_movement_velocity(direction)
 
@@ -134,7 +129,7 @@ func _calculate_jump_velocity() -> void:
 	if not player:
 		return
 	
-	# Formule physique : v = sqrt(2 * g * h)
+	# Calculer la vélocité nécessaire avec la formule physique : v = sqrt(2 * g * h)
 	var gravity = abs(player.get_gravity().y)
 	jump_velocity = sqrt(2.0 * max(gravity, 9.8) * jump_height)
 
@@ -144,14 +139,14 @@ func start_jump() -> void:
 	if player.is_on_floor() and not is_frozen:
 		player.velocity.y = jump_velocity
 		jump_time = 0.0
-		# Démarrer l'effet de regard vers le bas
+		# Démarrer l'effet de regard vers le bas de la caméra
 		if camera_component:
 			camera_component.start_jump_look_down(player.global_position.y)
 
 func start_slam() -> void:
 	if not player.is_on_floor() and jump_time >= min_time_before_slam and can_slam and not is_slamming and not is_frozen:
 		is_slamming = true
-		can_slam = false  # Empêcher les slams multiples
+		can_slam = false  # Empêcher les slams multiples consécutifs
 		player.velocity.y = slam_velocity
 
 func get_current_speed() -> float:
@@ -160,12 +155,6 @@ func get_current_speed() -> float:
 func is_moving() -> bool:
 	return current_speed > 0
 
-func is_jumping() -> bool:
-	return is_jumping_state
-
-func is_slamming_state() -> bool:
-	return is_slamming
-
 # === FONCTIONS UTILITAIRES PRIVÉES ===
 
 # --- Gestion de l'impact du slam ---
@@ -173,22 +162,22 @@ func _handle_slam_impact() -> void:
 	if not player:
 		return
 	
-	# Méthode simple : chercher tous les ennemis dans la scène
+	# Chercher tous les ennemis dans la scène
 	var enemies = get_tree().get_nodes_in_group("enemies")
 	
 	for enemy in enemies:
 		if not enemy or not is_instance_valid(enemy):
 			continue
 			
-		# Calculer la distance au joueur
+		# Calculer la distance entre le joueur et l'ennemi
 		var distance = player.global_position.distance_to(enemy.global_position)
 		
-		# Si l'ennemi est dans la zone de slam
+		# Vérifier si l'ennemi est dans la zone d'effet du slam
 		if distance <= slam_radius:
 			# Calculer la direction de repoussement (opposée au joueur)
 			var direction_away = (enemy.global_position - player.global_position).normalized()
 			
-			# Appliquer le repoussement immédiatement
+			# Appliquer le repoussement à l'ennemi
 			enemy._apply_slam_repulsion(direction_away, slam_push_distance, slam_push_height, slam_freeze_duration)
 
 # --- Arrêt du mouvement ---

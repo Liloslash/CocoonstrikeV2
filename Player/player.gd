@@ -12,16 +12,18 @@ extends CharacterBody3D
 @onready var movement_component: PlayerMovement = $PlayerMovement
 @onready var combat_component: PlayerCombat = $PlayerCombat
 @onready var input_component: PlayerInput = $PlayerInput
+@onready var interaction_component: PlayerInteraction = $PlayerInteraction
+@onready var interact_label: Label = $HUD_Layer/UI_Interactions/InteractLabel
+
+# --- État pour l'optimisation ---
+var last_movement_state: bool = false
 
 
 # --- Gestion des inputs ---
-func _input(event: InputEvent) -> void:
-	# Déléguer la gestion des inputs au composant
-	input_component._input(event)
-
 func _unhandled_input(event: InputEvent) -> void:
-	# Déléguer la gestion des inputs non gérés au composant
+	# Déléguer la gestion des inputs aux composants
 	input_component._unhandled_input(event)
+	interaction_component._unhandled_input(event)
 
 # --- Initialisation ---
 func _ready() -> void:
@@ -34,21 +36,19 @@ func _ready() -> void:
 	# Initialiser les composants
 	movement_component.setup_player(self)
 	input_component.setup_player(self, movement_component, combat_component)
+	interaction_component.setup_player(self, interact_label)
 	
-	# La connexion du signal de tir est déjà gérée dans PlayerCombat._connect_revolver()
-	
-	# Connexion du signal de slam pour le camera shake
+	# Connexion du signal de slam pour déclencher le camera shake
 	movement_component.slam_landed.connect(_on_slam_landed)
 
 # --- Fonction générique pour déclencher le tremblement de caméra ---
 func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: float = -1.0) -> void:
-	# Déléguer directement à la caméra (wrapper pour l'API publique)
+	# Déléguer directement à la caméra
 	camera_component.start_camera_shake(intensity, duration, rot)
 
 # --- Gestionnaire du signal de slam ---
 func _on_slam_landed() -> void:
 	# Déclencher un camera shake intense pour l'atterrissage
-	# Utiliser la durée configurée dans l'inspecteur
 	camera_component.start_camera_shake(1.2, -1.0, 8.0)
 
 # --- Gestion du tremblement, head bob et détection tir ---
@@ -58,6 +58,9 @@ func _process(_delta: float) -> void:
 	
 	# Mettre à jour l'état de mouvement du revolver
 	_update_revolver_movement_state()
+	
+	# Mettre à jour les interactions
+	interaction_component._process(_delta)
 
 # --- Mise à jour de la physique du joueur ---
 func _physics_process(delta: float) -> void:
@@ -78,5 +81,8 @@ func _update_revolver_movement_state() -> void:
 	if revolver_sprite.is_shooting or revolver_sprite.reload_state != revolver_sprite.ReloadState.IDLE:
 		return
 	
-	# Transmettre l'état de mouvement au revolver
-	revolver_sprite.set_movement_state(movement_component.is_moving())
+	# Ne mettre à jour que si l'état a changé
+	var current_movement_state = movement_component.is_moving()
+	if current_movement_state != last_movement_state:
+		last_movement_state = current_movement_state
+		revolver_sprite.set_movement_state(current_movement_state)
