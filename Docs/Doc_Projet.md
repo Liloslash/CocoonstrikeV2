@@ -70,7 +70,7 @@
 
 ### Mouvement Joueur
 - **Hauteur Y** : 1.2m (visibilité sur murets)
-- **Saut** : 3.5m de hauteur
+- **Saut** : 3.3m de hauteur
 - **Slam** : Repoussement 2m de rayon
 - **Vitesse** : Accélération progressive
 

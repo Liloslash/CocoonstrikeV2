@@ -88,7 +88,7 @@ var temp_audio_players: Array[AudioStreamPlayer2D] = []  # Pool d'objets tempora
 # === POSITIONS POUR L'ANIMATION ===
 var reload_position: Vector2     # Position quand l'arme est baissée
 
-func _ready():
+func _ready() -> void:
 	base_position = position
 	# Position de rechargement (plus bas que la position normale)
 	reload_position = base_position + Vector2(0, reload_offset_y)
@@ -102,12 +102,12 @@ func _ready():
 	# Connexion du signal frame_changed pour détecter le moment du tir
 	connect("frame_changed", Callable(self, "_on_frame_changed"))
 	
-	# === CHARGEMENT DES SONS ===
+	# Chargement des sons
 	sound_open = load("res://Assets/Audio/Guns/OpenRevolverBarrel.mp3")
 	sound_add_bullet = load("res://Assets/Audio/Guns/AddRevolverBullet.mp3")
 	sound_close = load("res://Assets/Audio/Guns/CloseRevolverBarrel.mp3")
-	sound_gunshot = load("res://Assets/Audio/Guns/GunShot-2.mp3")  # SON DE TIR
-	sound_empty_click = load("res://Assets/Audio/Guns/AOARevolver.mp3")  # SON QUAND VIDE
+	sound_gunshot = load("res://Assets/Audio/Guns/GunShot-2.mp3")
+	sound_empty_click = load("res://Assets/Audio/Guns/AOARevolver.mp3")
 	
 	# Création des lecteurs audio
 	audio_player = AudioStreamPlayer2D.new()
@@ -121,10 +121,8 @@ func _ready():
 	empty_click_audio_player = AudioStreamPlayer2D.new()
 	add_child(empty_click_audio_player)
 	
-	# === INITIALISATION DU POOL D'AUDIO PLAYERS ===
+	# Initialiser le pool d'audio players et le système de sway
 	_initialize_audio_pool()
-	
-	# === INITIALISATION DU SWAY ===
 	_start_sway_system()
 
 # === GESTION PRINCIPALE ===
@@ -132,22 +130,22 @@ func _process(_delta: float) -> void:
 	_update_sway(_delta)
 
 
-func play_shot_animation():
-	# Vérifications consolidées
+func play_shot_animation() -> void:
+	# Vérifier si on peut tirer
 	if is_shooting or not can_shoot:
 		return
 	
-	# Gestion du rechargement en cours
+	# Gérer le rechargement en cours
 	if reload_state == ReloadState.RELOAD_ADDING_BULLETS:
 		_interrupt_reload()
 		return
 	elif reload_state != ReloadState.IDLE:
 		return
 	
-	# Gestion du tir à vide
+	# Gérer le tir à vide
 	if current_ammo <= 0:
 		_play_empty_click_sound()
-		_create_weapon_shake_at_position(position)  # Utiliser la position actuelle
+		_create_weapon_shake_at_position(position)
 		return
 	
 	is_shooting = true
@@ -168,12 +166,12 @@ func play_shot_animation():
 	play("GunShotAnim")
 
 # === GESTION DE LA CADENCE DE TIR ===
-func _start_fire_rate_timer():
+func _start_fire_rate_timer() -> void:
 	await get_tree().create_timer(fire_rate).timeout
 	can_shoot = true
 
 # === FONCTION DE RECHARGEMENT ===
-func start_reload():
+func start_reload() -> void:
 	if is_shooting:
 		return
 	if current_ammo >= max_ammo:
@@ -200,8 +198,7 @@ func start_reload():
 	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	await tween.finished
 	
-	# Tremblement IMMÉDIAT quand la rotation se termine
-	# Forcer l'utilisation de reload_position comme référence
+	# Déclencher le tremblement immédiatement quand la rotation se termine
 	_create_weapon_shake_at_position(reload_position)
 	
 	_play_sound(sound_open)
@@ -211,7 +208,7 @@ func start_reload():
 	_add_next_bullet()
 
 # === AJOUT DES BALLES UNE PAR UNE ===
-func _add_next_bullet():
+func _add_next_bullet() -> void:
 	if bullets_added >= bullets_to_add:
 		_finish_reload()
 		return
@@ -223,7 +220,7 @@ func _add_next_bullet():
 	bullets_added += 1
 	current_ammo += 1
 	
-	# Déclenchement du tremblement à chaque balle ajoutée
+	# Déclencher le tremblement à chaque balle ajoutée
 	_create_weapon_shake()
 	
 	await audio_player.finished
@@ -234,7 +231,7 @@ func _add_next_bullet():
 	_add_next_bullet()
 
 # === FIN DU RECHARGEMENT ===
-func _finish_reload():
+func _finish_reload() -> void:
 	_play_sound(sound_close)
 	await audio_player.finished
 	
@@ -251,7 +248,7 @@ func _finish_reload():
 	resume_sway()
 
 # === INTERRUPTION DU RECHARGEMENT ===
-func _interrupt_reload():
+func _interrupt_reload() -> void:
 	reload_state = ReloadState.RELOAD_INTERRUPTED
 	
 	if audio_player.playing:
@@ -270,19 +267,19 @@ func _interrupt_reload():
 	resume_sway()
 
 # === UTILITAIRES POUR JOUER LES SONS ===
-func _play_sound(sound: AudioStream):
+func _play_sound(sound: AudioStream) -> void:
 	audio_player.stream = sound
 	audio_player.play()
 
-func _play_gunshot_sound():
+func _play_gunshot_sound() -> void:
 	_play_sound_with_superposition(gunshot_audio_player, sound_gunshot)
 
-func _play_empty_click_sound():
+func _play_empty_click_sound() -> void:
 	_play_sound_with_superposition(empty_click_audio_player, sound_empty_click)
 
-func _play_sound_with_superposition(target_player: AudioStreamPlayer2D, sound: AudioStream):
+func _play_sound_with_superposition(target_player: AudioStreamPlayer2D, sound: AudioStream) -> void:
 	if target_player.playing:
-		# Utiliser un player du pool au lieu d'en créer un nouveau
+		# Utiliser un player du pool pour permettre la superposition
 		var temp_player = _get_temp_audio_player()
 		temp_player.stream = sound
 		temp_player.play()
@@ -292,8 +289,8 @@ func _play_sound_with_superposition(target_player: AudioStreamPlayer2D, sound: A
 		target_player.play()
 
 # === GESTION DU POOL D'AUDIO PLAYERS ===
-func _initialize_audio_pool():
-	# Créer 3 AudioStreamPlayer2D en réserve
+func _initialize_audio_pool() -> void:
+	# Créer 3 AudioStreamPlayer2D en réserve pour la superposition de sons
 	for i in range(3):
 		var temp_player = AudioStreamPlayer2D.new()
 		add_child(temp_player)
@@ -310,12 +307,12 @@ func _get_temp_audio_player() -> AudioStreamPlayer2D:
 	temp_audio_players.append(new_player)
 	return new_player
 
-func _return_temp_audio_player(_player: AudioStreamPlayer2D):
-	# Le player sera réutilisé automatiquement
+func _return_temp_audio_player(_player: AudioStreamPlayer2D) -> void:
+	# Le player sera réutilisé automatiquement lors du prochain appel
 	pass
 
 # === FONCTIONS DE TREMBLEMENT DE L'ARME ===
-func _create_weapon_shake():
+func _create_weapon_shake() -> void:
 	# Déterminer la position de référence selon l'état
 	var reference_position = base_position
 	if reload_state == ReloadState.RELOAD_ADDING_BULLETS:
@@ -323,18 +320,17 @@ func _create_weapon_shake():
 	
 	_create_weapon_shake_at_position(reference_position)
 
-func _create_weapon_shake_at_position(target_position: Vector2):
-	# Création d'un tween pour le tremblement
+func _create_weapon_shake_at_position(target_position: Vector2) -> void:
+	# Créer un tween pour le tremblement
 	var shake_tween = create_tween()
-	# Pas de set_loops() - on contrôle manuellement la durée
 	
-	# Calcul du nombre d'oscillations basé sur la durée et la fréquence
+	# Calculer le nombre d'oscillations basé sur la durée et la fréquence
 	var oscillations = int(shake_duration * shake_frequency)
 	
 	_create_shake_animation(shake_tween, oscillations, target_position)
 
 # === ANIMATION DE TREMBLEMENT COMMUNE ===
-func _create_shake_animation(shake_tween: Tween, oscillations: int, reference_position: Vector2):
+func _create_shake_animation(shake_tween: Tween, oscillations: int, reference_position: Vector2) -> void:
 	# Création du pattern de tremblement
 	for i in range(oscillations):
 		# Calcul de l'intensité qui diminue progressivement
@@ -359,7 +355,7 @@ func _create_shake_animation(shake_tween: Tween, oscillations: int, reference_po
 	# Retour à la position de référence à la fin
 	shake_tween.tween_property(self, "position", reference_position, 0.05)
 	
-	# Arrêt du tween après la durée totale (sans await)
+	# Arrêter le tween après la durée totale
 	shake_tween.tween_callback(func(): shake_tween.kill()).set_delay(shake_duration)
 
 # === SYSTÈME DE SWAY ===
@@ -497,14 +493,14 @@ func set_movement_state(is_moving: bool) -> void:
 	else:
 		set_sway_idle()
 
-func _on_animation_finished():
+func _on_animation_finished() -> void:
 	if animation == "GunShotAnim":
 		is_shooting = false
 		# Reprendre le sway après le tir
 		resume_sway()
 		play("Idle")
 
-func _on_frame_changed():
+func _on_frame_changed() -> void:
 	if animation == "GunShotAnim":
 		if frame == shot_detection_frame:
 			shot_fired.emit()
@@ -512,7 +508,7 @@ func _on_frame_changed():
 
 # === FONCTION POUR CRÉER LES PARAMÈTRES D'EFFET ===
 func get_hit_effect_params() -> Dictionary:
-	# Retourne un dictionnaire avec les paramètres d'effet du revolver
+	# Retourner un dictionnaire avec les paramètres d'effet du revolver
 	return {
 		"duration": hit_shake_duration,
 		"intensity": hit_shake_intensity,

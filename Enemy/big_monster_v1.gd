@@ -43,56 +43,40 @@ var _dissolve_tween: Tween = null
 
 # === MÉTHODES VIRTUELLES SURCHARGÉES ===
 
-func _on_enemy_ready():
+func _on_enemy_ready() -> void:
 	# Initialisation spécifique au BigMonster V1
 	gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * big_monster_v1_gravity_scale
 	
-	# Configuration des collisions spécifique au monstre terrestre
+	# Configuration des collisions pour le monstre terrestre
 	collision_layer = 2  # Ennemi sur la layer 2 (détectable par raycast)
 	collision_mask = 3   # Détecte la layer 0 (environnement) + layer 1 (joueur)
 	
-	# Override des valeurs d'EnemyBase avec celles du BigMonster V1
+	# Appliquer les valeurs spécifiques au BigMonster V1
 	max_health = big_monster_v1_max_health
 	current_health = max_health
 	base_damage_dealt = big_monster_v1_damage_dealt
 	movement_speed_multiplier = big_monster_v1_movement_speed
 	shadow_size = big_monster_v1_shadow_size
 	shadow_opacity = big_monster_v1_shadow_opacity
-	# Réappliquer la configuration de l'ombre avec la nouvelle taille
 	_setup_shadow()
 	
 	# Sauvegarder la position initiale définie dans la scène
 	initial_position = global_position
 	
-	# NE PAS modifier la position Y - garder celle de la scène
-	# (le code forçait Y=0.75 ce qui surélevait l'ennemi)
-	
-	# Démarrer l'animation de marche en permanence
+	# Démarrer l'animation d'idle en permanence
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("BigMonsterV1IdleAnim"):
 		sprite.play("BigMonsterV1IdleAnim")
 	
-	# Préparer le matériau de dissolution pixelisée
-	if sprite:
-		dissolve_material = ShaderMaterial.new()
-		dissolve_material.shader = DISSOLVE_SHADER
-		var average_color: Color = (impact_color_1 + impact_color_2 + impact_color_3 + impact_color_4) / 4.0
-		dissolve_material.set_shader_parameter("dissolve_amount", 0.0)
-		dissolve_material.set_shader_parameter("pixel_size", 1.0)
-		dissolve_material.set_shader_parameter("edge_glow", death_edge_glow)
-		dissolve_material.set_shader_parameter("edge_color", Vector3(average_color.r, average_color.g, average_color.b))
-		sprite.material_override = dissolve_material
-		_update_dissolve_texture()
-		if not _dissolve_connection_established:
-			sprite.frame_changed.connect(_update_dissolve_texture)
-			_dissolve_connection_established = true
+	# Configurer le matériau de dissolution pixelisée
+	_setup_dissolve_material()
 
-func _on_physics_process(_delta: float):
+func _on_physics_process(_delta: float) -> void:
 	# Physique spécifique au BigMonster V1 (terrestre, reste au sol)
 	
 	# Appliquer la gravité
 	velocity.y -= gravity * _delta
 
-	# Si on est en cours de repoussement slam, laisser la physique gérer puis sortir
+	# Si en cours de repoussement slam, laisser la physique gérer
 	if is_being_slam_repelled:
 		move_and_slide()
 		return
@@ -106,27 +90,30 @@ func _on_physics_process(_delta: float):
 	if is_on_floor():
 		velocity.y = 0.0
 	
-	# Remettre le sprite à sa position d'origine (sauf rotation Y vers le joueur)
+	# Réinitialiser la position et rotation du sprite (sauf rotation Y vers le joueur)
 	if sprite:
 		sprite.position = Vector3.ZERO
 		sprite.rotation.x = 0.0
 		sprite.rotation.z = 0.0
 
-func _on_damage_taken(_damage: int):
-	# Réactions spécifiques aux dégâts du BigMonster V1 (pour l'instant, rien de spécial)
+func _on_damage_taken(_damage: int) -> void:
+	# Aucune réaction spécifique aux dégâts pour le BigMonster V1
 	pass
 
-func _on_death():
+func _on_death() -> bool:
 	if not sprite or dissolve_material == null:
 		return false
 	
+	# Déconnecter le signal de mise à jour de texture
 	if _dissolve_connection_established and sprite.frame_changed.is_connected(_update_dissolve_texture):
 		sprite.frame_changed.disconnect(_update_dissolve_texture)
 		_dissolve_connection_established = false
 	
+	# Arrêter le tween précédent s'il existe
 	if _dissolve_tween and _dissolve_tween.is_running():
 		_dissolve_tween.kill()
 	
+	# Créer le tween de dissolution
 	_dissolve_tween = create_tween()
 	_dissolve_tween.set_parallel(true)
 	_dissolve_tween.tween_property(dissolve_material, "shader_parameter/dissolve_amount", 1.0, death_dissolve_duration)\
@@ -136,6 +123,7 @@ func _on_death():
 		.set_trans(Tween.TRANS_CUBIC)\
 		.set_ease(Tween.EASE_OUT)
 	
+	# Supprimer l'ennemi à la fin de la dissolution
 	_dissolve_tween.finished.connect(func():
 		if is_instance_valid(sprite):
 			sprite.visible = false
@@ -144,15 +132,40 @@ func _on_death():
 	
 	return true
 
-# === MÉTHODE SPÉCIFIQUE AU BIG MONSTER V1 ===
-# Cette méthode sera utilisée par PlayerCombat pour récupérer les couleurs d'impact
+# === MÉTHODES SPÉCIFIQUES AU BIG MONSTER V1 ===
+
 func get_impact_colors() -> Array[Color]:
-	# Retourne les 4 couleurs d'impact du BigMonster V1 (tons rouge/orange/brun)
+	# Retourner les 4 couleurs d'impact du BigMonster V1 (tons rouge/orange/brun)
 	return [impact_color_1, impact_color_2, impact_color_3, impact_color_4]
 
-func _update_dissolve_texture():
+func _setup_dissolve_material() -> void:
+	# Configurer le matériau de dissolution pixelisée
+	if not sprite:
+		return
+	
+	dissolve_material = ShaderMaterial.new()
+	dissolve_material.shader = DISSOLVE_SHADER
+	
+	# Calculer la couleur moyenne pour le bord de dissolution
+	var average_color: Color = (impact_color_1 + impact_color_2 + impact_color_3 + impact_color_4) / 4.0
+	dissolve_material.set_shader_parameter("dissolve_amount", 0.0)
+	dissolve_material.set_shader_parameter("pixel_size", 1.0)
+	dissolve_material.set_shader_parameter("edge_glow", death_edge_glow)
+	dissolve_material.set_shader_parameter("edge_color", Vector3(average_color.r, average_color.g, average_color.b))
+	
+	sprite.material_override = dissolve_material
+	_update_dissolve_texture()
+	
+	# Connecter le signal pour mettre à jour la texture à chaque frame
+	if not _dissolve_connection_established:
+		sprite.frame_changed.connect(_update_dissolve_texture)
+		_dissolve_connection_established = true
+
+func _update_dissolve_texture() -> void:
+	# Mettre à jour la texture du shader avec la frame actuelle du sprite
 	if not sprite or not sprite.sprite_frames or dissolve_material == null:
 		return
+	
 	var frames: SpriteFrames = sprite.sprite_frames
 	var current_animation: StringName = sprite.animation
 	var current_frame: int = sprite.frame

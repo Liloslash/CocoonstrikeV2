@@ -1,7 +1,7 @@
 extends Node3D
 
-# Effet d'impact pixel explosion
-# S'adapte aux couleurs du sprite touché et aux paramètres d'arme
+# === EFFET D'IMPACT ===
+# Effet d'impact pixel explosion qui s'adapte aux couleurs du sprite touché
 
 @onready var particles: GPUParticles3D = $GPUParticles3D
 
@@ -18,88 +18,107 @@ extends Node3D
 @export var impact_colors: Array[Color] = []  # Les 4 couleurs de l'ennemi
 
 @export_group("Apparence")
-@export var cube_size: float = 0.056  # Taille des cubes de particules (réduite d'un quart de plus)
+@export var cube_size: float = 0.056  # Taille des cubes de particules
 
-func _ready():
-	# Configuration complète des particules dans le script
-	_configure_particles()
+# === VARIABLES INTERNES ===
+var created_particle_systems: Array[GPUParticles3D] = []
 
-func _configure_particles():
-	# Configuration pour effet court et punchy
+# === INITIALISATION ===
+func _ready() -> void:
+	# Le système original sera configuré si aucune couleur n'est fournie
+	pass
+
+# === FONCTION PUBLIQUE ===
+func set_impact_colors(colors: Array[Color]) -> void:
+	impact_colors = colors
+	
+	# Si aucune couleur n'est fournie, utiliser le système original
+	if impact_colors.size() == 0:
+		_configure_original_particles()
+		particles.emitting = true
+		await particles.finished
+		queue_free()
+		return
+	
+	# Créer un système de particules pour chaque couleur
+	_apply_all_colors()
+	
+	# Attendre la fin de tous les systèmes de particules créés
+	await _wait_for_all_particles_finished()
+	queue_free()
+
+# === FONCTIONS PRIVÉES ===
+
+# --- Configuration du système original (sans couleurs) ---
+func _configure_original_particles() -> void:
 	particles.amount = particle_count
 	particles.lifetime = effect_duration
 	particles.one_shot = true
 	particles.explosiveness = 1.0
 	
-	# Modifier le matériel du système original
+	# Configurer le matériel du système original
 	var material = particles.process_material as ParticleProcessMaterial
 	if material:
-		material.emission_shape = 0  # Point d'émission
-		material.direction = Vector3(0, 0, 0)  # Direction neutre
-		material.spread = 360.0  # Spread dans toutes les directions
-		material.initial_velocity_min = explosion_force_min  # Utilise la variable exportable
-		material.initial_velocity_max = explosion_force_max  # Utilise la variable exportable
-		material.gravity = Vector3(0, 0, 0)  # Pas de gravité
+		_configure_particle_material(material)
 	
 	# Appliquer la taille des cubes
 	var box_mesh = particles.draw_pass_1 as BoxMesh
 	if box_mesh:
 		box_mesh.size = Vector3(cube_size, cube_size, cube_size)
 		box_mesh.material = null
-	
 
-# Fonction pour définir les couleurs d'impact de l'ennemi
-func set_impact_colors(colors: Array[Color]):
-	impact_colors = colors
-	
-	# Appliquer toutes les couleurs aux particules
-	_apply_all_colors()
-	
-	# Démarrer les particules
-	particles.emitting = true
-	
-	# Attendre la fin de l'effet puis se supprimer
-	await particles.finished
-	queue_free()
-
-# Fonction pour créer plusieurs systèmes de particules avec des couleurs différentes
-func _apply_all_colors():
-	if impact_colors.size() == 0:
-		return
+# --- Création de systèmes de particules avec couleurs ---
+func _apply_all_colors() -> void:
+	# Désactiver le système original
+	particles.emitting = false
 	
 	# Créer un système de particules pour chaque couleur
 	for i in range(impact_colors.size()):
-		var color_particles = GPUParticles3D.new()
+		var color_particles = _create_colored_particle_system(impact_colors[i], impact_colors.size())
 		add_child(color_particles)
-		
-		# Configuration des particules pour effet localisé
-		color_particles.amount = int(float(particle_count) / float(impact_colors.size()))  # Répartir le nombre total
-		color_particles.lifetime = effect_duration
-		color_particles.one_shot = true
-		color_particles.explosiveness = 1.0
-		color_particles.emitting = true
-		
-		# Matériel avec la couleur spécifique
-		var material = ParticleProcessMaterial.new()
-		material.emission_shape = 0  # Point d'émission (pas de sphère)
-		material.direction = Vector3(0, 0, 0)  # Direction neutre
-		material.spread = 360.0  # Spread dans toutes les directions
-		material.initial_velocity_min = explosion_force_min  # Utilise la variable exportable
-		material.initial_velocity_max = explosion_force_max  # Utilise la variable exportable
-		material.gravity = Vector3(0, 0, 0)  # Pas de gravité
-		material.scale_min = 0.5
-		material.scale_max = 1.5
-		material.color = impact_colors[i]
-		color_particles.process_material = material
-		
-		# Mesh avec la couleur
-		var box_mesh = BoxMesh.new()
-		box_mesh.size = Vector3(cube_size, cube_size, cube_size)
-		var mesh_material = StandardMaterial3D.new()
-		mesh_material.albedo_color = impact_colors[i]
-		box_mesh.material = mesh_material
-		color_particles.draw_pass_1 = box_mesh
-		
+		created_particle_systems.append(color_particles)
+
+# --- Création d'un système de particules avec une couleur spécifique ---
+func _create_colored_particle_system(color: Color, total_colors: int) -> GPUParticles3D:
+	var color_particles = GPUParticles3D.new()
 	
-	# Désactiver le système original
-	particles.emitting = false
+	# Configuration de base des particules
+	color_particles.amount = int(float(particle_count) / float(total_colors))
+	color_particles.lifetime = effect_duration
+	color_particles.one_shot = true
+	color_particles.explosiveness = 1.0
+	color_particles.emitting = true
+	
+	# Créer et configurer le matériel
+	var material = ParticleProcessMaterial.new()
+	_configure_particle_material(material)
+	material.scale_min = 0.5
+	material.scale_max = 1.5
+	material.color = color
+	color_particles.process_material = material
+	
+	# Créer le mesh avec la couleur
+	var box_mesh = BoxMesh.new()
+	box_mesh.size = Vector3(cube_size, cube_size, cube_size)
+	var mesh_material = StandardMaterial3D.new()
+	mesh_material.albedo_color = color
+	box_mesh.material = mesh_material
+	color_particles.draw_pass_1 = box_mesh
+	
+	return color_particles
+
+# --- Configuration du matériel de particules (fonction helper) ---
+func _configure_particle_material(material: ParticleProcessMaterial) -> void:
+	material.emission_shape = ParticleProcessMaterial.EmissionShape.EMISSION_SHAPE_POINT
+	material.direction = Vector3(0, 0, 0)  # Direction neutre
+	material.spread = 360.0  # Spread dans toutes les directions
+	material.initial_velocity_min = explosion_force_min
+	material.initial_velocity_max = explosion_force_max
+	material.gravity = Vector3(0, 0, 0)  # Pas de gravité
+
+# --- Attendre la fin de tous les systèmes de particules ---
+func _wait_for_all_particles_finished() -> void:
+	# Attendre que tous les systèmes de particules se terminent
+	for particle_system in created_particle_systems:
+		if is_instance_valid(particle_system):
+			await particle_system.finished

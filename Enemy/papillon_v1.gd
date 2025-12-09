@@ -48,47 +48,38 @@ var _dissolve_tween: Tween = null
 
 # === MÉTHODES VIRTUELLES SURCHARGÉES ===
 
-func _on_enemy_ready():
-	# Initialisation spécifique au papillon
+func _on_enemy_ready() -> void:
+	# Initialisation spécifique au papillon V1
 	gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * gravity_scale
 	
-	# Configuration des collisions spécifique au papillon volant
+	# Configuration des collisions pour le papillon volant
 	collision_layer = 2  # Ennemi sur la layer 2 (détectable par raycast)
 	collision_mask = 3   # Détecte la layer 0 (environnement) + layer 1 (joueur)
 	
-	# Override des valeurs d'EnemyBase avec celles du papillon V1
+	# Appliquer les valeurs spécifiques au papillon V1
 	max_health = papillon_max_health
 	current_health = max_health
 	base_damage_dealt = papillon_v1_damage_dealt
 	movement_speed_multiplier = papillon_v1_movement_speed
 	shadow_size = papillon_v1_shadow_size
 	shadow_opacity = papillon_v1_shadow_opacity
-	# Réappliquer la configuration de l'ombre avec la nouvelle taille
 	_setup_shadow()
 	
 	# Démarrer l'animation de vol en permanence
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("PapillonV1IdleAnim"):
 		sprite.play("PapillonV1IdleAnim")
 	
-	# Préparer le matériau de dissolution pixelisée
-	if sprite:
-		dissolve_material = ShaderMaterial.new()
-		dissolve_material.shader = DISSOLVE_SHADER
-		var average_color: Color = (impact_color_1 + impact_color_2 + impact_color_3 + impact_color_4) / 4.0
-		dissolve_material.set_shader_parameter("dissolve_amount", 0.0)
-		dissolve_material.set_shader_parameter("pixel_size", 1.0)
-		dissolve_material.set_shader_parameter("edge_glow", 1.4)
-		dissolve_material.set_shader_parameter("edge_color", Vector3(average_color.r, average_color.g, average_color.b))
-		sprite.material_override = dissolve_material
-		_update_dissolve_texture()
-		if not _dissolve_connection_established:
-			sprite.frame_changed.connect(_update_dissolve_texture)
-			_dissolve_connection_established = true
+	# Configurer le matériau de dissolution pixelisée
+	_setup_dissolve_material()
 
-func _on_physics_process(delta: float):
+func _on_physics_process(delta: float) -> void:
+	# Physique spécifique au papillon V1 (vol avec flottement)
+	
+	# Calculer l'offset de flottement basé sur le temps
 	float_timer += delta * float_speed
 	var hover_offset: float = sin(float_timer) * float_amplitude
 	
+	# Effectuer un raycast vers le sol pour détecter la hauteur
 	var ray_start: Vector3 = global_position + Vector3.UP * 0.5
 	var ray_end: Vector3 = global_position + Vector3.DOWN * max_hover_ray_distance
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
@@ -105,31 +96,35 @@ func _on_physics_process(delta: float):
 			desired_height = hit_position.y + hover_height + hover_offset
 			has_ground_contact = true
 	
+	# Appliquer la gravité
 	velocity.y -= gravity * delta
-	
 	move_and_slide()
 	
+	# Ajuster la hauteur si contact avec le sol détecté
 	if has_ground_contact:
 		var t: float = clamp(hover_follow_speed * delta, 0.0, 1.0)
 		global_position.y = lerp(global_position.y, desired_height, t)
 		velocity.y = 0.0
 
 
-func _on_damage_taken(_damage: int):
-	# Réactions spécifiques aux dégâts (pour l'instant, rien de spécial)
+func _on_damage_taken(_damage: int) -> void:
+	# Aucune réaction spécifique aux dégâts pour le papillon V1
 	pass
 
-func _on_death():
+func _on_death() -> bool:
 	if not sprite or dissolve_material == null:
 		return false
 	
+	# Déconnecter le signal de mise à jour de texture
 	if _dissolve_connection_established and sprite.frame_changed.is_connected(_update_dissolve_texture):
 		sprite.frame_changed.disconnect(_update_dissolve_texture)
 		_dissolve_connection_established = false
 	
+	# Arrêter le tween précédent s'il existe
 	if _dissolve_tween and _dissolve_tween.is_running():
 		_dissolve_tween.kill()
 	
+	# Créer le tween de dissolution
 	_dissolve_tween = create_tween()
 	_dissolve_tween.set_parallel(true)
 	_dissolve_tween.tween_property(dissolve_material, "shader_parameter/dissolve_amount", 1.0, 0.45)\
@@ -138,6 +133,8 @@ func _on_death():
 	_dissolve_tween.tween_property(dissolve_material, "shader_parameter/pixel_size", 26.0, 0.45)\
 		.set_trans(Tween.TRANS_CUBIC)\
 		.set_ease(Tween.EASE_OUT)
+	
+	# Supprimer l'ennemi à la fin de la dissolution
 	_dissolve_tween.finished.connect(func():
 		if is_instance_valid(sprite):
 			sprite.visible = false
@@ -146,18 +143,43 @@ func _on_death():
 	
 	return true
 
-func _update_dissolve_texture():
+# === MÉTHODES SPÉCIFIQUES AU PAPILLON V1 ===
+
+func get_impact_colors() -> Array[Color]:
+	# Retourner les 4 couleurs d'impact du papillon V1 (tons bleu/cyan/rose/jaune)
+	return [impact_color_1, impact_color_2, impact_color_3, impact_color_4]
+
+func _setup_dissolve_material() -> void:
+	# Configurer le matériau de dissolution pixelisée
+	if not sprite:
+		return
+	
+	dissolve_material = ShaderMaterial.new()
+	dissolve_material.shader = DISSOLVE_SHADER
+	
+	# Calculer la couleur moyenne pour le bord de dissolution
+	var average_color: Color = (impact_color_1 + impact_color_2 + impact_color_3 + impact_color_4) / 4.0
+	dissolve_material.set_shader_parameter("dissolve_amount", 0.0)
+	dissolve_material.set_shader_parameter("pixel_size", 1.0)
+	dissolve_material.set_shader_parameter("edge_glow", 1.4)
+	dissolve_material.set_shader_parameter("edge_color", Vector3(average_color.r, average_color.g, average_color.b))
+	
+	sprite.material_override = dissolve_material
+	_update_dissolve_texture()
+	
+	# Connecter le signal pour mettre à jour la texture à chaque frame
+	if not _dissolve_connection_established:
+		sprite.frame_changed.connect(_update_dissolve_texture)
+		_dissolve_connection_established = true
+
+func _update_dissolve_texture() -> void:
+	# Mettre à jour la texture du shader avec la frame actuelle du sprite
 	if not sprite or not sprite.sprite_frames or dissolve_material == null:
 		return
+	
 	var frames: SpriteFrames = sprite.sprite_frames
 	var current_animation: StringName = sprite.animation
 	var current_frame: int = sprite.frame
 	var frame_texture: Texture2D = frames.get_frame_texture(current_animation, current_frame)
 	if frame_texture:
 		dissolve_material.set_shader_parameter("texture_albedo", frame_texture)
-
-# === MÉTHODE SPÉCIFIQUE AU PAPILLON ===
-# Cette méthode sera utilisée par PlayerCombat pour récupérer les couleurs d'impact
-func get_impact_colors() -> Array[Color]:
-	# Retourne les 4 couleurs d'impact du papillon
-	return [impact_color_1, impact_color_2, impact_color_3, impact_color_4]
