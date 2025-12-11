@@ -1,66 +1,82 @@
-extends Interactable
+extends StaticBody3D
 
 # === INTERRUPTEUR ===
 # Gère l'interaction avec l'interrupteur pour lancer les vagues
-# Utilise le système Interactable avec Area3D pour la détection optimale
+# Simple : Area3D détecte le joueur, E déclenche l'action
+
+# --- Signaux ---
+signal interaction_state_changed(interrupteur_id: String, is_active: bool)
 
 # --- Références ---
 @onready var sprite: AnimatedSprite3D = $AnimatedSprite3D
+@onready var interaction_area: Area3D = $InteractionArea
+
+# --- Paramètres exportés ---
+@export var interrupteur_id: String = "start_wave"  # Identifiant unique pour différencier les interrupteurs
 
 # --- État ---
 var is_in_wave: bool = false  # true = InWave, false = OffWave
+var player_in_range: bool = false  # Le joueur est dans la zone
 
 func _ready() -> void:
-	# Initialiser le rayon d'interaction (hérité de Interactable)
-	interaction_radius = 2.0
+	# Vérifier que l'Area3D existe
+	if not interaction_area:
+		push_error("Interrupteur: InteractionArea manquante ! Ajoutez une Area3D nommée 'InteractionArea' comme enfant.")
+		return
 	
-	super._ready()  # Appeler _ready() du parent Interactable
+	# Ajouter au groupe pour être trouvé par le joueur
+	add_to_group("interrupteurs")
 	
-	# Ajouter au groupe pour être détecté par PlayerInteraction
-	add_to_group("interactables")
+	# Connecter les signaux de l'Area3D pour détecter le joueur
+	interaction_area.body_entered.connect(_on_body_entered)
+	interaction_area.body_exited.connect(_on_body_exited)
 	
-	# Initialiser le texte d'interaction
-	interaction_text = "Appuyez sur E pour lancer la vague"
+	# Configurer les layers de collision
+	interaction_area.collision_layer = 0  # Ne détecte rien
+	interaction_area.collision_mask = 1   # Détecte la layer 1 (joueur)
 	
 	# Initialiser l'état à OffWave
 	sprite.animation = "OffWave"
 	sprite.play("OffWave")
-	
-	# Connecter les signaux du parent
-	player_entered.connect(_on_player_nearby)
-	player_exited.connect(_on_player_left)
-	interaction_triggered.connect(_on_interaction_requested_handler)
 
-# --- Surcharge des méthodes virtuelles d'Interactable ---
-func _on_interact(_player: CharacterBody3D) -> void:
-	# Appelé quand le joueur appuie sur E dans la zone
-	toggle_state()
+func _unhandled_input(event: InputEvent) -> void:
+	# Si le joueur est dans la zone et appuie sur E
+	if player_in_range:
+		if event.is_action_pressed("ui_accept") or (event is InputEventKey and event.keycode == KEY_E and event.pressed):
+			toggle_state()
 
-func _on_player_nearby(_player: CharacterBody3D) -> void:
-	# Le joueur est entré dans la zone
-	pass
+func _on_body_entered(body: Node) -> void:
+	# Vérifier que c'est bien le joueur (layer 1)
+	if body is CharacterBody3D and body.collision_layer == 1:
+		player_in_range = true
+		# Émettre le signal true si on peut interagir (pas en vague)
+		interaction_state_changed.emit(interrupteur_id, not is_in_wave)
 
-func _on_player_left(_player: CharacterBody3D) -> void:
+func _on_body_exited(body: Node) -> void:
 	# Le joueur est sorti de la zone
-	pass
+	if body is CharacterBody3D and body.collision_layer == 1:
+		player_in_range = false
+		# Émettre le signal false pour cacher le texte
+		interaction_state_changed.emit(interrupteur_id, false)
 
-func _on_interaction_requested_handler(_player: CharacterBody3D) -> void:
-	# Géré automatiquement par _on_interact()
-	pass
-
-# --- Méthodes spécifiques à l'interrupteur ---
 func toggle_state() -> void:
 	# Changer l'état de l'interrupteur
 	is_in_wave = not is_in_wave
 	
 	# TODO: Désactiver l'interaction si une vague est en cours
-	# can_interact = not is_in_wave  # Activé plus tard quand le système de vagues sera connecté
+	# player_in_range = not is_in_wave  # Activé plus tard quand le système de vagues sera connecté
 	
 	if is_in_wave:
 		# Passer à InWave (vague lancée)
 		sprite.animation = "InWave"
 		sprite.play("InWave")
+		# Cacher le texte d'interaction (false)
+		if player_in_range:
+			interaction_state_changed.emit(interrupteur_id, false)
 	else:
 		# Passer à OffWave (vague finie, peut relancer)
 		sprite.animation = "OffWave"
 		sprite.play("OffWave")
+		# Si le joueur est toujours dans la zone, réafficher le texte (true)
+		if player_in_range:
+			interaction_state_changed.emit(interrupteur_id, true)

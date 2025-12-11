@@ -1,0 +1,68 @@
+[gd_scene load_steps=9 format=3 uid="uid://c43p7asg3t7r7"]
+
+[ext_resource type="Script" uid="uid://e4fqemt0s4fb" path="res://Interrupteur/interrupteur.gd" id="1_kvdic"]
+[ext_resource type="Texture2D" uid="uid://38wa55qnh33b" path="res://Assets/Sprites/Objets/interupt.png" id="2_otwhq"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_ioo17"]
+size = Vector3(0.8, 1.8, 0.7)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_interrupteur"]
+size = Vector3(0.8, 1.8, 0.7)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wse8f"]
+atlas = ExtResource("2_otwhq")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ic0uy"]
+atlas = ExtResource("2_otwhq")
+region = Rect2(0, 128, 128, 128)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_k3n1d"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wse8f")
+}],
+"loop": true,
+"name": &"InWave",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ic0uy")
+}],
+"loop": true,
+"name": &"OffWave",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_interaction"]
+radius = 2.0
+
+[node name="InterrupteurPave" type="StaticBody3D" groups=["interrupteurs"]]
+script = ExtResource("1_kvdic")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.107922, 0, 0)
+mesh = SubResource("BoxMesh_ioo17")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_interrupteur")
+
+[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.0656898, 0.919057, 0)
+axis = 1
+sprite_frames = SubResource("SpriteFrames_k3n1d")
+animation = &"OffWave"
+autoplay = "OffWave"
+
+[node name="InteractionArea" type="Area3D" parent="."]
+collision_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractionArea"]
+shape = SubResource("SphereShape3D_interaction")

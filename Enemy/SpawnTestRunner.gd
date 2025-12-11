@@ -1,5 +1,4 @@
 extends Node
-
 class_name SpawnTestRunner
 
 @export_node_path("SpawnPoint")
@@ -31,13 +30,6 @@ func _ready() -> void:
 		return
 
 	_resolve_spawn_points()
-	if _spawn_points.is_empty():
-		await get_tree().process_frame
-		_resolve_spawn_points()
-
-	if _spawn_points.is_empty():
-		push_warning("SpawnTestRunner: Aucun SpawnPoint actif, aucun spawn ne sera lancé.")
-		return
 
 	_spawn_point = _spawn_points[0]
 

@@ -1,4 +1,5 @@
 extends AnimatedSprite2D
+class_name Revolver
 
 # Signal émis au moment exact du tir
 signal shot_fired

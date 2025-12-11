@@ -1,4 +1,4 @@
-extends "res://Enemy/enemy_base.gd"
+extends EnemyBase
 
 const DISSOLVE_SHADER = preload("res://Effects/Shaders/pixel_dissolve.gdshader")
 

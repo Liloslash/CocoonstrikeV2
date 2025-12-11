@@ -39,8 +39,8 @@
 - **PlayerMovement** : Déplacement, saut, slam
 - **PlayerCombat** : Tir, dégâts, raycast
 - **PlayerInput** : Inputs clavier/souris
-- **PlayerInteraction** : Gestion des interactions avec objets interactifs
 - **Revolver** : Arme (6 balles, rechargement)
+- **Gestion Interactions** : Gestion HUD + textes d'interaction (intégré dans `player.gd`)
 
 ### Ennemis (Héritage depuis EnemyBase)
 **4 types implémentés :**
@@ -110,38 +110,50 @@
 - `gravity_scale`, `max_hover_ray_distance`, `hover_collision_mask`
 
 ### Système d'Interaction
-**Architecture générique réutilisable** pour tous les objets interactifs (interrupteurs, pièges, etc.)
+**Architecture basée sur signaux et identifiants** pour objets interactifs réutilisables (interrupteurs, pièges, etc.)
 
-**Classe de base : `Interactable`** (`Interaction/Interactable.gd`)
-- Utilise **Area3D** pour la détection optimale du joueur (rayon configurable)
-- Signaux : `player_entered`, `player_exited`, `interaction_triggered`
-- Paramètres exportés : `interaction_radius` (2m par défaut), `interaction_text`, `can_interact`
-- Méthodes virtuelles surchargeables : `_on_interact()`, `_on_player_entered_range()`, `_on_player_exited_range()`
+**Principe :**
+- Chaque objet interactif est **autonome** et gère sa propre détection via **Area3D**
+- Communication via **signaux** avec identification unique (ID)
+- Le joueur centralise l'affichage des textes dans un dictionnaire
 
-**Composant joueur : `PlayerInteraction`** (`Player/PlayerInteraction.gd`)
-- Gère toutes les interactions côté joueur
-- Détecte les objets dans le groupe `"interactables"`
-- Affiche/cache le texte d'interaction dans le HUD
-- Gère l'input E pour déclencher les interactions (just_pressed)
+**Interrupteur de Vagues** (`Interrupteur/interrupteur.gd`)
+- Hérite directement de `StaticBody3D` (autonome, pas de classe de base)
+- Utilise `Area3D` nommé `InteractionArea` pour détecter le joueur
+- Paramètre exporté : `interrupteur_id` (ex: `"start_wave"`) pour identification unique
+- Signal : `interaction_state_changed(interrupteur_id: String, is_active: bool)`
+  - Émet `true` quand le joueur entre dans la zone (si interaction possible)
+  - Émet `false` quand le joueur sort ou quand l'interaction est désactivée
+- 2 états : `OffWave` (prêt) et `InWave` (vague en cours)
+- Sprite 2D avec 2 animations affiché sur le dessus du pavé 3D
+- Gère directement l'input E pour déclencher l'action
+- S'ajoute au groupe `"interrupteurs"` pour être détecté par le joueur
+
+**Gestion côté Joueur** (`Player/player.gd`)
+- Dictionnaire exporté `interaction_texts` : mappe les IDs aux textes d'affichage
+  - Exemple : `{"start_wave": "Appuyez sur E pour lancer la vague"}`
+  - Modifiable dans l'éditeur, facilement extensible
+- Dans `_ready()` : cherche tous les objets du groupe `"interrupteurs"` et se connecte à leurs signaux
+- Gestionnaire `_on_interaction_state_changed(interrupteur_id, is_active)` :
+  - Cherche le texte correspondant dans `interaction_texts[interrupteur_id]`
+  - Affiche/cache le label avec transition douce (lerp d'opacité)
+  - Texte par défaut si l'ID n'existe pas dans le dictionnaire
 
 **HUD Interface :**
 - Conteneur `UI_Interactions` dans `HUD_Layer` (organisé pour extensions futures)
-- Label `InteractLabel` : affiche le texte uniquement à ≤ 2m de l'objet
-- Transition douce d'apparition, disparition immédiate au-delà de 2m
+- Label `InteractLabel` : affiche le texte quand `is_active = true`
+- Transition douce d'apparition/disparition (lerp dans `_process()`)
 - Intégré à l'interface du casque high-tech du joueur (esthétique diégétique)
 
-**Interrupteur de Vagues** (`Interrupteur/interrupteur.gd`)
-- Hérite de `Interactable`
-- 2 états : `OffWave` (prêt) et `InWave` (vague en cours)
-- Sprite 2D avec 2 animations affiché sur le dessus du pavé 3D
-- Pavé 3D avec collisions (StaticBody3D + BoxMesh)
-- Interaction désactivable via `can_interact` (sera utilisé avec le système de vagues)
-
-**Pour les futurs pièges :**
-Créer un script qui hérite de `Interactable` :
-- Ajouter au groupe `"interactables"`
-- Surcharger `_on_interact()` pour définir le comportement
-- Le système gère automatiquement la détection et l'affichage du texte
+**Créer un nouvel objet interactif :**
+1. Créer un script qui hérite de `StaticBody3D` (ou autre selon besoin)
+2. Ajouter une `Area3D` nommée `InteractionArea` comme enfant
+3. Paramètre exporté `interrupteur_id: String` (ex: `"open_door"`)
+4. Signal `interaction_state_changed(interrupteur_id: String, is_active: bool)`
+5. Gérer la détection joueur (`body_entered`/`body_exited`) et émettre le signal
+6. S'ajouter au groupe `"interrupteurs"`
+7. Gérer l'input E localement pour déclencher l'action
+8. Dans le joueur, ajouter l'entrée dans `interaction_texts` : `{"open_door": "Appuyez sur E pour ouvrir"}`
 
 ---
 
@@ -236,12 +248,11 @@ Créer un script qui hérite de `Interactable` :
 ## 📁 STRUCTURE FICHIERS
 
 ```
-/Player/          - Composants joueur (5 scripts modulaires : Camera, Movement, Combat, Input, Interaction)
+/Player/          - Composants joueur (4 scripts modulaires : Camera, Movement, Combat, Input) + player.gd (orchestrateur + gestion interactions)
 /Enemy/           - EnemyBase + 4 ennemis (Papillon V1/V2, BigMonster V1/V2) + SpawnTestRunner + SpawnPoint
 /Revolver/        - Script arme
-/Interaction/     - Interactable.gd (classe de base pour objets interactifs)
-/Interrupteur/    - interrupteur.gd (interrupteur de vagues)
-/Effects/         - ImpactEffect (particules)
+/Interrupteur/    - interrupteur.gd (interrupteur de vagues autonome)
+/Effects/         - ImpactEffect (particules) + Shaders (pixel_dissolve)
 /Maps/            - Arena + Obstacles (glb)
 /Assets/          - Audio, Sprites, Fonts
 world.tscn        - Scène principale

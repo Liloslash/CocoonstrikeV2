@@ -7,7 +7,6 @@
 [ext_resource type="Script" uid="uid://yihmwlm1gdcc" path="res://Player/PlayerMovement.gd" id="5_od3ui"]
 [ext_resource type="Script" uid="uid://bx60wab5cy035" path="res://Player/PlayerCombat.gd" id="6_00tjw"]
 [ext_resource type="Script" uid="uid://djauqrp7mylji" path="res://Player/PlayerInput.gd" id="7_x3vf3"]
-[ext_resource type="Script" uid="uid://tup0ife8d80q" path="res://Player/PlayerInteraction.gd" id="8_interaction"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gwnis"]
 atlas = ExtResource("2_4ntmi")
@@ -150,6 +149,27 @@ _data = {
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_rpqav"]
 
+[sub_resource type="GDScript" id="GDScript_vtle1"]
+script/source = "extends Node
+class_name PlayerInteraction
+
+# === PLAYER INTERACTION ===
+# Ce système n'est plus utilisé - chaque objet interactif gère ses propres interactions
+# Conservé pour compatibilité future si nécessaire
+
+func setup_player(_player_node: CharacterBody3D, _label_node: Label) -> void:
+	# Ne fait rien - les objets interactifs gèrent maintenant leurs propres interactions
+	pass
+
+func _unhandled_input(_event: InputEvent) -> void:
+	# Ne fait rien - les objets interactifs gèrent maintenant leurs propres inputs
+	pass
+
+func _process(_delta: float) -> void:
+	# Ne fait rien - les objets interactifs gèrent maintenant leurs propres affichages
+	pass
+"
+
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_v0iea")
 
@@ -232,4 +252,4 @@ script = ExtResource("6_00tjw")
 script = ExtResource("7_x3vf3")
 
 [node name="PlayerInteraction" type="Node" parent="."]
-script = ExtResource("8_interaction")
+script = SubResource("GDScript_vtle1")

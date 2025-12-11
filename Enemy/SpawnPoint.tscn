@@ -1,18 +1,24 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3 uid="uid://671h1eqeay5v"]
 
-[ext_resource type="Script" path="res://Enemy/SpawnPoint.gd" id="1_kv0cv"]
+[ext_resource type="Script" uid="uid://dkrdvlrwytq4l" path="res://Enemy/SpawnPoint.gd" id="1_kv0cv"]
 
 [sub_resource type="CylinderMesh" id="2_72jo7"]
 top_radius = 0.01
 bottom_radius = 1.0
 height = 0.2
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yw4nf"]
+transparency = 1
+no_depth_test = true
+shading_mode = 0
+albedo_color = Color(0.4, 0.8, 1, 0.35)
+
 [node name="SpawnPoint" type="Node3D"]
 script = ExtResource("1_kv0cv")
 
 [node name="EditorOnly" type="Node3D" parent="."]
-editor_only = true
 
 [node name="RadiusMesh" type="MeshInstance3D" parent="EditorOnly"]
+transform = Transform3D(3, 0, 0, 0, 0.1, 0, 0, 0, 3, 0, 0, 0)
 mesh = SubResource("2_72jo7")
-
+surface_material_override/0 = SubResource("StandardMaterial3D_yw4nf")

@@ -48,6 +48,7 @@ func setup_player(player_node: CharacterBody3D) -> void:
 
 # === GESTION PRINCIPALE ===
 func _physics_process(delta: float) -> void:
+
 	if not player:
 		return
 		
