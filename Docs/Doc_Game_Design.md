@@ -24,22 +24,6 @@ vagues d'ennemis dans un environnement urbain en ruine.
 4. **Slam** → Attaque spéciale avec zone de repulsion
 5. **Rechargement** → Gestion des munitions dans l'arme
 
-## 🎨 DIRECTION ARTISTIQUE
-
-### Armure Futuriste
-- **Style** : Armure assistée futuriste 
-- **HUD diégétique** : Contour de visière de casque affichant vie et munitions
-et état des capacités
-- **Justification gameplay** : L'armure explique les capacités spéciales (slam, power shot)
-
-### Environnement
-- **Style** : Environnement urbain en ruine et barricadé
-- **Amélioration** : Remplacer les "blocs types" actuels par une ambiance urbaine
-
-### Armes
-- **Révolver futuriste** : Design qui inspire la puissance et la confiance
-- **Power shot** : Mécanique de tir spécial justifiée par l'armure
-
 ## 👾 ENNEMIS
 
 ### Architecture des Ennemis
@@ -94,8 +78,50 @@ et état des capacités
 - **Application** : Tous les obstacles de cette hauteur partagent cette propriété
 - **Feedback visuel** : À définir
 
-## 🎵 AUDIO & FEEDBACK
-- **Sons de pas** : Joueur et ennemis
-- **Sons de dégâts** : Impact et mort des ennemis
-- **Audio ambiant** : Ambiance urbaine post-apocalyptique
-- **Effets visuels** : Particules d'impact, tremblements, animations
+## 🌊 SYSTÈME DE VAGUES
+
+> **Note** : Ce système est une ébauche. Le système final sera plus complexe et plus riche. Cette version initiale pourra être complétée et complexifiée au fur et à mesure.
+
+### Variables de Contrôle
+Le système de vagues utilise 5 variables principales pour ajuster la difficulté :
+
+1. **Nombre total d'ennemis** : Quantité d'ennemis à éliminer pour terminer la vague
+2. **Nombre d'ennemis simultanés** : Limite d'ennemis présents en même temps sur la map (limite de spawn)
+3. **Variété des ennemis** : Types d'ennemis présents dans la vague (Papillons, Monsters, BigMonsters)
+4. **Timer** : Temps alloué pour éliminer tous les ennemis de la vague
+5. **Surcharge de stats** : Multiplicateur de statistiques pour créer des vagues spéciales (ex: +25% PV, +25% dégâts)
+
+### Cycle de 5 Vagues (Progression Intra-Cycle)
+Chaque cycle de 5 vagues suit une progression de difficulté :
+
+- **Vague 1** : Base
+  - Nombre d'ennemis : n
+  
+- **Vague 2** : Plus d'ennemis
+  - Nombre d'ennemis : n+
+  
+- **Vague 3** : Augmentation simultanée
+  - Nombre d'ennemis : n+
+  - Nombre d'ennemis simultanés : Augmenté
+  
+- **Vague 4** : Variété maximale
+  - Nombre d'ennemis : n++
+  - Nombre d'ennemis simultanés : Augmenté
+  - Variété : Tous les types d'ennemis présents
+  
+- **Vague 5** : Vague spéciale
+  - Nombre d'ennemis : n+
+  - Stats surchargées : Ennemis avec statistiques augmentées (ex: +25% PV)
+  - Timer : Restreint (moins de temps pour éliminer la vague)
+
+### Progression Inter-Cycles
+Après chaque cycle de 5 vagues terminé, la difficulté de base augmente :
+
+- **Nombre de base d'ennemis (n)** : Augmente de +1
+- **Timer de base** : Diminue (ex: -1 seconde par cycle)
+
+### Exemple de Progression
+- **Cycle 1** (Vagues 1-5) : n=5 ennemis de base, timer=30s
+- **Cycle 2** (Vagues 6-10) : n=6 ennemis de base, timer=29s
+- **Cycle 3** (Vagues 11-15) : n=7 ennemis de base, timer=28s
+- Et ainsi de suite...
