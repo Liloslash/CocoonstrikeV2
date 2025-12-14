@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://duveuss376vek"]
+[gd_scene load_steps=14 format=3 uid="uid://duveuss376vek"]
 
 [ext_resource type="PackedScene" uid="uid://on8dmdl0asvj" path="res://Maps/environments/Arena.glb" id="1_fj7yv"]
 [ext_resource type="PackedScene" uid="uid://danq5m8lo3862" path="res://Maps/obstacles/Obstacles.glb" id="2_tlwt5"]
@@ -10,12 +10,6 @@
 [ext_resource type="PackedScene" uid="uid://671h1eqeay5v" path="res://Enemy/SpawnPoint.tscn" id="8_spawn"]
 [ext_resource type="Script" uid="uid://cl4c33wc4qc6i" path="res://Enemy/SpawnTestRunner.gd" id="9_snm2e"]
 [ext_resource type="PackedScene" uid="uid://c43p7asg3t7r7" path="res://Interrupteur/interrupteur_pave.tscn" id="10_wse8f"]
-
-[sub_resource type="NavigationMesh" id="NavigationMesh_aqk2v"]
-geometry_parsed_geometry_type = 1
-agent_height = 1.0
-agent_max_climb = 0.2
-region_min_size = 0.1
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tlwt5"]
 sky_top_color = Color(0.0885772, 0.129562, 0.304281, 1)
@@ -41,9 +35,6 @@ shadow_enabled = true
 [node name="Arena" parent="." instance=ExtResource("1_fj7yv")]
 
 [node name="Obstacles" parent="." instance=ExtResource("2_tlwt5")]
-
-[node name="Navigation" type="NavigationRegion3D" parent="."]
-navigation_mesh = SubResource("NavigationMesh_aqk2v")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_036b0")

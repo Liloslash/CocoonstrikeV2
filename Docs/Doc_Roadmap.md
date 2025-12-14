@@ -1,7 +1,6 @@
 # 🚀 ROADMAP - COCOONSTRIKE REBUILD
 
 ## 🔥 SUR LE FEU (En cours)
-- implmémentation de l'interrupteur de vagues
 - Système de vagues d'ennemis
 - Sons de dégâts des ennemis
 
@@ -11,7 +10,6 @@
 - Création du système de canal pour gérer l'audio
 - Implémentation des bruits de pas du player
 - Bruits de pas des ennemis
-- Polish des effets visuels et sonores
 
 ## 📅 MOYEN TERME (1-2 mois)
 - Redesign de la map avec obstacles aux particularités spécifiques
@@ -31,6 +29,7 @@
 - Première version avec une boucle de jeu complète
 
 ## ✅ ACCOMPLIS
+- implmémentation de l'interrupteur de vagues
 - Création d'une animation de mort pour l'ennemi
 - Création des 4 points d'apparitions sur la map
 - Création de "l'ombre" pour les enemies 
