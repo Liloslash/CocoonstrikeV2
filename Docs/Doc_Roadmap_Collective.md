@@ -1,12 +1,20 @@
-Pour Antoine:
-	Refaire les spawn points avec des Area3D
-	Créer le système de vagues
+## 👨‍🚀 Loïc
+- Intégrer le nouveau gun
+- Chercher de nouveaux sons :
+  - pas
+  - mort enemies
+  - second Gun
+  - début vague/fin vague
+- Développer une intrigue :
+  - Y insérer un mystère
+  - trouver à faire sens du titre ou l'abandonner
 
-Pour Loïc
-	mettre le systeme de vagues imaginé dans la Doc_Game_Design
+## 👨‍💻 Antoine
+- Refaire les spawn points avec des Area3D
+- Créer le système de vagues
 
-Pour Florent
-	Remap général
+## 👷‍♂️ Florent
+- Remap général
 
-Pour Arnaud
-	Création sprite du shotgun
+## 👨‍🎨 Arnaud
+- Création de la visière UI

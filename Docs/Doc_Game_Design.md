@@ -1,9 +1,9 @@
 # 🎮 GAME DESIGN - COCOONSTRIKE
 
 ## 🎯 CONCEPT CORE
-**Cocoonstrike - Rebuild** est un survival shooter FPS où le joueur incarne 
-un soldat dans une armure assistée futuriste, condamné à survivre face à des
-vagues d'ennemis dans un environnement urbain en ruine.
+**Cocoonstrike - Rebuild** est un survival shooter FPS où le joueur incarne
+un soldat dans une armure assistée futuriste, condamné à survivre face à
+des vagues d'ennemis dans un environnement urbain en ruine.
 
 **Objectif :** Survivre le plus longtemps possible  
 **Fin :** Mort inévitable  
@@ -59,6 +59,7 @@ vagues d'ennemis dans un environnement urbain en ruine.
 ### Ressources : "Bric-à-brac"
 - **Récupération** : Sprites qui tournent et disparaissent quand ramassés
 - **Utilisation** : Matériaux pour construire différents types de pièges
+  ou soigner le joueur
 
 ### Types de Pièges
 - **Barricades** : Bloquer une ou plusieurs entrées pour un tour
@@ -73,23 +74,33 @@ vagues d'ennemis dans un environnement urbain en ruine.
 
 ### Système de Couverture
 - **Conditions** : Joueur à 1.5m d'un muret + muret entre joueur et ennemi
-- **Hauteur** : Muret arrive à la moitié du torse (joueur voit son arme au-dessus)
-- **Effets** : 50% de dégâts en moins + 75% de chance de toucher pour l'ennemi
-- **Application** : Tous les obstacles de cette hauteur partagent cette propriété
+- **Hauteur** : Muret arrive à la moitié du torse (joueur voit son arme
+  au-dessus)
+- **Effets** : 50% de dégâts en moins + 75% de chance de toucher pour
+  l'ennemi
+- **Application** : Tous les obstacles de cette hauteur partagent cette
+  propriété
 - **Feedback visuel** : À définir
 
 ## 🌊 SYSTÈME DE VAGUES
 
-> **Note** : Ce système est une ébauche. Le système final sera plus complexe et plus riche. Cette version initiale pourra être complétée et complexifiée au fur et à mesure.
+> **Note** : Ce système est une ébauche. Le système final sera plus
+> complexe et plus riche. Cette version initiale pourra être complétée et
+> complexifiée au fur et à mesure.
 
 ### Variables de Contrôle
-Le système de vagues utilise 5 variables principales pour ajuster la difficulté :
+Le système de vagues utilise 5 variables principales pour ajuster la
+difficulté :
 
-1. **Nombre total d'ennemis** : Quantité d'ennemis à éliminer pour terminer la vague
-2. **Nombre d'ennemis simultanés** : Limite d'ennemis présents en même temps sur la map (limite de spawn)
-3. **Variété des ennemis** : Types d'ennemis présents dans la vague (Papillons, Monsters, BigMonsters)
+1. **Nombre total d'ennemis** : Quantité d'ennemis à éliminer pour
+   terminer la vague
+2. **Nombre d'ennemis simultanés** : Limite d'ennemis présents en même
+   temps sur la map (limite de spawn)
+3. **Variété des ennemis** : Types d'ennemis présents dans la vague
+   (Papillons, Monsters, BigMonsters)
 4. **Timer** : Temps alloué pour éliminer tous les ennemis de la vague
-5. **Surcharge de stats** : Multiplicateur de statistiques pour créer des vagues spéciales (ex: +25% PV, +25% dégâts)
+5. **Surcharge de stats** : Multiplicateur de statistiques pour créer des
+   vagues spéciales (ex: +25% PV, +25% dégâts)
 
 ### Cycle de 5 Vagues (Progression Intra-Cycle)
 Chaque cycle de 5 vagues suit une progression de difficulté :
@@ -110,9 +121,10 @@ Chaque cycle de 5 vagues suit une progression de difficulté :
   - Variété : Tous les types d'ennemis présents
   
 - **Vague 5** : Vague spéciale
-  - Nombre d'ennemis : n+
-  - Stats surchargées : Ennemis avec statistiques augmentées (ex: +25% PV)
-  - Timer : Restreint (moins de temps pour éliminer la vague)
+	- Nombre d'ennemis : n+
+	- Stats surchargées : Ennemis avec statistiques augmentées
+	  (ex: +25% PV)
+	- Timer : Restreint (moins de temps pour éliminer la vague)
 
 ### Progression Inter-Cycles
 Après chaque cycle de 5 vagues terminé, la difficulté de base augmente :
