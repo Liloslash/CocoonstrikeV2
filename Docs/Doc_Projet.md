@@ -40,7 +40,8 @@
 - **PlayerCombat** : Tir, dégâts, raycast
 - **PlayerInput** : Inputs clavier/souris
 - **Revolver** : Arme (6 balles, rechargement)
-- **Gestion Interactions** : Gestion HUD + textes d'interaction (intégré dans `player.gd`)
+- **Gestion Interactions** : Gestion HUD + textes d'interaction
+  (intégré dans `player.gd`)
 
 ### Ennemis (Héritage depuis EnemyBase)
 **4 types implémentés :**
@@ -89,20 +90,30 @@
 ### Système de Spawn
 - **Scene principale :** `world.tscn`
 - **Script clé :** `Enemy/SpawnTestRunner.gd`
-- **Activation rapide :** Export `is_active` (case à cocher) pour démarrer/arrêter le runner.
-- **Sélection zones :** Export `enabled_zones_mask` (cases Zone 1 → Zone 4). Le script recherche tous les `SpawnPoint` (`SpawnPoint.tscn`) dont `zone_id` correspond aux cases cochées.
+- **Activation rapide :** Export `is_active` (case à cocher) pour
+  démarrer/arrêter le runner.
+- **Sélection zones :** Export `enabled_zones_mask` (cases Zone 1 → Zone 4).
+  Le script recherche tous les `SpawnPoint` (`SpawnPoint.tscn`) dont
+  `zone_id` correspond aux cases cochées.
 - **Fallback :** Si aucune zone n’est cochée, le runner tente `spawn_point_path` (héritage de l’ancien système) puis annule proprement avec warning.
-- **Timer interne :** crée un `Timer` pour cadencer les spawns (`spawn_interval`), gère les retries (`retry_delay`, `max_spawn_attempts`) et recycle les scenes invalides.
-- **SpawnPoint.tscn :** `zone_id`, `spawn_radius`, gizmo masqué en runtime (`EditorOnly` invisible) pour placer les zones 3D.
+- **Timer interne :** crée un `Timer` pour cadencer les spawns
+  (`spawn_interval`), gère les retries (`retry_delay`,
+  `max_spawn_attempts`) et recycle les scenes invalides.
+- **SpawnPoint.tscn :** `zone_id`, `spawn_radius`, gizmo masqué en runtime
+  (`EditorOnly` invisible) pour placer les zones 3D.
 
 ### Vol des Papillons
-**Principe :** Raycast vertical pour suivre le sol + interpolation vers une hauteur cible, avec oscillation sinus.
+**Principe :** Raycast vertical pour suivre le sol + interpolation vers une
+hauteur cible, avec oscillation sinus.
 
 **Pipeline :**
-1. Raycast vers le bas (`max_hover_ray_distance`) pour détecter le sol (filtré par `hover_collision_mask`).
+1. Raycast vers le bas (`max_hover_ray_distance`) pour détecter le sol
+   (filtré par `hover_collision_mask`).
 2. Hauteur cible = `sol + hover_height + sin(float_timer) * float_amplitude`.
-3. Interpolation `lerp` contrôlée par `hover_follow_speed` après `move_and_slide()`.
-4. Gravité appliquée (`gravity_scale`), retombée naturelle si aucun sol détecté.
+3. Interpolation `lerp` contrôlée par `hover_follow_speed` après
+   `move_and_slide()`.
+4. Gravité appliquée (`gravity_scale`), retombée naturelle si aucun sol
+   détecté.
 
 **Paramètres exportés :**
 - `hover_height`, `float_amplitude`, `float_speed`
@@ -110,50 +121,61 @@
 - `gravity_scale`, `max_hover_ray_distance`, `hover_collision_mask`
 
 ### Système d'Interaction
-**Architecture basée sur signaux et identifiants** pour objets interactifs réutilisables (interrupteurs, pièges, etc.)
+**Architecture basée sur signaux et identifiants** pour objets interactifs
+réutilisables (interrupteurs, pièges, etc.)
 
 **Principe :**
-- Chaque objet interactif est **autonome** et gère sa propre détection via **Area3D**
+- Chaque objet interactif est **autonome** et gère sa propre détection via
+  **Area3D**
 - Communication via **signaux** avec identification unique (ID)
 - Le joueur centralise l'affichage des textes dans un dictionnaire
 
 **Interrupteur de Vagues** (`Interrupteur/interrupteur.gd`)
 - Hérite directement de `StaticBody3D` (autonome, pas de classe de base)
 - Utilise `Area3D` nommé `InteractionArea` pour détecter le joueur
-- Paramètre exporté : `interrupteur_id` (ex: `"start_wave"`) pour identification unique
+- Paramètre exporté : `interrupteur_id` (ex: `"start_wave"`) pour
+  identification unique
 - Signal : `interaction_state_changed(interrupteur_id: String, is_active: bool)`
-  - Émet `true` quand le joueur entre dans la zone (si interaction possible)
-  - Émet `false` quand le joueur sort ou quand l'interaction est désactivée
+  - Émet `true` quand le joueur entre dans la zone (si interaction
+	possible)
+  - Émet `false` quand le joueur sort ou quand l'interaction est
+	désactivée
 - 2 états : `OffWave` (prêt) et `InWave` (vague en cours)
 - Sprite 2D avec 2 animations affiché sur le dessus du pavé 3D
 - Gère directement l'input E pour déclencher l'action
 - S'ajoute au groupe `"interrupteurs"` pour être détecté par le joueur
 
 **Gestion côté Joueur** (`Player/player.gd`)
-- Dictionnaire exporté `interaction_texts` : mappe les IDs aux textes d'affichage
+- Dictionnaire exporté `interaction_texts` : mappe les IDs aux textes
+  d'affichage
   - Exemple : `{"start_wave": "Appuyez sur E pour lancer la vague"}`
   - Modifiable dans l'éditeur, facilement extensible
-- Dans `_ready()` : cherche tous les objets du groupe `"interrupteurs"` et se connecte à leurs signaux
+- Dans `_ready()` : cherche tous les objets du groupe `"interrupteurs"` et
+  se connecte à leurs signaux
 - Gestionnaire `_on_interaction_state_changed(interrupteur_id, is_active)` :
   - Cherche le texte correspondant dans `interaction_texts[interrupteur_id]`
   - Affiche/cache le label avec transition douce (lerp d'opacité)
   - Texte par défaut si l'ID n'existe pas dans le dictionnaire
 
 **HUD Interface :**
-- Conteneur `UI_Interactions` dans `HUD_Layer` (organisé pour extensions futures)
+- Conteneur `UI_Interactions` dans `HUD_Layer` (organisé pour extensions
+  futures)
 - Label `InteractLabel` : affiche le texte quand `is_active = true`
 - Transition douce d'apparition/disparition (lerp dans `_process()`)
-- Intégré à l'interface du casque high-tech du joueur (esthétique diégétique)
+- Intégré à l'interface du casque high-tech du joueur (esthétique
+  diégétique)
 
 **Créer un nouvel objet interactif :**
 1. Créer un script qui hérite de `StaticBody3D` (ou autre selon besoin)
 2. Ajouter une `Area3D` nommée `InteractionArea` comme enfant
 3. Paramètre exporté `interrupteur_id: String` (ex: `"open_door"`)
 4. Signal `interaction_state_changed(interrupteur_id: String, is_active: bool)`
-5. Gérer la détection joueur (`body_entered`/`body_exited`) et émettre le signal
+5. Gérer la détection joueur (`body_entered`/`body_exited`) et émettre le
+   signal
 6. S'ajouter au groupe `"interrupteurs"`
 7. Gérer l'input E localement pour déclencher l'action
-8. Dans le joueur, ajouter l'entrée dans `interaction_texts` : `{"open_door": "Appuyez sur E pour ouvrir"}`
+8. Dans le joueur, ajouter l'entrée dans `interaction_texts` :
+   `{"open_door": "Appuyez sur E pour ouvrir"}`
 
 ---
 
@@ -161,7 +183,8 @@
 
 ### PapillonV1 (Volant Léger)
 - **75 PV** | **10 dégâts** | **Vitesse 1.0x**
-- Flottement paisible (speed 1.5) + suivi du sol (raycast) pour rester à `hover_height`
+- Flottement paisible (speed 1.5) + suivi du sol (raycast) pour rester à
+  `hover_height`
 - Couleurs : Bleu, Cyan, Rose, Jaune
 
 ### PapillonV2 (Volant Agressif)
@@ -171,11 +194,14 @@
 
 ### BigMonsterV1 (Terrestre Équilibré)
 - **62 PV** | **20 dégâts** | **Vitesse 1.0x**
-- Gravité active (`gravity_scale` configurable) : retombe naturellement après un spawn en suspension
+- Gravité active (`gravity_scale` configurable) : retombe naturellement
+  après un spawn en suspension
 - Animation : 1 frame statique
 - Couleurs : Rouge foncé, Orange, Brun
-- **Mort** : Dissolution pixelisée (shader commun, tween 0.45s, `death_pixel_size = 156`)
-- **Mort (FX)** : Lancement automatique du shader `pixel_dissolve.gdshader` (palette ennemie) avec tween Godot `create_tween()`
+- **Mort** : Dissolution pixelisée (shader commun, tween 0.45s,
+  `death_pixel_size = 156`)
+- **Mort (FX)** : Lancement automatique du shader `pixel_dissolve.gdshader`
+  (palette ennemie) avec tween Godot `create_tween()`
 
 ### BigMonsterV2 (Tank Lourd)
 - **62 PV** | **30 dégâts** | **Vitesse 0.75x**
@@ -183,7 +209,8 @@
 - Animation : 26 frames de marche
 - Couleurs : Violet foncé, Gris
 - **Mort** : Dissolution pixelisée (mêmes paramètres éditables que V1)
-- **Mort (FX)** : Même pipeline shader/tween que V1 (`dissolve_amount` + `pixel_size` sur 0.45s, `death_pixel_size = 156`)
+- **Mort (FX)** : Même pipeline shader/tween que V1 (`dissolve_amount` +
+  `pixel_size` sur 0.45s, `death_pixel_size = 156`)
 
 ### Système d'Ombres Portées
 **Tous les ennemis** ont une ombre portée configurable qui suit le sol via raycast.
@@ -204,9 +231,12 @@
 
 ### Effets de Mort (Pixel Dissolve)
 - **Shader partagé** : `Effects/Shaders/pixel_dissolve.gdshader`
-- **Ennemis concernés** : Papillon V1/V2, BigMonster V1/V2 (paramètres éditables par variant)
-- **Paramètres principaux** : `dissolve_amount` (0→1), `pixel_size` (1→N selon taille sprite), `edge_glow`, `edge_color`
-- **Tween** : `create_tween()` (0.45s par défaut) anime dissolution + pixellisation, `queue_free()` à la fin
+- **Ennemis concernés** : Papillon V1/V2, BigMonster V1/V2 (paramètres
+  éditables par variant)
+- **Paramètres principaux** : `dissolve_amount` (0→1), `pixel_size`
+  (1→N selon taille sprite), `edge_glow`, `edge_color`
+- **Tween** : `create_tween()` (0.45s par défaut) anime dissolution +
+  pixellisation, `queue_free()` à la fin
 - **Palette** : Couleurs d’impact de l’ennemi (4 teintes exportées) injectées dans le shader via `edge_color`
 
 ---
@@ -248,8 +278,11 @@
 ## 📁 STRUCTURE FICHIERS
 
 ```
-/Player/          - Composants joueur (4 scripts modulaires : Camera, Movement, Combat, Input) + player.gd (orchestrateur + gestion interactions)
-/Enemy/           - EnemyBase + 4 ennemis (Papillon V1/V2, BigMonster V1/V2) + SpawnTestRunner + SpawnPoint
+/Player/          - Composants joueur (4 scripts modulaires : Camera,
+					Movement, Combat, Input) + player.gd (orchestrateur +
+					gestion interactions)
+/Enemy/           - EnemyBase + 4 ennemis (Papillon V1/V2, BigMonster
+					V1/V2) + SpawnTestRunner + SpawnPoint
 /Revolver/        - Script arme
 /Interrupteur/    - interrupteur.gd (interrupteur de vagues autonome)
 /Effects/         - ImpactEffect (particules) + Shaders (pixel_dissolve)
