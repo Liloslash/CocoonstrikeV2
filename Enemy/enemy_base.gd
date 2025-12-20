@@ -10,30 +10,30 @@ class_name EnemyBase
 @export var max_health: int = 100
 
 @export_group("Mouvement")
-@export var movement_speed_multiplier: float = 1.0  # Multiplicateur de vitesse de déplacement
+@export var movement_speed_multiplier: float = 1.0 # Multiplicateur de vitesse de déplacement
 
 @export_group("Attaque")
-@export var base_damage_dealt: int = 10  # Dégâts de base infligés au joueur
+@export var base_damage_dealt: int = 10 # Dégâts de base infligés au joueur
 
 @export_group("Effet de Rougissement")
-@export var red_flash_duration: float = 0.2  # Durée du rougissement (0.2 secondes)
-@export var red_flash_intensity: float = 1.5  # Intensité du rouge (1.5 pour un effet bien visible)
-@export var red_flash_color: Color = Color.RED  # Couleur du rougissement
+@export var red_flash_duration: float = 0.2 # Durée du rougissement (0.2 secondes)
+@export var red_flash_intensity: float = 1.5 # Intensité du rouge (1.5 pour un effet bien visible)
+@export var red_flash_color: Color = Color.RED # Couleur du rougissement
 
 @export_group("Freeze après Dégâts")
-@export var damage_freeze_duration: float = 0.25  # Durée du freeze après avoir pris des dégâts
+@export var damage_freeze_duration: float = 0.25 # Durée du freeze après avoir pris des dégâts
 
 @export_group("Slam Repoussement")
-@export var slam_push_force: float = 4.0  # Force du repoussement
-@export var slam_bond_duration: float = 0.6  # Durée du bond avant arrêt horizontal
-@export var slam_freeze_delay: float = 0.8  # Délai avant le freeze
-@export var slam_cooldown_time: float = 0.2  # Cooldown entre les slams
+@export var slam_push_force: float = 4.0 # Force du repoussement
+@export var slam_bond_duration: float = 0.6 # Durée du bond avant arrêt horizontal
+@export var slam_freeze_delay: float = 0.8 # Délai avant le freeze
+@export var slam_cooldown_time: float = 0.2 # Cooldown entre les slams
 
 @export_group("Ombre Portée")
-@export var shadow_enabled: bool = true  # Activer/désactiver l'ombre
-@export var shadow_size: float = 1.0  # Taille de l'ombre (multiplicateur)
-@export var shadow_opacity: float = 0.6  # Opacité de l'ombre (0.0 à 1.0)
-@export var shadow_height_offset: float = 0.01  # Hauteur de l'ombre au-dessus du sol
+@export var shadow_enabled: bool = true # Activer/désactiver l'ombre
+@export var shadow_size: float = 1.0 # Taille de l'ombre (multiplicateur)
+@export var shadow_opacity: float = 0.6 # Opacité de l'ombre (0.0 à 1.0)
+@export var shadow_height_offset: float = 0.01 # Hauteur de l'ombre au-dessus du sol
 
 # === VARIABLES INTERNES ===
 var current_health: int
@@ -42,12 +42,15 @@ var is_frozen: bool = false
 var player_reference: Node3D = null
 var freeze_timer: float = 0.0
 var slam_cooldown: float = 0.0
-var is_being_slam_repelled: bool = false  # Pour distinguer le repoussement slam des autres freezes
+var is_being_slam_repelled: bool = false # Pour distinguer le repoussement slam des autres freezes
 var _shadow_initialized: bool = false
 
+# === SIGNAUX ===
+signal enemy_died
+
 # === COMPOSANTS ===
-@onready var sprite: AnimatedSprite3D = $AnimatedSprite3D  # Le sprite 2D billboard
-@onready var shadow_sprite: Sprite3D = null  # L'ombre portée (optionnel)
+@onready var sprite: AnimatedSprite3D = $AnimatedSprite3D # Le sprite 2D billboard
+@onready var shadow_sprite: Sprite3D = null # L'ombre portée (optionnel)
 
 # === MÉTHODES VIRTUELLES À SURCHARGER ===
 # Ces méthodes peuvent être surchargées par les ennemis spécifiques
@@ -185,8 +188,8 @@ func _apply_slam_repulsion(direction: Vector3, _push_distance: float, push_heigh
 	
 	# Calculer la vélocité de repoussement (force constante, peu importe la distance)
 	var push_velocity = Vector3(
-		direction.x * slam_push_force,  # Force horizontale configurable
-		push_height * slam_push_force,  # Force verticale configurable
+		direction.x * slam_push_force, # Force horizontale configurable
+		push_height * slam_push_force, # Force verticale configurable
 		direction.z * slam_push_force
 	)
 	
@@ -206,7 +209,7 @@ func _apply_slam_repulsion(direction: Vector3, _push_distance: float, push_heigh
 		return
 	is_frozen = true
 	freeze_timer = freeze_duration
-	is_being_slam_repelled = false  # Fin du repoussement slam
+	is_being_slam_repelled = false # Fin du repoussement slam
 
 func _stop_after_bond():
 	# Arrêter le mouvement horizontal après le bond
@@ -225,6 +228,7 @@ func _die():
 	is_frozen = true
 	_disable_collisions()
 	
+	enemy_died.emit()
 	# Appeler la méthode virtuelle pour les effets de mort spécifiques
 	var death_handled = _on_death()
 	if death_handled == true:
@@ -265,6 +269,13 @@ func get_damage_dealt() -> int:
 
 func get_movement_speed() -> float:
 	return movement_speed_multiplier
+
+# === SURCHARGE DE STATS ===
+func apply_stat_boost(health_multiplier: float, damage_multiplier: float) -> void:
+	# Appliquer les multiplicateurs aux statistiques
+	max_health = int(max_health * health_multiplier)
+	current_health = max_health
+	base_damage_dealt = int(base_damage_dealt * damage_multiplier)
 
 # === EFFET DE ROUGISSEMENT (COMMUN À TOUS) ===
 func _create_red_flash():
@@ -357,7 +368,7 @@ func _update_sprite_rotation():
 	
 	# Calculer la direction vers le joueur (SEULEMENT sur l'axe X/Z)
 	var direction_to_player = (player_reference.global_position - global_position)
-	direction_to_player.y = 0  # Ignorer l'axe Y (hauteur)
+	direction_to_player.y = 0 # Ignorer l'axe Y (hauteur)
 	direction_to_player = direction_to_player.normalized()
 	
 	# Créer un point cible devant l'ennemi dans la direction du joueur (même hauteur)
@@ -413,7 +424,7 @@ func _setup_shadow():
 	
 	# Rotation de 90 degrés sur Y pour orienter l'ombre correctement
 	# (billboard et axis sont déjà définis dans les scènes .tscn)
-	shadow_sprite.rotation_degrees = Vector3(0, 90, 0)  # Rotation sur l'axe Y
+	shadow_sprite.rotation_degrees = Vector3(0, 90, 0) # Rotation sur l'axe Y
 	
 	# Position initiale sera mise à jour par _update_shadow_position()
 	_shadow_initialized = true
@@ -434,7 +445,7 @@ func _update_shadow_position():
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	if space_state:
 		var query := PhysicsRayQueryParameters3D.create(raycast_start, raycast_end)
-		query.collision_mask = 1  # Layer 0 = environnement
+		query.collision_mask = 1 # Layer 0 = environnement
 		var result := space_state.intersect_ray(query)
 		if result:
 			var hit_position: Vector3 = result.position

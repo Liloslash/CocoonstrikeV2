@@ -15,6 +15,10 @@ class_name Player
 @onready var input_component: PlayerInput = $PlayerInput
 @onready var interact_label: Label = $HUD_Layer/UI_Interactions/InteractLabel
 
+@onready var wave_counter: Label = $HUD_Layer/UI_Interactions/HBoxContainer/WaveCounter
+@onready var enemies_counter: Label = $HUD_Layer/UI_Interactions/HBoxContainer/EnemiesCounter
+@onready var timer_counter: Label = $HUD_Layer/UI_Interactions/HBoxContainer/Timer
+
 # --- État pour l'optimisation ---
 var last_movement_state: bool = false
 
@@ -37,18 +41,18 @@ func _unhandled_input(event: InputEvent) -> void:
 # --- Initialisation ---
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	
+
 	# Configuration des collisions
-	collision_layer = 1  # Joueur sur la layer 1
-	collision_mask = 3   # Détecte la layer 0 (environnement) + layer 2 (ennemis)
-	
+	collision_layer = 1 # Joueur sur la layer 1
+	collision_mask = 3 # Détecte la layer 0 (environnement) + layer 2 (ennemis)
+
 	# Initialiser les composants
 	movement_component.setup_player(self)
 	input_component.setup_player(self, movement_component, combat_component)
-	
+
 	# Connexion du signal de slam pour déclencher le camera shake
 	movement_component.slam_landed.connect(_on_slam_landed)
-	
+
 	# Se connecter aux signaux des interrupteurs
 	_connect_to_interrupteurs()
 
@@ -56,6 +60,16 @@ func _ready() -> void:
 func start_camera_shake(intensity: float = -1.0, duration: float = -1.0, rot: float = -1.0) -> void:
 	# Déléguer directement à la caméra
 	camera_component.start_camera_shake(intensity, duration, rot)
+
+
+func update_wave_counter(wave_number: int) -> void:
+	wave_counter.text = "Vague %d" % wave_number
+
+func update_enemies_counter(enemies_count: int, max_enemies: int) -> void:
+	enemies_counter.text = "Ennemis : %d/%d" % [enemies_count, max_enemies]
+
+func update_timer_counter(timer_value: int) -> void:
+	timer_counter.text = "Temps : %d" % timer_value
 
 # --- Gestionnaire du signal de slam ---
 func _on_slam_landed() -> void:
@@ -66,20 +80,19 @@ func _on_slam_landed() -> void:
 func _physics_process(delta: float) -> void:
 	# Déléguer la gestion du mouvement au composant
 	movement_component._physics_process(delta)
-	
+
 	_update_revolver_movement_state()
 	# Appliquer le mouvement
 	move_and_slide()
 
 # --- Mise à jour de l'état de mouvement du revolver ---
 func _update_revolver_movement_state() -> void:
-	
 	var revolver_sprite = combat_component.revolver_sprite
-	
+
 	# Ne pas envoyer d'état pendant le tir ou le rechargement
 	if revolver_sprite.is_shooting or revolver_sprite.reload_state != revolver_sprite.ReloadState.IDLE:
 		return
-	
+
 	# Ne mettre à jour que si l'état a changé
 	var current_movement_state = movement_component.is_moving()
 	if current_movement_state != last_movement_state:
@@ -100,7 +113,7 @@ func _on_interaction_state_changed(interrupteur_id: String, is_active: bool) -> 
 	# Mettre à jour l'état d'affichage selon le signal reçu
 	should_show_interaction = is_active
 	current_interrupteur_id = interrupteur_id if is_active else ""
-	
+
 	# Mettre à jour le texte du label si on l'affiche
 	if interact_label and is_active:
 		# Chercher le texte correspondant à cet ID dans le dictionnaire
@@ -114,7 +127,7 @@ func _process(_delta: float) -> void:
 	# Mettre à jour l'opacité du label d'interaction avec transition douce
 	if not interact_label:
 		return
-	
+
 	var target_alpha: float = 1.0 if should_show_interaction else 0.0
 	interact_label.modulate.a = lerp(interact_label.modulate.a, target_alpha, 0.2)
 	interact_label.modulate = Color(1, 1, 1, interact_label.modulate.a)

@@ -6,35 +6,36 @@ extends StaticBody3D
 
 # --- Signaux ---
 signal interaction_state_changed(interrupteur_id: String, is_active: bool)
+signal wave_started()
 
 # --- Références ---
 @onready var sprite: AnimatedSprite3D = $AnimatedSprite3D
 @onready var interaction_area: Area3D = $InteractionArea
 
 # --- Paramètres exportés ---
-@export var interrupteur_id: String = "start_wave"  # Identifiant unique pour différencier les interrupteurs
+@export var interrupteur_id: String = "start_wave" # Identifiant unique pour différencier les interrupteurs
 
 # --- État ---
-var is_in_wave: bool = false  # true = InWave, false = OffWave
-var player_in_range: bool = false  # Le joueur est dans la zone
+var is_in_wave: bool = false # true = InWave, false = OffWave
+var player_in_range: bool = false # Le joueur est dans la zone
 
 func _ready() -> void:
 	# Vérifier que l'Area3D existe
 	if not interaction_area:
 		push_error("Interrupteur: InteractionArea manquante ! Ajoutez une Area3D nommée 'InteractionArea' comme enfant.")
 		return
-	
+
 	# Ajouter au groupe pour être trouvé par le joueur
 	add_to_group("interrupteurs")
-	
+
 	# Connecter les signaux de l'Area3D pour détecter le joueur
 	interaction_area.body_entered.connect(_on_body_entered)
 	interaction_area.body_exited.connect(_on_body_exited)
-	
+
 	# Configurer les layers de collision
-	interaction_area.collision_layer = 0  # Ne détecte rien
-	interaction_area.collision_mask = 1   # Détecte la layer 1 (joueur)
-	
+	interaction_area.collision_layer = 0 # Ne détecte rien
+	interaction_area.collision_mask = 1 # Détecte la layer 1 (joueur)
+
 	# Initialiser l'état à OffWave
 	sprite.animation = "OffWave"
 	sprite.play("OffWave")
@@ -62,10 +63,10 @@ func _on_body_exited(body: Node) -> void:
 func toggle_state() -> void:
 	# Changer l'état de l'interrupteur
 	is_in_wave = not is_in_wave
-	
+
 	# TODO: Désactiver l'interaction si une vague est en cours
 	# player_in_range = not is_in_wave  # Activé plus tard quand le système de vagues sera connecté
-	
+
 	if is_in_wave:
 		# Passer à InWave (vague lancée)
 		sprite.animation = "InWave"
@@ -73,6 +74,8 @@ func toggle_state() -> void:
 		# Cacher le texte d'interaction (false)
 		if player_in_range:
 			interaction_state_changed.emit(interrupteur_id, false)
+		# Émettre le signal de démarrage de vague
+		wave_started.emit()
 	else:
 		# Passer à OffWave (vague finie, peut relancer)
 		sprite.animation = "OffWave"

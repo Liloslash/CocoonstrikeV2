@@ -222,6 +222,24 @@ grow_vertical = 2
 text = "Appuyez sur E pour interagir"
 horizontal_alignment = 1
 
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD_Layer/UI_Interactions"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
+offset_bottom = 40.0
+grow_horizontal = 0
+
+[node name="WaveCounter" type="Label" parent="HUD_Layer/UI_Interactions/HBoxContainer"]
+layout_mode = 2
+
+[node name="EnemiesCounter" type="Label" parent="HUD_Layer/UI_Interactions/HBoxContainer"]
+layout_mode = 2
+
+[node name="Timer" type="Label" parent="HUD_Layer/UI_Interactions/HBoxContainer"]
+layout_mode = 2
+
 [node name="PlayerCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
 script = ExtResource("4_vtle1")

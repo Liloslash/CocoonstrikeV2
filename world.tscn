@@ -1,14 +1,13 @@
-[gd_scene load_steps=14 format=3 uid="uid://duveuss376vek"]
+[gd_scene load_steps=13 format=3 uid="uid://duveuss376vek"]
 
 [ext_resource type="PackedScene" uid="uid://on8dmdl0asvj" path="res://Maps/environments/Arena.glb" id="1_fj7yv"]
+[ext_resource type="Script" uid="uid://b8refsi5jatuy" path="res://world.gd" id="1_ic0uy"]
 [ext_resource type="PackedScene" uid="uid://danq5m8lo3862" path="res://Maps/obstacles/Obstacles.glb" id="2_tlwt5"]
 [ext_resource type="PackedScene" uid="uid://blpn5lfg8ub4b" path="res://Player/player.tscn" id="3_tlwt5"]
 [ext_resource type="PackedScene" uid="uid://ku4i8q6cljds" path="res://Enemy/papillon_v1.tscn" id="5_036b0"]
-[ext_resource type="PackedScene" uid="uid://c4lqud6bnoswo" path="res://Enemy/papillon_v2.tscn" id="6_dwbse"]
 [ext_resource type="PackedScene" uid="uid://d0g5y8d0slojv" path="res://Enemy/big_monster_v1.tscn" id="6_pkg7o"]
-[ext_resource type="PackedScene" uid="uid://bm2v2scene456" path="res://Enemy/big_monster_v2.tscn" id="7_gbfbk"]
 [ext_resource type="PackedScene" uid="uid://671h1eqeay5v" path="res://Enemy/SpawnPoint.tscn" id="8_spawn"]
-[ext_resource type="Script" uid="uid://cl4c33wc4qc6i" path="res://Enemy/SpawnTestRunner.gd" id="9_snm2e"]
+[ext_resource type="Script" path="res://Enemy/SpawnTestRunner.gd" id="9_snm2e"]
 [ext_resource type="PackedScene" uid="uid://c43p7asg3t7r7" path="res://Interrupteur/interrupteur_pave.tscn" id="10_wse8f"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tlwt5"]
@@ -27,6 +26,7 @@ sky = SubResource("Sky_aqk2v")
 ambient_light_source = 3
 
 [node name="World" type="Node3D"]
+script = ExtResource("1_ic0uy")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 0, 0)
@@ -41,18 +41,6 @@ environment = SubResource("Environment_036b0")
 
 [node name="Player" parent="." instance=ExtResource("3_tlwt5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-
-[node name="PapillonV1" parent="." instance=ExtResource("5_036b0")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.361, 1.2, -9.979)
-
-[node name="PapillonV2" parent="." instance=ExtResource("6_dwbse")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.839, 1.2, -9.882)
-
-[node name="BigMonsterV1" parent="." instance=ExtResource("6_pkg7o")]
-transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0, 0.716792, -7.68238)
-
-[node name="BigMonsterV2" parent="." instance=ExtResource("7_gbfbk")]
-transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 1.37909, 0.711007, -7.00184)
 
 [node name="SpawnPointZone1" parent="." instance=ExtResource("8_spawn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.4266, 1.2, -26.071)
