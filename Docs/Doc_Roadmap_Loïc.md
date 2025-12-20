@@ -1,7 +1,6 @@
 # 🚀 ROADMAP - COCOONSTRIKE REBUILD
 
 ## 🔥 SUR LE FEU (En cours)
-- Système de vagues d'ennemis
 - Sons de dégâts des ennemis
 
 ## ⚡ COURT TERME (1-2 semaines)
@@ -26,6 +25,7 @@
 - Création d'un tableau des scores
 
 ## ✅ ACCOMPLIS
+- Système de vagues d'ennemis
 - implmémentation de l'interrupteur de vagues
 - Création d'une animation de mort pour l'ennemi
 - Création des 4 points d'apparitions sur la map

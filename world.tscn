@@ -1,7 +1,7 @@
 [gd_scene load_steps=13 format=3 uid="uid://duveuss376vek"]
 
 [ext_resource type="PackedScene" uid="uid://on8dmdl0asvj" path="res://Maps/environments/Arena.glb" id="1_fj7yv"]
-[ext_resource type="Script" uid="uid://b8refsi5jatuy" path="res://world.gd" id="1_ic0uy"]
+[ext_resource type="Script" path="res://world.gd" id="1_ic0uy"]
 [ext_resource type="PackedScene" uid="uid://danq5m8lo3862" path="res://Maps/obstacles/Obstacles.glb" id="2_tlwt5"]
 [ext_resource type="PackedScene" uid="uid://blpn5lfg8ub4b" path="res://Player/player.tscn" id="3_tlwt5"]
 [ext_resource type="PackedScene" uid="uid://ku4i8q6cljds" path="res://Enemy/papillon_v1.tscn" id="5_036b0"]
