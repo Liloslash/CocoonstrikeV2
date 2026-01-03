@@ -10,8 +10,7 @@
   - trouver à faire sens du titre ou l'abandonner
 
 ## 👨‍💻 Antoine
-- Refaire les spawn points avec des Area3D
-- Créer le système de vagues
+- 
 
 ## 👷‍♂️ Florent
 - Remap général

@@ -87,20 +87,41 @@
 - **Recoil** : Recul avec variation aléatoire
 - **Jump Look Down** : 25° pendant saut
 
-### Système de Spawn
-- **Scene principale :** `world.tscn`
-- **Script clé :** `Enemy/SpawnTestRunner.gd`
-- **Activation rapide :** Export `is_active` (case à cocher) pour
-  démarrer/arrêter le runner.
-- **Sélection zones :** Export `enabled_zones_mask` (cases Zone 1 → Zone 4).
-  Le script recherche tous les `SpawnPoint` (`SpawnPoint.tscn`) dont
-  `zone_id` correspond aux cases cochées.
-- **Fallback :** Si aucune zone n’est cochée, le runner tente `spawn_point_path` (héritage de l’ancien système) puis annule proprement avec warning.
-- **Timer interne :** crée un `Timer` pour cadencer les spawns
-  (`spawn_interval`), gère les retries (`retry_delay`,
-  `max_spawn_attempts`) et recycle les scenes invalides.
-- **SpawnPoint.tscn :** `zone_id`, `spawn_radius`, gizmo masqué en runtime
-  (`EditorOnly` invisible) pour placer les zones 3D.
+### Système de Vagues
+**Script principal :** `world.gd` (attaché au nœud `World` dans `world.tscn`)
+
+**Architecture :**
+- Gère les cycles de 5 vagues avec progression automatique
+- Système de spawn par paquets d'ennemis
+- Timer de vague avec limite de temps
+- Connexion automatique aux interrupteurs via groupe `"interrupteurs"`
+
+**Paramètres exportés (configurables dans l'éditeur) :**
+- `base_enemy_count` : Nombre de base d'ennemis (n) - défaut : 5
+- `base_timer` : Timer de base en secondes - défaut : 30.0
+- `packet_size` : Nombre d'ennemis par paquet - défaut : 5
+- `spawn_interval` : Intervalle entre chaque spawn dans un paquet (secondes) - défaut : 0.5
+
+**Cycle de 5 vagues :**
+- **Vague 1** : n ennemis, n simultanés
+- **Vague 2** : n+2 ennemis, n+2 simultanés
+- **Vague 3** : n+2 ennemis, n+4 simultanés
+- **Vague 4** : n+4 ennemis, n+4 simultanés, tous types
+- **Vague 5** : n+2 ennemis, n+2 simultanés, +25% PV/dégâts, timer × 0.8
+
+**Progression inter-cycles :**
+- Après chaque cycle de 5 vagues : n augmente de +1, timer diminue de 1s (minimum 5s)
+
+**Système de spawn :**
+- Spawn par paquets progressifs (respecte la limite simultanée)
+- 4 zones de spawn (`SpawnPointZone1` à `SpawnPointZone4`)
+- Sélection aléatoire du type d'ennemi et de la zone
+- Respawn intelligent : quand il reste 15% d'ennemis, nouveaux paquets si possible
+
+**SpawnPoint :**
+- **Scene :** `Enemy/SpawnPoint.tscn`
+- **Paramètres :** `zone_id` (1-4), `spawn_radius` (rayon de spawn), `editor_color` (gizmo éditeur)
+- **Fonction :** `get_spawn_position()` retourne une position aléatoire dans le rayon
 
 ### Vol des Papillons
 **Principe :** Raycast vertical pour suivre le sol + interpolation vers une
@@ -133,17 +154,17 @@ réutilisables (interrupteurs, pièges, etc.)
 **Interrupteur de Vagues** (`Interrupteur/interrupteur.gd`)
 - Hérite directement de `StaticBody3D` (autonome, pas de classe de base)
 - Utilise `Area3D` nommé `InteractionArea` pour détecter le joueur
-- Paramètre exporté : `interrupteur_id` (ex: `"start_wave"`) pour
-  identification unique
-- Signal : `interaction_state_changed(interrupteur_id: String, is_active: bool)`
-  - Émet `true` quand le joueur entre dans la zone (si interaction
-	possible)
-  - Émet `false` quand le joueur sort ou quand l'interaction est
-	désactivée
-- 2 états : `OffWave` (prêt) et `InWave` (vague en cours)
+- Paramètre exporté : `interrupteur_id` (ex: `"start_wave"`) pour identification unique
+- **Signaux :**
+  - `interaction_state_changed(interrupteur_id: String, is_active: bool)` : Pour le HUD du joueur
+	- Émet `true` quand le joueur entre dans la zone (si interaction possible)
+	- Émet `false` quand le joueur sort ou quand l'interaction est désactivée
+  - `wave_started()` : Pour déclencher une vague dans `world.gd`
+- **2 états :** `OffWave` (prêt) et `InWave` (vague en cours)
 - Sprite 2D avec 2 animations affiché sur le dessus du pavé 3D
 - Gère directement l'input E pour déclencher l'action
-- S'ajoute au groupe `"interrupteurs"` pour être détecté par le joueur
+- S'ajoute au groupe `"interrupteurs"` pour être détecté par le joueur et `world.gd`
+- **Connexion automatique :** `world.gd` cherche tous les interrupteurs du groupe et se connecte au signal `wave_started`
 
 **Gestion côté Joueur** (`Player/player.gd`)
 - Dictionnaire exporté `interaction_texts` : mappe les IDs aux textes
@@ -158,12 +179,19 @@ réutilisables (interrupteurs, pièges, etc.)
   - Texte par défaut si l'ID n'existe pas dans le dictionnaire
 
 **HUD Interface :**
-- Conteneur `UI_Interactions` dans `HUD_Layer` (organisé pour extensions
-  futures)
+- Conteneur `UI_Interactions` dans `HUD_Layer` (organisé pour extensions futures)
 - Label `InteractLabel` : affiche le texte quand `is_active = true`
 - Transition douce d'apparition/disparition (lerp dans `_process()`)
-- Intégré à l'interface du casque high-tech du joueur (esthétique
-  diégétique)
+- Intégré à l'interface du casque high-tech du joueur (esthétique diégétique)
+
+**HUD Vagues (intégré dans `player.gd`) :**
+- `WaveCounter` : Affiche le numéro de vague actuel ("Vague X")
+- `EnemiesCounter` : Affiche "Ennemis : X/Y" (ennemis vivants / total de la vague)
+- `Timer` : Affiche le temps restant ("Temps : X")
+- Mise à jour automatique via `world.gd` :
+  - `update_wave_counter(wave_number)` : Met à jour le numéro de vague
+  - `update_enemies_counter(enemies_count, max_enemies)` : Met à jour le compteur d'ennemis
+  - `update_timer_counter(timer_value)` : Met à jour le timer
 
 **Créer un nouvel objet interactif :**
 1. Créer un script qui hérite de `StaticBody3D` (ou autre selon besoin)
@@ -196,7 +224,7 @@ réutilisables (interrupteurs, pièges, etc.)
 - **62 PV** | **20 dégâts** | **Vitesse 1.0x**
 - Gravité active (`gravity_scale` configurable) : retombe naturellement
   après un spawn en suspension
-- Animation : 1 frame statique
+- Animation : Animation de marche disponible (26 frames) mais actuellement statique
 - Couleurs : Rouge foncé, Orange, Brun
 - **Mort** : Dissolution pixelisée (shader commun, tween 0.45s,
   `death_pixel_size = 156`)
@@ -235,9 +263,11 @@ réutilisables (interrupteurs, pièges, etc.)
   éditables par variant)
 - **Paramètres principaux** : `dissolve_amount` (0→1), `pixel_size`
   (1→N selon taille sprite), `edge_glow`, `edge_color`
-- **Tween** : `create_tween()` (0.45s par défaut) anime dissolution +
-  pixellisation, `queue_free()` à la fin
-- **Palette** : Couleurs d’impact de l’ennemi (4 teintes exportées) injectées dans le shader via `edge_color`
+- **Tween** : `create_tween()` anime dissolution + pixellisation, `queue_free()` à la fin
+  - **BigMonster V1/V2** : 0.45s, `pixel_size = 156`
+  - **PapillonV1** : 0.45s, `pixel_size = 26`
+  - **PapillonV2** : 0.4s, `pixel_size = 30`
+- **Palette** : Couleurs d'impact de l'ennemi (4 teintes exportées) injectées dans le shader via `edge_color`
 
 ---
 
@@ -280,15 +310,16 @@ réutilisables (interrupteurs, pièges, etc.)
 ```
 /Player/          - Composants joueur (4 scripts modulaires : Camera,
 					Movement, Combat, Input) + player.gd (orchestrateur +
-					gestion interactions)
+					gestion interactions + HUD)
 /Enemy/           - EnemyBase + 4 ennemis (Papillon V1/V2, BigMonster
-					V1/V2) + SpawnTestRunner + SpawnPoint
+					V1/V2) + SpawnPoint
 /Revolver/        - Script arme
 /Interrupteur/    - interrupteur.gd (interrupteur de vagues autonome)
 /Effects/         - ImpactEffect (particules) + Shaders (pixel_dissolve)
 /Maps/            - Arena + Obstacles (glb)
 /Assets/          - Audio, Sprites, Fonts
-world.tscn        - Scène principale
+world.gd          - Script système de vagues (attaché à world.tscn)
+world.tscn        - Scène principale (World + Player + SpawnPoints + Interrupteur)
 ```
 
 ---

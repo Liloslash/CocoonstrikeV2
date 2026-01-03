@@ -24,36 +24,6 @@ des vagues d'ennemis dans un environnement urbain en ruine.
 4. **Slam** → Attaque spéciale avec zone de repulsion
 5. **Rechargement** → Gestion des munitions dans l'arme
 
-## 👾 ENNEMIS
-
-### Architecture des Ennemis
-- **3 types de base** : Papillons (léger), Monster (moyen), BigMonster (lourd)
-- **Recolorisations** : Chaque type a 2 variantes avec comportements différents
-- **Total final** : 6 ennemis uniques (3 types × 2 variantes)
-
-### PAPILLONS (Type Léger)
-
-#### Chaser (Papillon V1)
-- **Comportement** : Pathfinding direct vers le joueur + attaque corps à corps
-- **Attaque** : Jet de spores (animation) dans un rayon de 1.5m
-- **Dégâts** : 15 points par attaque
-- **Cooldown** : 3 secondes entre attaques
-- **Style** : Agressif, pression directe
-
-#### Peintre (Papillon V2 - Recolorisé)
-- **Comportement** : Déplacement libre sur la carte + contrôle de zone
-- **Attaque** : Lance des spores à intervalles de 8 secondes
-- **Effet spécial** : Zones de dégâts persistantes (5 DPS)
-- **Taille des zones** : Rayon de 1.5m
-- **Limitation** : Maximum 3 zones simultanées par ennemi
-- **Style** : Tactique, pression indirecte
-
-### MONSTER (Type Moyen)
-- **2 variantes** : À définir (comportements différents)
-
-### BIG MONSTER (Type Lourd)
-- **2 variantes** : À définir (comportements différents)
-
 ## 🛠️ SYSTÈMES
 
 ### Ressources : "Bric-à-brac"
@@ -84,53 +54,48 @@ des vagues d'ennemis dans un environnement urbain en ruine.
 
 ## 🌊 SYSTÈME DE VAGUES
 
-> **Note** : Ce système est une ébauche. Le système final sera plus
-> complexe et plus riche. Cette version initiale pourra être complétée et
-> complexifiée au fur et à mesure.
+### Activation
+- **Déclenchement** : Le joueur active un interrupteur pour lancer une vague
+- **Une vague à la fois** : Impossible de lancer une nouvelle vague si une vague est déjà en cours
+- **Fin de vague** : Tous les ennemis éliminés (succès) ou timer écoulé (échec)
 
-### Variables de Contrôle
-Le système de vagues utilise 5 variables principales pour ajuster la
-difficulté :
-
-1. **Nombre total d'ennemis** : Quantité d'ennemis à éliminer pour
-   terminer la vague
-2. **Nombre d'ennemis simultanés** : Limite d'ennemis présents en même
-   temps sur la map (limite de spawn)
-3. **Variété des ennemis** : Types d'ennemis présents dans la vague
-   (Papillons, Monsters, BigMonsters)
-4. **Timer** : Temps alloué pour éliminer tous les ennemis de la vague
-5. **Surcharge de stats** : Multiplicateur de statistiques pour créer des
-   vagues spéciales (ex: +25% PV, +25% dégâts)
+### Système de Spawn
+- **Spawn par paquets** : Les ennemis apparaissent progressivement par groupes
+- **4 zones de spawn** : Les ennemis peuvent apparaître dans n'importe laquelle des 4 zones
+- **Respawn intelligent** : Quand il reste 15% d'ennemis, de nouveaux paquets peuvent être spawnés si la limite simultanée le permet
+- **Limite simultanée** : Nombre maximum d'ennemis présents en même temps sur la map
 
 ### Cycle de 5 Vagues (Progression Intra-Cycle)
 Chaque cycle de 5 vagues suit une progression de difficulté :
 
 - **Vague 1** : Base
   - Nombre d'ennemis : n
+  - Ennemis simultanés : n
   
 - **Vague 2** : Plus d'ennemis
-  - Nombre d'ennemis : n+
+  - Nombre d'ennemis : n+2
+  - Ennemis simultanés : n+2
   
 - **Vague 3** : Augmentation simultanée
-  - Nombre d'ennemis : n+
-  - Nombre d'ennemis simultanés : Augmenté
+  - Nombre d'ennemis : n+2
+  - Ennemis simultanés : n+4 (plus de pression)
   
 - **Vague 4** : Variété maximale
-  - Nombre d'ennemis : n++
-  - Nombre d'ennemis simultanés : Augmenté
-  - Variété : Tous les types d'ennemis présents
+  - Nombre d'ennemis : n+4
+  - Ennemis simultanés : n+4
+  - Tous les types d'ennemis présents
   
 - **Vague 5** : Vague spéciale
-	- Nombre d'ennemis : n+
-	- Stats surchargées : Ennemis avec statistiques augmentées
-	  (ex: +25% PV)
-	- Timer : Restreint (moins de temps pour éliminer la vague)
+  - Nombre d'ennemis : n+2
+  - Ennemis simultanés : n+2
+  - Stats boostées : +25% PV et +25% dégâts
+  - Timer restreint : 80% du temps normal
 
 ### Progression Inter-Cycles
 Après chaque cycle de 5 vagues terminé, la difficulté de base augmente :
 
-- **Nombre de base d'ennemis (n)** : Augmente de +1
-- **Timer de base** : Diminue (ex: -1 seconde par cycle)
+- **Nombre de base d'ennemis (n)** : Augmente de +1 par cycle
+- **Timer de base** : Diminue de 1 seconde par cycle (minimum 5 secondes)
 
 ### Exemple de Progression
 - **Cycle 1** (Vagues 1-5) : n=5 ennemis de base, timer=30s
